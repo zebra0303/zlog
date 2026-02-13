@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { Eye, Edit3, Columns, Save, ArrowLeft, ImageIcon } from "lucide-react";
+import { Eye, Edit3, Columns, Save, ArrowLeft, ImageIcon, Upload, Loader2 } from "lucide-react";
 import { Button, Input, Card, CardContent, SEOHead } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -16,6 +16,7 @@ export default function PostEditorPage() {
   const [preview, setPreview] = useState(""); const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [categories, setCategories] = useState<CategoryWithStats[]>([]); const [isSaving, setIsSaving] = useState(false); const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { if (!isAuthenticated) void navigate("/login"); }, [isAuthenticated, navigate]);
@@ -86,6 +87,23 @@ export default function PostEditorPage() {
     }
   }, []);
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsCoverUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await api.upload<{ url: string }>("/upload/image", fd);
+      setCoverImage(res.url);
+    } catch {
+      setError("커버 이미지 업로드에 실패했습니다.");
+    } finally {
+      setIsCoverUploading(false);
+      e.target.value = "";
+    }
+  };
+
   const handleSave = async (s: "draft" | "published") => {
     if (!title.trim() || !content.trim()) { setError("제목과 내용을 입력해주세요."); return; }
     if (s === "published" && !categoryId) { setError("발행하려면 카테고리를 선택해주세요."); return; }
@@ -119,7 +137,18 @@ export default function PostEditorPage() {
         <Input placeholder="제목을 입력하세요" value={title} onChange={(e) => setTitle(e.target.value)} className="flex-1 text-lg font-bold" />
         <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"><option value="">카테고리 선택</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
       </div>
-      <div className="flex gap-3"><Input placeholder="태그 (쉼표로 구분)" value={tags} onChange={(e) => setTags(e.target.value)} className="flex-1" /><Input placeholder="커버 이미지 URL" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="flex-1" /></div>
+      <div className="flex gap-3">
+        <Input placeholder="태그 (쉼표로 구분)" value={tags} onChange={(e) => setTags(e.target.value)} className="flex-1" />
+        <div className="flex flex-1 items-center gap-2">
+          <Input placeholder="커버 이미지 URL" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="flex-1" />
+          <label className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)]">
+            <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={isCoverUploading} />
+            {isCoverUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+            {isCoverUploading ? "업로드 중" : "업로드"}
+          </label>
+          {coverImage && <button onClick={() => setCoverImage("")} className="shrink-0 text-xs text-red-500 hover:underline">삭제</button>}
+        </div>
+      </div>
       <div className="flex min-h-[500px] gap-4">
         {(viewMode === "edit" || viewMode === "split") && (
           <div className={viewMode === "split" ? "w-1/2" : "w-full"}>

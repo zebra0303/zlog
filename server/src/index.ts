@@ -41,6 +41,9 @@ const CLIENT_DIST = path.resolve(PROJECT_ROOT, "client/dist");
 app.use("/uploads/*", serveStatic({ root: "./" }));
 app.use("/assets/*", serveStatic({ root: CLIENT_DIST }));
 app.use("/img/*", serveStatic({ root: CLIENT_DIST }));
+app.use("/favicons/*", serveStatic({ root: CLIENT_DIST }));
+app.get("/site.webmanifest", serveStatic({ root: CLIENT_DIST, path: "site.webmanifest" }));
+app.get("/sw.js", serveStatic({ root: CLIENT_DIST, path: "sw.js" }));
 
 app.route("/api/auth", auth);
 app.route("/api/posts", postsRoute);
