@@ -43,6 +43,9 @@ export const ko: Record<TranslationKeys, string> = {
   home_all: "전체",
   home_no_posts: "게시글이 없습니다.",
   home_write_first: "첫 번째 글을 작성해보세요!",
+  home_search_placeholder: "글 검색...",
+  home_no_search_results: '"{query}"에 대한 검색 결과가 없습니다.',
+  home_search_clear: "검색 초기화",
 
   // Post Card
   post_external_blog: "외부 블로그",
@@ -145,6 +148,17 @@ export const ko: Record<TranslationKeys, string> = {
   admin_saving: "저장 중...",
   admin_saved: "설정이 저장되었습니다.",
   admin_save_failed: "저장에 실패했습니다.",
+
+  // Admin - Post Management
+  admin_post_title: "글 관리",
+  admin_post_all: "전체",
+  admin_post_published: "발행됨",
+  admin_post_draft: "임시저장",
+  admin_post_empty: "게시글이 없습니다.",
+  admin_post_delete_confirm: '"{title}" 글을 삭제하시겠습니까?',
+  admin_post_untitled: "제목 없음",
+  admin_post_search_placeholder: "제목으로 검색...",
+  admin_post_page_info: "{page} / {totalPages} 페이지",
 
   // Admin - Category
   admin_cat_title: "카테고리 관리",

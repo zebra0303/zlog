@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc, and, sql, like } from "drizzle-orm";
+import { eq, desc, and, or, sql, like } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
@@ -32,7 +32,12 @@ postsRoute.get("/", async (c) => {
     categoryId = cat?.id ?? null;
   }
 
-  const conditions = [eq(schema.posts.status, status as "draft" | "published" | "deleted")];
+  const conditions: ReturnType<typeof eq>[] = [];
+  if (status === "all") {
+    conditions.push(or(eq(schema.posts.status, "published"), eq(schema.posts.status, "draft"))!);
+  } else {
+    conditions.push(eq(schema.posts.status, status as "draft" | "published" | "deleted"));
+  }
   if (categoryId) {
     conditions.push(eq(schema.posts.categoryId, categoryId));
   }

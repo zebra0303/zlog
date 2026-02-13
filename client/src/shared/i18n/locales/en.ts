@@ -41,6 +41,9 @@ export const en = {
   home_all: "All",
   home_no_posts: "No posts yet.",
   home_write_first: "Write your first post!",
+  home_search_placeholder: "Search posts...",
+  home_no_search_results: 'No posts found for "{query}".',
+  home_search_clear: "Clear search",
 
   // Post Card
   post_external_blog: "External Blog",
@@ -143,6 +146,17 @@ export const en = {
   admin_saving: "Saving...",
   admin_saved: "Settings saved.",
   admin_save_failed: "Failed to save.",
+
+  // Admin - Post Management
+  admin_post_title: "Post Management",
+  admin_post_all: "All",
+  admin_post_published: "Published",
+  admin_post_draft: "Draft",
+  admin_post_empty: "No posts.",
+  admin_post_delete_confirm: 'Delete "{title}"?',
+  admin_post_untitled: "Untitled",
+  admin_post_search_placeholder: "Search by title...",
+  admin_post_page_info: "Page {page} of {totalPages}",
 
   // Admin - Category
   admin_cat_title: "Category Management",

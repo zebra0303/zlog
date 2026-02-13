@@ -1,12 +1,172 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2, Rss, Languages } from "lucide-react";
-import { Button, Input, Textarea, Card, CardContent, SEOHead, Badge } from "@/shared/ui";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, Link } from "react-router";
+import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2, Rss, Languages, Edit, Eye, EyeOff, Search } from "lucide-react";
+import { Button, Input, Textarea, Card, CardContent, SEOHead, Badge, Pagination } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
-import type { CategoryWithStats } from "@zlog/shared";
+import { timeAgo } from "@/shared/lib/formatDate";
+import type { CategoryWithStats, PostWithCategory, PaginatedResponse } from "@zlog/shared";
+
+// ============ Post Manager ============
+type PostStatus = "all" | "published" | "draft";
+
+function PostManager() {
+  const [posts, setPosts] = useState<PostWithCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<PostStatus>("all");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { t } = useI18n();
+
+  const fetchPosts = useCallback((status: PostStatus, pg: number, search: string) => {
+    setIsLoading(true);
+    const params = new URLSearchParams();
+    params.set("status", status);
+    params.set("page", String(pg));
+    if (search) params.set("search", search);
+    api.get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`)
+      .then((data) => {
+        setPosts(data.items);
+        setTotalPages(data.totalPages);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  useEffect(() => { fetchPosts(filter, page, debouncedSearch); }, [filter, page, debouncedSearch, fetchPosts]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(1);
+    }, 300);
+  };
+
+  const handleFilterChange = (status: PostStatus) => {
+    setFilter(status);
+    setPage(1);
+  };
+
+  const handleDelete = async (post: PostWithCategory) => {
+    if (!confirm(t("admin_post_delete_confirm", { title: post.title || t("admin_post_untitled") }))) return;
+    setDeletingId(post.id);
+    try {
+      await api.delete(`/posts/${post.id}`);
+      fetchPosts(filter, page, debouncedSearch);
+    } catch {
+      /* ignore */
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const filterButtons: { key: PostStatus; label: string }[] = [
+    { key: "all", label: t("admin_post_all") },
+    { key: "published", label: t("admin_post_published") },
+    { key: "draft", label: t("admin_post_draft") },
+  ];
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+            <FileText className="h-5 w-5" />{t("admin_post_title")}
+          </h2>
+          <div className="flex rounded-lg border border-[var(--color-border)]">
+            {filterButtons.map((fb) => (
+              <button
+                key={fb.key}
+                onClick={() => handleFilterChange(fb.key)}
+                className={`px-3 py-1 text-xs ${filter === fb.key ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"} ${fb.key === "all" ? "rounded-l-lg" : fb.key === "draft" ? "rounded-r-lg" : ""}`}
+              >
+                {fb.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 검색 */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
+          <Input
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder={t("admin_post_search_placeholder")}
+            className="pl-9 pr-8"
+          />
+          {searchInput && (
+            <button onClick={() => { setSearchInput(""); setDebouncedSearch(""); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {isLoading ? (
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("loading")}</p>
+        ) : posts.length === 0 ? (
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("admin_post_empty")}</p>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              {posts.map((post) => (
+                <div key={post.id} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-medium text-[var(--color-text)]">
+                        {post.title || t("admin_post_untitled")}
+                      </span>
+                      {post.status === "draft" ? (
+                        <Badge variant="outline" className="border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400">
+                          <EyeOff className="mr-1 h-3 w-3" />{t("admin_post_draft")}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          <Eye className="mr-1 h-3 w-3" />{t("admin_post_published")}
+                        </Badge>
+                      )}
+                      {post.category && <Badge variant="outline">{post.category.name}</Badge>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                      {timeAgo(post.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="ml-2 flex shrink-0 gap-1">
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link to={`/write/${post.id}`} aria-label={t("edit")}>
+                        <Edit className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(post)}
+                      disabled={deletingId === post.id}
+                      aria-label={t("delete")}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4">
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 // ============ Category Manager ============
 function CategoryManager() {
@@ -520,6 +680,9 @@ export default function AdminPage() {
           </select>
         </div>
       </CardContent></Card>
+
+      {/* 글 관리 */}
+      <PostManager />
 
       {/* 카테고리 관리 */}
       <CategoryManager />
