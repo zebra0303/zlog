@@ -8,6 +8,44 @@ import type { WebhookEvent } from "@zlog/shared";
 
 const federationRoute = new Hono();
 
+/** 마크다운 content 내 상대 경로 이미지를 절대 URL로 변환 (제공 측에서 사용) */
+function resolveRelativeUrls(content: string, siteUrl: string): string {
+  return content.replace(/(\!\[.*?\]\()(\/(uploads|img)\/[^)]+\))/g, `$1${siteUrl}$2`);
+}
+
+/** 상대 경로를 절대 URL로 변환 (coverImage 등) */
+function resolveUrl(url: string | null, siteUrl: string): string | null {
+  if (!url) return url;
+  return url.startsWith("/") ? siteUrl + url : url;
+}
+
+/**
+ * 수신 측에서 사용: content 내 이미지 URL의 도메인을 실제 원격 블로그 URL로 치환
+ * - 상대 경로: /uploads/... → remoteSiteUrl/uploads/...
+ * - 잘못된 도메인: http://localhost/uploads/... → remoteSiteUrl/uploads/...
+ * - 마크다운 ![...](...) 및 HTML <img src="..."> 모두 처리
+ */
+function fixRemoteContentUrls(content: string, remoteSiteUrl: string): string {
+  let fixed = content;
+  // 1) 마크다운 이미지 상대 경로
+  fixed = fixed.replace(/(\!\[.*?\]\()(\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
+  // 2) 마크다운 이미지 잘못된 절대 URL → 올바른 도메인으로 교체
+  fixed = fixed.replace(/(\!\[.*?\]\()https?:\/\/[^/\s"')]+(\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
+  // 3) HTML img src 상대 경로
+  fixed = fixed.replace(/(src=["'])(\/(uploads|img)\/)/g, `$1${remoteSiteUrl}$2`);
+  // 4) HTML img src 잘못된 절대 URL → 올바른 도메인으로 교체
+  fixed = fixed.replace(/(src=["'])https?:\/\/[^/\s"']+(\/(uploads|img)\/)/g, `$1${remoteSiteUrl}$2`);
+  return fixed;
+}
+
+/** 단일 URL의 도메인을 실제 원격 블로그 URL로 치환 */
+function fixRemoteUrl(url: string | null, remoteSiteUrl: string): string | null {
+  if (!url) return url;
+  if (url.startsWith("/")) return remoteSiteUrl + url;
+  // 잘못된 도메인 교체 (예: http://localhost/uploads/... → remoteSiteUrl/uploads/...)
+  return url.replace(/^https?:\/\/[^/]+(\/(uploads|img)\/)/, `${remoteSiteUrl}$1`);
+}
+
 federationRoute.get("/info", async (c) => {
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
   if (!ownerRecord) return c.json({ error: "블로그 정보를 찾을 수 없습니다." }, 404);
@@ -36,8 +74,9 @@ federationRoute.get("/categories/:id/posts", async (c) => {
   const siteUrl = ownerRecord?.siteUrl ?? "";
 
   return c.json(postsResult.map((post) => ({
-    id: post.id, title: post.title, slug: post.slug, content: post.content,
-    excerpt: post.excerpt, coverImage: post.coverImage,
+    id: post.id, title: post.title, slug: post.slug,
+    content: resolveRelativeUrls(post.content, siteUrl),
+    excerpt: post.excerpt, coverImage: resolveUrl(post.coverImage, siteUrl),
     uri: `${siteUrl}/posts/${post.id}`, createdAt: post.createdAt, updatedAt: post.updatedAt,
   })));
 });
@@ -47,10 +86,12 @@ federationRoute.get("/posts/:id", async (c) => {
   const post = db.select().from(schema.posts).where(and(eq(schema.posts.id, id), eq(schema.posts.status, "published"))).get();
   if (!post) return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
+  const siteUrl = ownerRecord?.siteUrl ?? "";
   return c.json({
-    id: post.id, title: post.title, slug: post.slug, content: post.content,
-    excerpt: post.excerpt, coverImage: post.coverImage,
-    uri: `${ownerRecord?.siteUrl ?? ""}/posts/${post.id}`,
+    id: post.id, title: post.title, slug: post.slug,
+    content: resolveRelativeUrls(post.content, siteUrl),
+    excerpt: post.excerpt, coverImage: resolveUrl(post.coverImage, siteUrl),
+    uri: `${siteUrl}/posts/${post.id}`,
     createdAt: post.createdAt, updatedAt: post.updatedAt, author: ownerRecord?.displayName ?? "",
   });
 });
@@ -109,11 +150,13 @@ federationRoute.post("/webhook", async (c) => {
   const localCatId = subscription?.localCategoryId ?? null;
 
   if (body.event === "post.published" || body.event === "post.updated") {
+    const fixedContent = fixRemoteContentUrls(body.post.content, body.siteUrl);
+    const fixedCover = fixRemoteUrl(body.post.coverImage ?? null, body.siteUrl);
     const existing = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.remoteUri, remoteUri)).get();
     if (existing) {
-      db.update(schema.remotePosts).set({ title: body.post.title, slug: body.post.slug, content: body.post.content, excerpt: body.post.excerpt ?? null, coverImage: body.post.coverImage ?? null, remoteStatus: "published", remoteUpdatedAt: body.post.updatedAt, fetchedAt: now, localCategoryId: localCatId ?? existing.localCategoryId }).where(eq(schema.remotePosts.id, existing.id)).run();
+      db.update(schema.remotePosts).set({ title: body.post.title, slug: body.post.slug, content: fixedContent, excerpt: body.post.excerpt ?? null, coverImage: fixedCover, remoteStatus: "published", remoteUpdatedAt: body.post.updatedAt, fetchedAt: now, localCategoryId: localCatId ?? existing.localCategoryId }).where(eq(schema.remotePosts.id, existing.id)).run();
     } else {
-      db.insert(schema.remotePosts).values({ id: generateId(), remoteUri, remoteBlogId: remoteBlog.id, remoteCategoryId: remoteCategory.id, localCategoryId: localCatId, title: body.post.title, slug: body.post.slug, content: body.post.content, excerpt: body.post.excerpt ?? null, coverImage: body.post.coverImage ?? null, remoteStatus: "published", authorName: remoteBlog.displayName, remoteCreatedAt: body.post.createdAt, remoteUpdatedAt: body.post.updatedAt, fetchedAt: now }).run();
+      db.insert(schema.remotePosts).values({ id: generateId(), remoteUri, remoteBlogId: remoteBlog.id, remoteCategoryId: remoteCategory.id, localCategoryId: localCatId, title: body.post.title, slug: body.post.slug, content: fixedContent, excerpt: body.post.excerpt ?? null, coverImage: fixedCover, remoteStatus: "published", authorName: remoteBlog.displayName, remoteCreatedAt: body.post.createdAt, remoteUpdatedAt: body.post.updatedAt, fetchedAt: now }).run();
     }
   } else if (body.event === "post.deleted" || body.event === "post.unpublished") {
     db.update(schema.remotePosts).set({ remoteStatus: "deleted", fetchedAt: now }).where(eq(schema.remotePosts.remoteUri, remoteUri)).run();
@@ -166,6 +209,16 @@ federationRoute.post("/local-subscribe", async (c) => {
   const existingSub = db.select().from(schema.categorySubscriptions).where(and(eq(schema.categorySubscriptions.localCategoryId, localCat.id), eq(schema.categorySubscriptions.remoteCategoryId, remoteCat.id))).get();
   if (existingSub) {
     db.update(schema.categorySubscriptions).set({ isActive: true }).where(eq(schema.categorySubscriptions.id, existingSub.id)).run();
+    // 기존 remotePosts의 localCategoryId 복원
+    db.update(schema.remotePosts)
+      .set({ localCategoryId: localCat.id })
+      .where(
+        and(
+          eq(schema.remotePosts.remoteCategoryId, remoteCat.id),
+          eq(schema.remotePosts.remoteStatus, "published"),
+        ),
+      )
+      .run();
     return c.json({ message: "구독이 재활성화되었습니다.", subscriptionId: existingSub.id });
   }
 
@@ -206,6 +259,22 @@ federationRoute.get("/remote-posts/:id", async (c) => {
     ...rp,
     remoteBlog: remoteBlog ? { siteUrl: remoteBlog.siteUrl, displayName: remoteBlog.displayName, blogTitle: remoteBlog.blogTitle, avatarUrl: remoteBlog.avatarUrl } : null,
   });
+});
+
+// ============ 관리자용: 원격 블로그 카테고리 프록시 조회 ============
+federationRoute.get("/remote-categories", authMiddleware, async (c) => {
+  const url = c.req.query("url");
+  if (!url) return c.json({ error: "url 파라미터가 필요합니다." }, 400);
+
+  const normalized = url.replace(/\/+$/, "");
+  try {
+    const res = await fetch(`${normalized}/api/federation/categories`, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return c.json({ error: `원격 서버 응답 오류: ${res.status}` }, 502);
+    const cats = await res.json();
+    return c.json(cats);
+  } catch {
+    return c.json({ error: "원격 서버에 연결할 수 없습니다." }, 502);
+  }
 });
 
 // ============ 관리자용: 내가 구독 중인 카테고리 목록 ============
@@ -250,7 +319,8 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
   if (!remoteBlog) return c.json({ error: "원격 블로그를 찾을 수 없습니다." }, 404);
 
   try {
-    const postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts${sub.lastSyncedAt ? `?since=${sub.lastSyncedAt}` : ""}`;
+    // 항상 전체 글을 가져와서 이미지 URL 등도 최신화
+    const postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts`;
     const res = await fetch(postsUrl, { signal: AbortSignal.timeout(15000) });
     if (!res.ok) return c.json({ error: `원격 서버 응답 오류: ${res.status}` }, 502);
     const posts = (await res.json()) as Array<{
@@ -263,12 +333,16 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
     let synced = 0;
 
     for (const post of posts) {
-      const remoteUri = post.uri || `${remoteBlog.siteUrl}/posts/${post.id}`;
+      // uri의 도메인이 잘못되었을 수 있으므로 (예: http://localhost/posts/...) 실제 remoteBlog URL로 치환
+      const rawUri = post.uri || `${remoteBlog.siteUrl}/posts/${post.id}`;
+      const remoteUri = rawUri.replace(/^https?:\/\/[^/]+/, remoteBlog.siteUrl);
+      const fixedContent = fixRemoteContentUrls(post.content, remoteBlog.siteUrl);
+      const fixedCover = fixRemoteUrl(post.coverImage ?? null, remoteBlog.siteUrl);
       const existing = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.remoteUri, remoteUri)).get();
       if (existing) {
         db.update(schema.remotePosts).set({
-          title: post.title, slug: post.slug, content: post.content,
-          excerpt: post.excerpt ?? null, coverImage: post.coverImage ?? null,
+          title: post.title, slug: post.slug, content: fixedContent,
+          excerpt: post.excerpt ?? null, coverImage: fixedCover,
           remoteStatus: "published", remoteUpdatedAt: post.updatedAt, fetchedAt: now,
           localCategoryId: sub.localCategoryId,
         }).where(eq(schema.remotePosts.id, existing.id)).run();
@@ -276,8 +350,8 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
         db.insert(schema.remotePosts).values({
           id: generateId(), remoteUri, remoteBlogId: remoteBlog.id,
           remoteCategoryId: remoteCat.id, localCategoryId: sub.localCategoryId,
-          title: post.title, slug: post.slug, content: post.content,
-          excerpt: post.excerpt ?? null, coverImage: post.coverImage ?? null,
+          title: post.title, slug: post.slug, content: fixedContent,
+          excerpt: post.excerpt ?? null, coverImage: fixedCover,
           remoteStatus: "published", authorName: remoteBlog.displayName,
           remoteCreatedAt: post.createdAt, remoteUpdatedAt: post.updatedAt, fetchedAt: now,
         }).run();
@@ -300,6 +374,16 @@ federationRoute.delete("/subscriptions/:id", authMiddleware, async (c) => {
   const existing = db.select().from(schema.categorySubscriptions).where(eq(schema.categorySubscriptions.id, id)).get();
   if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
   db.update(schema.categorySubscriptions).set({ isActive: false }).where(eq(schema.categorySubscriptions.id, id)).run();
+  // 해당 구독의 remotePosts에서 localCategoryId를 null로 설정하여 목록에서 제거
+  db.update(schema.remotePosts)
+    .set({ localCategoryId: null })
+    .where(
+      and(
+        eq(schema.remotePosts.remoteCategoryId, existing.remoteCategoryId),
+        eq(schema.remotePosts.localCategoryId, existing.localCategoryId),
+      ),
+    )
+    .run();
   return c.json({ message: "구독이 해제되었습니다." });
 });
 

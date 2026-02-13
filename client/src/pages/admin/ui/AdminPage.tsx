@@ -597,9 +597,7 @@ function SubscriptionManager() {
     setRemoteCats([]);
     setSelectedRemoteCat("");
     try {
-      const res = await fetch(`${url}/api/federation/categories`, { signal: AbortSignal.timeout(10000) });
-      if (!res.ok) throw new Error("fetch failed");
-      const cats = (await res.json()) as RemoteCategoryOption[];
+      const cats = await api.get<RemoteCategoryOption[]>(`/federation/remote-categories?url=${encodeURIComponent(url)}`);
       if (cats.length === 0) {
         setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
       } else {
