@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut } from "lucide-react";
 import { Button, ZlogLogo } from "@/shared/ui";
@@ -10,6 +10,7 @@ const glass = "backdrop-blur-md bg-[var(--color-surface)]/70 rounded-xl px-3 py-
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { isAuthenticated, logout } = useAuthStore();
   const { isDark, toggle } = useThemeStore();
   const { getHeaderStyle } = useSiteSettingsStore();
@@ -20,12 +21,31 @@ export function Header() {
   const hasCustom = !!(customStyle.backgroundColor || customStyle.backgroundImage);
   const hasCustomHeight = !!customStyle.minHeight;
 
+  // 스크롤 감지 - 커스텀 높이가 있을 때만 compact 모드 전환
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const compact = isScrolled && hasCustomHeight;
+
+  // 헤더 스타일: compact 모드에서는 minHeight 제거
+  const headerStyle: React.CSSProperties | undefined = hasCustom
+    ? {
+        ...customStyle,
+        ...(compact ? { minHeight: undefined, height: "4rem" } : {}),
+        transition: "min-height 0.3s ease, height 0.3s ease",
+        overflow: "hidden",
+      }
+    : undefined;
+
   return (
     <header
       className={`sticky top-0 z-50 border-b border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]/80 backdrop-blur-md"}`}
-      style={hasCustom ? customStyle : undefined}
+      style={headerStyle}
     >
-      <div className={`mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
+      <div className={`mx-auto flex max-w-6xl items-center justify-between px-4 transition-all duration-300 ${compact ? "h-16" : hasCustomHeight ? "py-4" : "h-16"}`}>
         <Link to="/" className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
           <ZlogLogo size={36} />
           <span className="text-xl font-bold text-[var(--color-text)]">zlog</span>
