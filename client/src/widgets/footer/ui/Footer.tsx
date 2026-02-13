@@ -14,7 +14,7 @@ export function Footer() {
       style={hasCustomBg ? customStyle : undefined}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-6">
-        <div className="flex items-center gap-2"><ZlogLogo size={24} /><span className="text-sm text-[var(--color-text-secondary)]">Powered by zlog</span></div>
+        <div className="flex items-center gap-2"><ZlogLogo size={24} /><span className="text-sm text-[var(--color-text-secondary)]">Powered by <a href="https://github.com/zebra0303/zlog" target="_blank" rel="noopener noreferrer" className="no-underline hover:text-[var(--color-primary)]">zlog</a></span></div>
         <p className="text-sm text-[var(--color-text-secondary)]">&copy; {new Date().getFullYear()} zlog</p>
       </div>
     </footer>
