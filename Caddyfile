@@ -1,0 +1,19 @@
+{$DOMAIN:localhost} {
+  reverse_proxy zlog:3000
+  encode gzip
+
+  header {
+    X-Content-Type-Options nosniff
+    X-Frame-Options DENY
+    Referrer-Policy strict-origin-when-cross-origin
+    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+  }
+
+  handle_path /uploads/* {
+    header Cache-Control "public, max-age=31536000, immutable"
+  }
+
+  handle_path /assets/* {
+    header Cache-Control "public, max-age=31536000, immutable"
+  }
+}

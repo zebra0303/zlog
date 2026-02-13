@@ -1,0 +1,63 @@
+services:
+  zlog:
+    build: .
+    container_name: zlog
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - zlog-data:/app/data
+      - zlog-uploads:/app/uploads
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/zlog.db
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: zlog-caddy
+    restart: unless-stopped
+    profiles: [production]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      zlog:
+        condition: service_healthy
+
+  backup:
+    image: alpine:3
+    container_name: zlog-backup
+    profiles: [backup]
+    volumes:
+      - zlog-data:/data:ro
+      - zlog-backups:/backups
+    entrypoint: /bin/sh
+    command: >
+      -c 'while true; do
+        BACKUP_FILE="/backups/zlog-$(date +%Y%m%d_%H%M%S).db";
+        cp /data/zlog.db "$$BACKUP_FILE";
+        echo "Backup created: $$BACKUP_FILE";
+        find /backups -name "*.db" -mtime +7 -delete;
+        sleep 86400;
+      done'
+    restart: unless-stopped
+    depends_on:
+      - zlog
+
+volumes:
+  zlog-data:
+  zlog-uploads:
+  zlog-backups:
+  caddy-data:
+  caddy-config:
