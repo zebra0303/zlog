@@ -1,74 +1,101 @@
 # zlog
 
-분산형 자체 호스팅 개인 블로그 시스템
+A distributed, self-hosted personal blog system.
 
-## 빠른 시작
+[한국어 문서 (Korean)](./README.ko.md)
+
+## Quick Start
 
 ```bash
-# 의존성 설치
+# Install dependencies
 npm install
 
-# .env 설정
-cp .env.example .env  # 필요한 값 수정
+# Configure environment
+cp .env.example .env  # Edit values as needed
 
-# 개발 서버 시작
+# Start development server
 npm run dev
 ```
 
-- 프론트엔드: http://localhost:5173
-- 백엔드 API: http://localhost:3000
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
 
-## 환경변수
+## Environment Variables
 
-| 변수 | 설명 | 기본값 |
-|------|------|--------|
-| `PORT` | 서버 포트 | `3000` |
-| `DB_PATH` | SQLite DB 경로 | `./data/zlog.db` |
-| `JWT_SECRET` | JWT 서명 키 | `please-change-this` |
-| `SITE_URL` | 사이트 URL | `http://localhost:3000` |
-| `ADMIN_EMAIL` | 관리자 이메일 | `admin@example.com` |
-| `ADMIN_PASSWORD` | 관리자 비밀번호 | `changeme` |
-| `ADMIN_DISPLAY_NAME` | 관리자 표시 이름 | `Blog Owner` |
-| `ADMIN_BLOG_HANDLE` | 블로그 핸들 | `admin` |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `3000` |
+| `DB_PATH` | SQLite DB path | `./data/zlog.db` |
+| `JWT_SECRET` | JWT signing key | `please-change-this` |
+| `SITE_URL` | Site URL | `http://localhost:3000` |
+| `ADMIN_EMAIL` | Admin email | `admin@example.com` |
+| `ADMIN_PASSWORD` | Admin password | `changeme` |
+| `ADMIN_DISPLAY_NAME` | Admin display name | `Blog Owner` |
+| `ADMIN_BLOG_HANDLE` | Blog handle | `admin` |
+| `GITHUB_CLIENT_ID` | GitHub OAuth Client ID (optional) | - |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth Client Secret (optional) | - |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID (optional) | - |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret (optional) | - |
 
-## 기술 스택
+## Tech Stack
 
-- **프론트엔드**: React 19 + Vite 6 + Tailwind CSS v4 + Zustand 5
-- **백엔드**: Hono 4 + SQLite (better-sqlite3) + Drizzle ORM
-- **인프라**: Docker + Caddy (자동 HTTPS)
+- **Frontend**: React 19 + Vite 6 + Tailwind CSS v4 + Zustand 5
+- **Backend**: Hono 4 + SQLite (better-sqlite3) + Drizzle ORM
+- **Infrastructure**: Docker + Caddy (automatic HTTPS)
 
-## 배포
+## Features
+
+- Markdown editor with live preview (split/edit/preview modes)
+- Custom embeds (YouTube, CodePen, CodeSandbox)
+- Dark/Light theme toggle
+- Responsive design with mobile support
+- SEO optimization with meta tags
+- Image upload with auto-resize
+- Profile & social link management
+- Federation protocol (subscribe, webhook, polling)
+- PWA support (Service Worker + Manifest)
+- Cover image upload for posts
+- SSO comments via GitHub/Google OAuth
+- XSS protection for user inputs
+- Multi-language support (English / Korean)
+- Header/Footer theme customization (per light/dark mode)
+
+## Deployment
 
 ```bash
 docker compose up -d
 ```
 
-프로덕션 (HTTPS 포함):
+Production (with HTTPS):
 ```bash
 DOMAIN=yourdomain.com docker compose --profile production up -d
 ```
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 zlog/
-├── client/           # 프론트엔드 (FSD 아키텍처)
+├── client/           # Frontend (FSD Architecture)
 │   └── src/
-│       ├── app/      # 엔트리포인트, 라우터, 프로바이더
-│       ├── pages/    # 페이지 컴포넌트
-│       ├── widgets/  # 헤더, 푸터, 사이드바
-│       ├── features/ # 인증, 댓글, 테마
+│       ├── app/      # Entry point, router, providers
+│       ├── pages/    # Page components
+│       ├── widgets/  # Header, footer, sidebar
+│       ├── features/ # Auth, comments, theme
 │       ├── entities/ # PostCard, CategoryBadge
-│       └── shared/   # UI, API, 유틸
-├── server/           # 백엔드 (Hono)
+│       └── shared/   # UI components, API client, i18n, utilities
+├── server/           # Backend (Hono)
 │   └── src/
-│       ├── db/       # 스키마, 마이그레이션
-│       ├── routes/   # API 라우트
-│       ├── middleware/# 인증, 에러 핸들러
-│       ├── services/ # 비즈니스 로직
-│       └── lib/      # 유틸리티
-├── shared/           # 공유 타입
+│       ├── db/       # Schema, migrations
+│       ├── routes/   # API routes
+│       ├── middleware/# Auth, error handlers
+│       ├── services/ # Business logic
+│       └── lib/      # Utilities
+├── shared/           # Shared types
 ├── Dockerfile
 ├── docker-compose.yml
 └── Caddyfile
 ```
+
+## License
+
+MIT

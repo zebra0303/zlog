@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "@/shared/api/client";
+import { useI18n, type Locale } from "@/shared/i18n";
 
 interface SiteSettingsState {
   settings: Record<string, string>;
@@ -19,6 +20,11 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     try {
       const data = await api.get<Record<string, string>>("/settings");
       set({ settings: data, isLoaded: true });
+      // 서버에 저장된 기본 언어가 있고, 사용자가 수동 설정하지 않았으면 적용
+      const serverLang = data.default_language as Locale | undefined;
+      if (serverLang && !localStorage.getItem("zlog_locale")) {
+        useI18n.getState().setLocale(serverLang);
+      }
     } catch {
       set({ isLoaded: true });
     }

@@ -164,6 +164,19 @@ export async function bootstrap() {
       UNIQUE(category_id, subscriber_url)
     );
 
+    CREATE TABLE IF NOT EXISTS commenters (
+      id TEXT PRIMARY KEY,
+      provider TEXT NOT NULL,
+      provider_id TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      email TEXT,
+      avatar_url TEXT,
+      profile_url TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(provider, provider_id)
+    );
+
     CREATE TABLE IF NOT EXISTS site_settings (
       id TEXT PRIMARY KEY,
       key TEXT UNIQUE NOT NULL,
@@ -171,6 +184,13 @@ export async function bootstrap() {
       updated_at TEXT NOT NULL
     );
   `);
+
+  // comments 테이블에 commenter_id 컬럼 추가 (마이그레이션)
+  try {
+    sqlite.exec("ALTER TABLE comments ADD COLUMN commenter_id TEXT REFERENCES commenters(id) ON DELETE SET NULL");
+  } catch {
+    // 이미 존재하면 무시
+  }
 
   // 관리자 계정이 없으면 생성
   const existingOwner = db.select().from(schema.owner).limit(1).all();

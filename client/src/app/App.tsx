@@ -5,11 +5,13 @@ import { Providers } from "./providers";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
+import { useI18n } from "@/shared/i18n";
 
 export default function App() {
   const { initTheme } = useThemeStore();
   const { checkAuth } = useAuthStore();
   const { fetchSettings } = useSiteSettingsStore();
-  useEffect(() => { initTheme(); void checkAuth(); void fetchSettings(); }, [initTheme, checkAuth, fetchSettings]);
+  const { initLocale } = useI18n();
+  useEffect(() => { initTheme(); initLocale(); void checkAuth(); void fetchSettings(); }, [initTheme, initLocale, checkAuth, fetchSettings]);
   return <Providers><RouterProvider router={router} /></Providers>;
 }

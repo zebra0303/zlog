@@ -6,9 +6,10 @@ import { Pagination, SEOHead, Skeleton, Card, CardContent, Badge, Button, Input 
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
+import { useI18n } from "@/shared/i18n";
 import type { CategoryWithStats, PostWithCategory, PaginatedResponse } from "@zlog/shared";
 
-// ============ 구독 다이얼로그 ============
+// ============ Subscribe Dialog ============
 function SubscribeDialog({
   category,
   onClose,
@@ -19,6 +20,7 @@ function SubscribeDialog({
   const [blogUrl, setBlogUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const { t } = useI18n();
 
   const callbackUrl = blogUrl.trim()
     ? `${blogUrl.trim().replace(/\/$/, "")}/api/federation/webhook`
@@ -26,22 +28,38 @@ function SubscribeDialog({
 
   const handleSubscribe = async () => {
     if (!blogUrl.trim()) {
-      setResult({ type: "error", text: "블로그 URL을 입력해주세요." });
+      setResult({ type: "error", text: t("cat_subscribe_enter_url") });
       return;
     }
     setIsSubmitting(true);
     setResult(null);
     try {
+      const remoteSiteUrl = window.location.origin;
       await api.post("/federation/subscribe", {
         categoryId: category.id,
         subscriberUrl: blogUrl.trim().replace(/\/$/, ""),
         callbackUrl,
       });
-      setResult({ type: "success", text: "구독이 등록되었습니다! 새 글이 발행되면 자동으로 동기화됩니다." });
+      try {
+        await fetch(`${blogUrl.trim().replace(/\/$/, "")}/api/federation/local-subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            remoteSiteUrl,
+            remoteCategoryId: category.id,
+            remoteCategoryName: category.name,
+            remoteCategorySlug: category.slug,
+            localCategorySlug: category.slug,
+          }),
+        });
+      } catch {
+        // ignore local mapping failure
+      }
+      setResult({ type: "success", text: t("cat_subscribe_success") });
     } catch (err) {
       setResult({
         type: "error",
-        text: err instanceof Error ? err.message : "구독에 실패했습니다.",
+        text: err instanceof Error ? err.message : t("cat_subscribe_failed"),
       });
     } finally {
       setIsSubmitting(false);
@@ -50,21 +68,35 @@ function SubscribeDialog({
 
   const handleUnsubscribe = async () => {
     if (!blogUrl.trim()) {
-      setResult({ type: "error", text: "블로그 URL을 입력해주세요." });
+      setResult({ type: "error", text: t("cat_subscribe_enter_url") });
       return;
     }
     setIsSubmitting(true);
     setResult(null);
     try {
+      const remoteSiteUrl = window.location.origin;
       await api.post("/federation/unsubscribe", {
         categoryId: category.id,
         subscriberUrl: blogUrl.trim().replace(/\/$/, ""),
       });
-      setResult({ type: "success", text: "구독이 해제되었습니다." });
+      try {
+        await fetch(`${blogUrl.trim().replace(/\/$/, "")}/api/federation/local-unsubscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            remoteSiteUrl,
+            remoteCategoryId: category.id,
+            localCategorySlug: category.slug,
+          }),
+        });
+      } catch {
+        // ignore
+      }
+      setResult({ type: "success", text: t("cat_unsubscribe_success") });
     } catch (err) {
       setResult({
         type: "error",
-        text: err instanceof Error ? err.message : "구독 해제에 실패했습니다.",
+        text: err instanceof Error ? err.message : t("cat_unsubscribe_failed"),
       });
     } finally {
       setIsSubmitting(false);
@@ -80,7 +112,7 @@ function SubscribeDialog({
         <div className="flex items-center justify-between border-b border-[var(--color-border)] p-4">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
             <Rss className="h-5 w-5 text-[var(--color-primary)]" />
-            "{category.name}" 카테고리 구독
+            {t("cat_subscribe_title")} "{category.name}" {t("cat_subscribe_category")}
           </h2>
           <button onClick={onClose} className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
             <X className="h-5 w-5" />
@@ -88,27 +120,24 @@ function SubscribeDialog({
         </div>
 
         <div className="p-4">
-          {/* 설명 */}
           <div className="mb-4 rounded-lg bg-[var(--color-background)] p-3">
             <div className="mb-2 flex items-start gap-2">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary)]" />
               <div>
-                <h3 className="text-sm font-medium text-[var(--color-text)]">zlog Federation 구독이란?</h3>
+                <h3 className="text-sm font-medium text-[var(--color-text)]">{t("cat_subscribe_what")}</h3>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                  다른 zlog 블로그를 운영하고 계신다면, 이 카테고리를 구독할 수 있습니다.
-                  구독하면 이 카테고리에 새 글이 발행될 때마다 자동으로 여러분의 블로그에 동기화됩니다.
+                  {t("cat_subscribe_desc1")} {t("cat_subscribe_desc2")}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                  아래에 여러분의 블로그 URL을 입력하면, 콜백 URL이 자동 생성되어 웹훅으로 새 글 알림을 받게 됩니다.
+                  {t("cat_subscribe_desc3")}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 입력 폼 */}
           <div className="flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">내 블로그 URL</label>
+              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("cat_subscribe_blog_url")}</label>
               <Input
                 placeholder="https://myblog.example.com"
                 value={blogUrl}
@@ -117,7 +146,7 @@ function SubscribeDialog({
             </div>
             {callbackUrl && (
               <div>
-                <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">콜백 URL (자동 생성)</label>
+                <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">{t("cat_subscribe_callback")}</label>
                 <div className="flex items-center gap-2 rounded-lg bg-[var(--color-background)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
                   <ExternalLink className="h-3 w-3 shrink-0" />
                   <span className="truncate">{callbackUrl}</span>
@@ -135,11 +164,11 @@ function SubscribeDialog({
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={handleUnsubscribe} disabled={isSubmitting || !blogUrl.trim()}>
-                구독 해제
+                {t("cat_unsubscribe")}
               </Button>
               <Button size="sm" onClick={handleSubscribe} disabled={isSubmitting || !blogUrl.trim()}>
                 <Rss className="mr-1 h-4 w-4" />
-                {isSubmitting ? "처리 중..." : "구독하기"}
+                {isSubmitting ? t("cat_subscribe_processing") : t("cat_subscribe_button")}
               </Button>
             </div>
           </div>
@@ -149,7 +178,7 @@ function SubscribeDialog({
   );
 }
 
-// ============ 메인 페이지 ============
+// ============ Main Page ============
 export default function CategoryDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -160,6 +189,7 @@ export default function CategoryDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSubscribe, setShowSubscribe] = useState(false);
   const { isAuthenticated } = useAuthStore();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!slug) return;
@@ -183,7 +213,7 @@ export default function CategoryDetailPage() {
 
   if (!category && !isLoading)
     return (
-      <p className="py-20 text-center text-[var(--color-text-secondary)]">카테고리를 찾을 수 없습니다.</p>
+      <p className="py-20 text-center text-[var(--color-text-secondary)]">{t("cat_not_found")}</p>
     );
 
   return (
@@ -200,8 +230,8 @@ export default function CategoryDetailPage() {
                     <p className="mb-3 text-[var(--color-text-secondary)]">{category.description}</p>
                   )}
                   <div className="flex flex-wrap gap-3">
-                    <Badge variant="secondary">{category.postCount}개 게시글</Badge>
-                    <Badge variant="outline">{category.followerCount}명 구독</Badge>
+                    <Badge variant="secondary">{category.postCount} {t("cat_posts_count")}</Badge>
+                    <Badge variant="outline">{category.followerCount} {t("cat_followers_count")}</Badge>
                   </div>
                 </div>
                 {!isAuthenticated && (
@@ -212,7 +242,7 @@ export default function CategoryDetailPage() {
                     className="shrink-0"
                   >
                     <Rss className="mr-1 h-4 w-4" />
-                    구독
+                    {t("cat_subscribe")}
                   </Button>
                 )}
               </div>
@@ -254,7 +284,7 @@ export default function CategoryDetailPage() {
         </>
       ) : (
         <p className="py-10 text-center text-[var(--color-text-secondary)]">
-          이 카테고리에 게시글이 없습니다.
+          {t("cat_no_posts")}
         </p>
       )}
 

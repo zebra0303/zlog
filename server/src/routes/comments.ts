@@ -6,6 +6,44 @@ import { generateId } from "../lib/uuid.js";
 
 const commentsRoute = new Hono();
 
+/**
+ * HTML 태그 및 XSS 위험 요소 제거 — 평문 텍스트만 허용
+ */
+function sanitizePlainText(input: string): string {
+  return input
+    // HTML 태그 모두 제거
+    .replace(/<[^>]*>/g, "")
+    // HTML 엔티티 인코딩되지 않은 위험 문자 치환
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
+    // javascript: / data: URI 스킴 제거
+    .replace(/javascript\s*:/gi, "")
+    .replace(/data\s*:/gi, "")
+    // on* 이벤트 핸들러 패턴 제거
+    .replace(/on\w+\s*=/gi, "")
+    .trim();
+}
+
+/**
+ * URL 검증 — http/https만 허용
+ */
+function sanitizeUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function buildCommentTree(
   allComments: (typeof schema.comments.$inferSelect & {
     likeCount: number;
@@ -70,14 +108,27 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     authorName: string;
     authorEmail: string;
     authorUrl?: string;
+    authorAvatarUrl?: string;
+    commenterId?: string;
     content: string;
     parentId?: string;
   }>();
 
-  if (!body.authorName || !body.authorEmail || !body.content) {
-    return c.json({ error: "이름, 이메일, 내용을 입력해주세요." }, 400);
+  // 입력값 sanitize (평문 텍스트만 허용, XSS 방지)
+  const authorName = sanitizePlainText(body.authorName ?? "");
+  const authorEmail = sanitizePlainText(body.authorEmail ?? "");
+  const content = sanitizePlainText(body.content ?? "");
+  const authorUrl = body.authorUrl ? sanitizeUrl(body.authorUrl) : null;
+  // OAuth 아바타 URL도 검증
+  const authorAvatarUrl = body.authorAvatarUrl ? sanitizeUrl(body.authorAvatarUrl) : null;
+
+  if (!body.commenterId) {
+    return c.json({ error: "Social login is required to post a comment." }, 403);
   }
-  if (body.content.length > 2000) {
+  if (!authorName || !content) {
+    return c.json({ error: "Name and content are required." }, 400);
+  }
+  if (content.length > 2000) {
     return c.json({ error: "댓글은 최대 2,000자까지 입력 가능합니다." }, 400);
   }
 
@@ -111,10 +162,12 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     .values({
       id,
       postId,
-      authorName: body.authorName,
-      authorEmail: body.authorEmail,
-      authorUrl: body.authorUrl ?? null,
-      content: body.content,
+      commenterId: body.commenterId ?? null,
+      authorName,
+      authorEmail,
+      authorUrl,
+      authorAvatarUrl,
+      content,
       parentId: body.parentId ?? null,
       createdAt: now,
       updatedAt: now,

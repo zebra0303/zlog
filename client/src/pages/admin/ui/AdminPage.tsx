@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2, Rss } from "lucide-react";
+import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2, Rss, Languages } from "lucide-react";
 import { Button, Input, Textarea, Card, CardContent, SEOHead, Badge } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
+import { useI18n } from "@/shared/i18n";
 import type { CategoryWithStats } from "@zlog/shared";
 
-// ============ 카테고리 관리 컴포넌트 ============
+// ============ Category Manager ============
 function CategoryManager() {
   const [categories, setCategories] = useState<CategoryWithStats[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -19,6 +20,7 @@ function CategoryManager() {
   const [editDesc, setEditDesc] = useState("");
   const [editIsPublic, setEditIsPublic] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useI18n();
 
   const fetchCategories = () => {
     void api.get<CategoryWithStats[]>("/categories").then(setCategories).catch(() => {});
@@ -27,31 +29,31 @@ function CategoryManager() {
   useEffect(() => { fetchCategories(); }, []);
 
   const handleCreate = async () => {
-    if (!newName.trim()) { setError("카테고리 이름을 입력해주세요."); return; }
+    if (!newName.trim()) { setError(t("admin_cat_name_required")); return; }
     setError(null);
     try {
       await api.post("/categories", { name: newName, description: newDesc || undefined, isPublic: newIsPublic });
       setNewName(""); setNewDesc(""); setNewIsPublic(true); setIsAdding(false);
       fetchCategories();
-    } catch (err) { setError(err instanceof Error ? err.message : "생성에 실패했습니다."); }
+    } catch (err) { setError(err instanceof Error ? err.message : t("admin_cat_create_failed")); }
   };
 
   const handleUpdate = async (id: string) => {
-    if (!editName.trim()) { setError("카테고리 이름을 입력해주세요."); return; }
+    if (!editName.trim()) { setError(t("admin_cat_name_required")); return; }
     setError(null);
     try {
       await api.put(`/categories/${id}`, { name: editName, description: editDesc || undefined, isPublic: editIsPublic });
       setEditingId(null);
       fetchCategories();
-    } catch (err) { setError(err instanceof Error ? err.message : "수정에 실패했습니다."); }
+    } catch (err) { setError(err instanceof Error ? err.message : t("admin_cat_update_failed")); }
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`"${name}" 카테고리를 삭제하시겠습니까?\n이 카테고리에 속한 게시글은 카테고리 없음 상태가 됩니다.`)) return;
+    if (!confirm(t("admin_cat_delete_confirm", { name }))) return;
     try {
       await api.delete(`/categories/${id}`);
       fetchCategories();
-    } catch (err) { setError(err instanceof Error ? err.message : "삭제에 실패했습니다."); }
+    } catch (err) { setError(err instanceof Error ? err.message : t("admin_cat_delete_failed")); }
   };
 
   const startEdit = (cat: CategoryWithStats) => {
@@ -62,23 +64,22 @@ function CategoryManager() {
     <Card>
       <CardContent className="pt-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><Folder className="h-5 w-5" />카테고리 관리</h2>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><Folder className="h-5 w-5" />{t("admin_cat_title")}</h2>
           {!isAdding && (
-            <Button variant="outline" size="sm" onClick={() => setIsAdding(true)}><Plus className="mr-1 h-4 w-4" />추가</Button>
+            <Button variant="outline" size="sm" onClick={() => setIsAdding(true)}><Plus className="mr-1 h-4 w-4" />{t("admin_cat_add")}</Button>
           )}
         </div>
 
         {error && <div className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20">{error}</div>}
 
-        {/* 새 카테고리 생성 폼 */}
         {isAdding && (
           <div className="mb-4 rounded-lg border border-[var(--color-primary)] bg-[var(--color-background)] p-4">
-            <h3 className="mb-3 text-sm font-medium text-[var(--color-text)]">새 카테고리</h3>
+            <h3 className="mb-3 text-sm font-medium text-[var(--color-text)]">{t("admin_cat_new")}</h3>
             <div className="flex flex-col gap-3">
-              <Input placeholder="카테고리 이름" value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
-              <Input placeholder="설명 (선택)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+              <Input placeholder={t("admin_cat_name_placeholder")} value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
+              <Input placeholder={t("admin_cat_desc_placeholder")} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
               <div className="flex items-center justify-between">
-                <label className="text-sm text-[var(--color-text)]">공개</label>
+                <label className="text-sm text-[var(--color-text)]">{t("public")}</label>
                 <button
                   onClick={() => setNewIsPublic(!newIsPublic)}
                   className={`relative h-6 w-11 rounded-full transition-colors ${newIsPublic ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
@@ -87,27 +88,25 @@ function CategoryManager() {
                 </button>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => { setIsAdding(false); setNewName(""); setNewDesc(""); setError(null); }}>취소</Button>
-                <Button size="sm" onClick={handleCreate}>생성</Button>
+                <Button variant="ghost" size="sm" onClick={() => { setIsAdding(false); setNewName(""); setNewDesc(""); setError(null); }}>{t("cancel")}</Button>
+                <Button size="sm" onClick={handleCreate}>{t("create")}</Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* 카테고리 목록 */}
         {categories.length === 0 ? (
-          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">카테고리가 없습니다. 위의 추가 버튼으로 생성하세요.</p>
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("admin_cat_empty")}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {categories.map((cat) => (
               <div key={cat.id} className="rounded-lg border border-[var(--color-border)] p-3">
                 {editingId === cat.id ? (
-                  /* 수정 모드 */
                   <div className="flex flex-col gap-3">
                     <Input value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus />
-                    <Input placeholder="설명" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+                    <Input placeholder={t("admin_cat_desc_placeholder")} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
                     <div className="flex items-center justify-between">
-                      <label className="text-sm text-[var(--color-text)]">공개</label>
+                      <label className="text-sm text-[var(--color-text)]">{t("public")}</label>
                       <button
                         onClick={() => setEditIsPublic(!editIsPublic)}
                         className={`relative h-6 w-11 rounded-full transition-colors ${editIsPublic ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
@@ -116,25 +115,24 @@ function CategoryManager() {
                       </button>
                     </div>
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => { setEditingId(null); setError(null); }}><X className="mr-1 h-3 w-3" />취소</Button>
-                      <Button size="sm" onClick={() => handleUpdate(cat.id)}><Check className="mr-1 h-3 w-3" />저장</Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingId(null); setError(null); }}><X className="mr-1 h-3 w-3" />{t("cancel")}</Button>
+                      <Button size="sm" onClick={() => handleUpdate(cat.id)}><Check className="mr-1 h-3 w-3" />{t("save")}</Button>
                     </div>
                   </div>
                 ) : (
-                  /* 보기 모드 */
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-[var(--color-text)]">{cat.name}</span>
-                        <Badge variant="secondary">{cat.postCount}개</Badge>
-                        {!cat.isPublic && <Badge variant="outline">비공개</Badge>}
+                        <Badge variant="secondary">{cat.postCount} {t("admin_cat_posts_count")}</Badge>
+                        {!cat.isPublic && <Badge variant="outline">{t("private")}</Badge>}
                       </div>
                       {cat.description && <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{cat.description}</p>}
                       <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">/{cat.slug}</p>
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => startEdit(cat)} aria-label="수정"><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(cat.id, cat.name)} aria-label="삭제"><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => startEdit(cat)} aria-label={t("edit")}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(cat.id, cat.name)} aria-label={t("delete")}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                     </div>
                   </div>
                 )}
@@ -147,7 +145,7 @@ function CategoryManager() {
   );
 }
 
-// ============ 이미지 업로드 입력 ============
+// ============ Image Upload Input ============
 function ImageUploadInput({
   settingKey,
   value,
@@ -160,6 +158,7 @@ function ImageUploadInput({
   placeholder: string;
 }) {
   const [uploading, setUploading] = useState(false);
+  const { t } = useI18n();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,7 +179,7 @@ function ImageUploadInput({
 
   return (
     <div>
-      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">배경 이미지</label>
+      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">{t("admin_theme_bg_image")}</label>
       <div className="flex items-center gap-2">
         <Input
           placeholder={placeholder}
@@ -191,20 +190,21 @@ function ImageUploadInput({
         <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)]">
           <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={uploading} />
           {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-          {uploading ? "업로드 중" : "업로드"}
+          {uploading ? t("uploading") : t("upload")}
         </label>
         {value && (
-          <button onClick={() => onChange("")} className="text-xs text-red-500 hover:underline">초기화</button>
+          <button onClick={() => onChange("")} className="text-xs text-red-500 hover:underline">{t("reset")}</button>
         )}
       </div>
     </div>
   );
 }
 
-// ============ 헤더/푸터 테마 섹션 ============
+// ============ Theme Customizer ============
 function ThemeCustomizer({ settings, update }: { settings: Record<string, string>; update: (k: string, v: string) => void }) {
+  const { t } = useI18n();
   const heightOptions = [
-    { value: "auto", label: "자동" },
+    { value: "auto", label: t("admin_theme_auto") },
     { value: "80px", label: "80px" },
     { value: "100px", label: "100px" },
     { value: "120px", label: "120px" },
@@ -215,7 +215,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
 
   const sections = [
     {
-      title: "헤더 (Header)",
+      title: t("admin_theme_header"),
       heightKey: "header_height",
       keys: {
         lightColor: "header_bg_color_light",
@@ -225,7 +225,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
       },
     },
     {
-      title: "푸터 (Footer)",
+      title: t("admin_theme_footer"),
       heightKey: "footer_height",
       keys: {
         lightColor: "footer_bg_color_light",
@@ -240,10 +240,10 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
     <Card>
       <CardContent className="pt-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
-          <Palette className="h-5 w-5" />헤더/푸터 테마 커스터마이징
+          <Palette className="h-5 w-5" />{t("admin_theme_title")}
         </h2>
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-          밝은 모드와 어두운 모드에서 각각 다른 배경색이나 배경 이미지를 설정할 수 있습니다. 비워두면 기본 테마 색상이 사용됩니다.
+          {t("admin_theme_desc")}
         </p>
 
         <div className="flex flex-col gap-6">
@@ -252,7 +252,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-medium text-[var(--color-text)]">{section.title}</h3>
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-[var(--color-text-secondary)]">높이</label>
+                  <label className="text-xs text-[var(--color-text-secondary)]">{t("admin_theme_height")}</label>
                   <select
                     value={settings[section.heightKey] ?? "auto"}
                     onChange={(e) => update(section.heightKey, e.target.value)}
@@ -265,12 +265,12 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* 밝은 모드 */}
+                {/* Light Mode */}
                 <div className="rounded-lg bg-[var(--color-background)] p-3">
-                  <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">밝은 모드</h4>
+                  <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">{t("admin_theme_light_mode")}</h4>
                   <div className="flex flex-col gap-2">
                     <div>
-                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">배경색</label>
+                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">{t("admin_theme_bg_color")}</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -286,7 +286,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                         />
                         {settings[section.keys.lightColor] && (
                           <button onClick={() => update(section.keys.lightColor, "")} className="text-xs text-red-500 hover:underline">
-                            초기화
+                            {t("reset")}
                           </button>
                         )}
                       </div>
@@ -295,9 +295,8 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                       settingKey={section.keys.lightImage}
                       value={settings[section.keys.lightImage] ?? ""}
                       onChange={(url) => update(section.keys.lightImage, url)}
-                      placeholder="URL 또는 파일 업로드"
+                      placeholder={t("admin_theme_image_placeholder")}
                     />
-                    {/* 미리보기 */}
                     {(settings[section.keys.lightColor] || settings[section.keys.lightImage]) && (
                       <div
                         className="mt-1 h-12 rounded border border-[var(--color-border)]"
@@ -311,12 +310,12 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                     )}
                   </div>
                 </div>
-                {/* 어두운 모드 */}
+                {/* Dark Mode */}
                 <div className="rounded-lg bg-[var(--color-background)] p-3">
-                  <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">어두운 모드</h4>
+                  <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">{t("admin_theme_dark_mode")}</h4>
                   <div className="flex flex-col gap-2">
                     <div>
-                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">배경색</label>
+                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">{t("admin_theme_bg_color")}</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -332,7 +331,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                         />
                         {settings[section.keys.darkColor] && (
                           <button onClick={() => update(section.keys.darkColor, "")} className="text-xs text-red-500 hover:underline">
-                            초기화
+                            {t("reset")}
                           </button>
                         )}
                       </div>
@@ -341,7 +340,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                       settingKey={section.keys.darkImage}
                       value={settings[section.keys.darkImage] ?? ""}
                       onChange={(url) => update(section.keys.darkImage, url)}
-                      placeholder="URL 또는 파일 업로드"
+                      placeholder={t("admin_theme_image_placeholder")}
                     />
                     {/* 미리보기 */}
                     {(settings[section.keys.darkColor] || settings[section.keys.darkImage]) && (
@@ -366,7 +365,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
   );
 }
 
-// ============ 구독자 관리 컴포넌트 ============
+// ============ Subscriber Manager ============
 interface Subscriber {
   id: string;
   categoryId: string;
@@ -381,6 +380,7 @@ function SubscriberManager() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { t, locale } = useI18n();
 
   const fetchSubscribers = () => {
     setIsLoading(true);
@@ -398,7 +398,7 @@ function SubscriberManager() {
   }, []);
 
   const handleDelete = async (sub: Subscriber) => {
-    if (!confirm(`"${sub.subscriberUrl}"의 구독을 삭제하시겠습니까?`)) return;
+    if (!confirm(t("admin_sub_delete_confirm", { url: sub.subscriberUrl }))) return;
     setDeletingId(sub.id);
     try {
       await api.delete(`/federation/subscribers/${sub.id}`);
@@ -414,16 +414,16 @@ function SubscriberManager() {
     <Card>
       <CardContent className="pt-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
-          <Rss className="h-5 w-5" />구독자 관리
+          <Rss className="h-5 w-5" />{t("admin_sub_title")}
         </h2>
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-          이 블로그의 카테고리를 구독하고 있는 외부 블로그 목록입니다.
+          {t("admin_sub_desc")}
         </p>
 
         {isLoading ? (
-          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">불러오는 중...</p>
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("admin_sub_loading")}</p>
         ) : subscribers.length === 0 ? (
-          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">구독자가 없습니다.</p>
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("admin_sub_empty")}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {subscribers.map((sub) => (
@@ -434,14 +434,14 @@ function SubscriberManager() {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-[var(--color-text)]">{sub.subscriberUrl}</span>
-                    <Badge variant="secondary">{sub.categoryName ?? "삭제된 카테고리"}</Badge>
-                    {!sub.isActive && <Badge variant="outline">비활성</Badge>}
+                    <Badge variant="secondary">{sub.categoryName ?? t("admin_sub_deleted_cat")}</Badge>
+                    {!sub.isActive && <Badge variant="outline">{t("admin_sub_inactive")}</Badge>}
                   </div>
                   <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-                    콜백: {sub.callbackUrl}
+                    {t("admin_sub_callback")} {sub.callbackUrl}
                   </p>
                   <p className="text-xs text-[var(--color-text-secondary)]">
-                    구독일: {new Date(sub.createdAt).toLocaleDateString("ko-KR")}
+                    {t("admin_sub_date")} {new Date(sub.createdAt).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US")}
                   </p>
                 </div>
                 <Button
@@ -449,7 +449,7 @@ function SubscriberManager() {
                   size="icon"
                   onClick={() => handleDelete(sub)}
                   disabled={deletingId === sub.id}
-                  aria-label="삭제"
+                  aria-label={t("delete")}
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
@@ -482,45 +482,62 @@ export default function AdminPage() {
     try {
       await api.put("/settings", settings);
       await refreshSiteSettings();
-      setMessage("설정이 저장되었습니다.");
+      setMessage(useI18n.getState().t("admin_saved"));
     }
-    catch { setMessage("저장에 실패했습니다."); }
+    catch { setMessage(useI18n.getState().t("admin_save_failed")); }
     finally { setIsSaving(false); }
   };
 
+  const { t, setLocale, locale } = useI18n();
   const desc = settings.seo_description ?? "";
   const title = settings.blog_title ?? "";
 
+  const handleLanguageChange = (lang: string) => {
+    update("default_language", lang);
+    setLocale(lang as "en" | "ko");
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <SEOHead title="관리자 설정" />
+      <SEOHead title={t("admin_title")} />
       <div className="flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-text)]">
-          <Settings className="h-6 w-6" />관리자 설정
+          <Settings className="h-6 w-6" />{t("admin_title")}
         </h1>
         <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="mr-1 h-4 w-4" />{isSaving ? "저장 중..." : "설정 저장"}
+          <Save className="mr-1 h-4 w-4" />{isSaving ? t("admin_saving") : t("admin_save")}
         </Button>
       </div>
       {message && <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20">{message}</div>}
+
+      {/* 언어 설정 */}
+      <Card><CardContent className="pt-6"><h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><Languages className="h-5 w-5" />{t("admin_lang_title")}</h2>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("admin_lang_label")}</label>
+          <select value={settings.default_language ?? locale} onChange={(e) => handleLanguageChange(e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]">
+            <option value="en">English</option>
+            <option value="ko">한국어</option>
+          </select>
+        </div>
+      </CardContent></Card>
 
       {/* 카테고리 관리 */}
       <CategoryManager />
 
       {/* 표시 설정 */}
-      <Card><CardContent className="pt-6"><h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><FileText className="h-5 w-5" />표시 설정</h2>
+      <Card><CardContent className="pt-6"><h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><FileText className="h-5 w-5" />{t("admin_display_title")}</h2>
         <div className="flex flex-col gap-4">
-          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">페이지당 게시글 수</label><select value={settings.posts_per_page ?? "10"} onChange={(e) => update("posts_per_page", e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]">{[3,5,10,15,20,30].map((n) => <option key={n} value={String(n)}>{n}개</option>)}</select></div>
-          <div className="flex items-center justify-between"><div><label className="text-sm font-medium text-[var(--color-text)]">이미지 Lazy Loading</label></div><button onClick={() => update("lazy_load_images", settings.lazy_load_images === "true" ? "false" : "true")} className={`relative h-6 w-11 rounded-full transition-colors ${settings.lazy_load_images === "true" ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${settings.lazy_load_images === "true" ? "left-[22px]" : "left-0.5"}`} /></button></div>
+          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("admin_display_per_page")}</label><select value={settings.posts_per_page ?? "10"} onChange={(e) => update("posts_per_page", e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]">{[3,5,10,15,20,30].map((n) => <option key={n} value={String(n)}>{n}</option>)}</select></div>
+          <div className="flex items-center justify-between"><div><label className="text-sm font-medium text-[var(--color-text)]">{t("admin_display_lazy_load")}</label></div><button onClick={() => update("lazy_load_images", settings.lazy_load_images === "true" ? "false" : "true")} className={`relative h-6 w-11 rounded-full transition-colors ${settings.lazy_load_images === "true" ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${settings.lazy_load_images === "true" ? "left-[22px]" : "left-0.5"}`} /></button></div>
         </div>
       </CardContent></Card>
 
       {/* SEO 설정 */}
-      <Card><CardContent className="pt-6"><h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><Globe className="h-5 w-5" />SEO 설정</h2>
+      <Card><CardContent className="pt-6"><h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><Globe className="h-5 w-5" />{t("admin_seo_title")}</h2>
         <div className="flex flex-col gap-4">
-          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">블로그 제목</label><Input value={title} onChange={(e) => update("blog_title", e.target.value)} /></div>
-          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">메타 설명</label><Textarea value={desc} onChange={(e) => update("seo_description", e.target.value)} maxLength={160} rows={3} /><p className="mt-1 text-xs text-[var(--color-text-secondary)]">{desc.length}/160자</p></div>
-          <div className="rounded-lg border border-[var(--color-border)] p-4"><p className="mb-1 text-xs text-[var(--color-text-secondary)]">Google 검색 미리보기</p><p className="text-lg text-blue-700">{title || "블로그 제목"}</p><p className="text-sm text-green-700">{window.location.origin}</p><p className="text-sm text-[var(--color-text-secondary)]">{desc || "블로그 설명이 여기에 표시됩니다."}</p></div>
+          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("admin_seo_blog_title")}</label><Input value={title} onChange={(e) => update("blog_title", e.target.value)} /></div>
+          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("admin_seo_meta_desc")}</label><Textarea value={desc} onChange={(e) => update("seo_description", e.target.value)} maxLength={160} rows={3} /><p className="mt-1 text-xs text-[var(--color-text-secondary)]">{desc.length}/160</p></div>
+          <div className="rounded-lg border border-[var(--color-border)] p-4"><p className="mb-1 text-xs text-[var(--color-text-secondary)]">{t("admin_seo_preview")}</p><p className="text-lg text-blue-700">{title || t("admin_seo_preview_title")}</p><p className="text-sm text-green-700">{window.location.origin}</p><p className="text-sm text-[var(--color-text-secondary)]">{desc || t("admin_seo_preview_desc")}</p></div>
         </div>
       </CardContent></Card>
 
@@ -528,10 +545,10 @@ export default function AdminPage() {
       <ThemeCustomizer settings={settings} update={update} />
 
       {/* Federation 설정 */}
-      <Card><CardContent className="pt-6"><h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><Globe className="h-5 w-5" />Federation 설정</h2>
+      <Card><CardContent className="pt-6"><h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><Globe className="h-5 w-5" />{t("admin_fed_title")}</h2>
         <div className="flex flex-col gap-4">
-          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">사이트 URL</label><Input value={window.location.origin} disabled className="opacity-60" /></div>
-          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">Webhook 동기화 주기</label><select value={settings.webhook_sync_interval ?? "15"} onChange={(e) => update("webhook_sync_interval", e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"><option value="5">5분</option><option value="15">15분</option><option value="30">30분</option><option value="60">1시간</option></select></div>
+          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("admin_fed_site_url")}</label><Input value={window.location.origin} disabled className="opacity-60" /></div>
+          <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("admin_fed_sync_interval")}</label><select value={settings.webhook_sync_interval ?? "15"} onChange={(e) => update("webhook_sync_interval", e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"><option value="5">{t("admin_fed_5min")}</option><option value="15">{t("admin_fed_15min")}</option><option value="30">{t("admin_fed_30min")}</option><option value="60">{t("admin_fed_1hour")}</option></select></div>
         </div>
       </CardContent></Card>
 

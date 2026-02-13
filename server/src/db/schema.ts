@@ -100,6 +100,7 @@ export const comments = sqliteTable(
     postId: text("post_id")
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
+    commenterId: text("commenter_id").references(() => commenters.id, { onDelete: "set null" }),
     authorName: text("author_name").notNull(),
     authorEmail: text("author_email").notNull(),
     authorUrl: text("author_url"),
@@ -216,6 +217,19 @@ export const subscribers = sqliteTable(
   },
   (table) => [uniqueIndex("idx_subscribers_unique").on(table.categoryId, table.subscriberUrl)],
 );
+
+// ============ commenters — OAuth 댓글 작성자 ============
+export const commenters = sqliteTable("commenters", {
+  id: text("id").primaryKey(),
+  provider: text("provider", { enum: ["github", "google"] }).notNull(),
+  providerId: text("provider_id").notNull(),
+  displayName: text("display_name").notNull(),
+  email: text("email"),
+  avatarUrl: text("avatar_url"),
+  profileUrl: text("profile_url"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [uniqueIndex("idx_commenters_provider").on(table.provider, table.providerId)]);
 
 // ============ siteSettings — 사이트 설정 (key-value) ============
 export const siteSettings = sqliteTable("site_settings", {

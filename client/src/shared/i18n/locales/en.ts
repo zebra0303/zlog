@@ -1,0 +1,256 @@
+export const en = {
+  // Common
+  save: "Save",
+  cancel: "Cancel",
+  delete: "Delete",
+  edit: "Edit",
+  close: "Close",
+  confirm: "Confirm",
+  loading: "Loading...",
+  error: "Error",
+  success: "Success",
+  back: "Back",
+  home: "Home",
+  login: "Login",
+  logout: "Logout",
+  preview: "Preview",
+  upload: "Upload",
+  uploading: "Uploading",
+  reset: "Reset",
+  public: "Public",
+  private: "Private",
+  add: "Add",
+  create: "Create",
+  search: "Search",
+
+  // Header / Nav
+  nav_home: "Home",
+  nav_profile: "Profile",
+  nav_write: "Write",
+  nav_admin: "Admin",
+  nav_login: "Login",
+  nav_logout: "Logout",
+  nav_theme_toggle: "Toggle theme",
+  nav_menu: "Menu",
+
+  // Footer
+  footer_powered_by: "Powered by",
+
+  // Home
+  home_title: "Home",
+  home_all: "All",
+  home_no_posts: "No posts yet.",
+  home_write_first: "Write your first post!",
+
+  // Post Card
+  post_external_blog: "External Blog",
+
+  // Post Detail
+  post_not_found: "Post not found.",
+  post_go_home: "Go Home",
+  post_go_list: "Go to list",
+  post_edit: "Edit",
+  post_delete: "Delete",
+  post_confirm_delete: "Are you sure you want to delete this post?",
+  post_delete_failed: "Failed to delete the post.",
+  post_view_original: "View original post",
+
+  // Post Editor
+  editor_title_placeholder: "Enter title",
+  editor_tag_placeholder: "Tags (comma separated)",
+  editor_cover_image_placeholder: "Cover image URL",
+  editor_content_placeholder: "Write in markdown... (Paste or drag images to auto-upload)",
+  editor_category_select: "Select category",
+  editor_publish: "Publish",
+  editor_draft: "Save draft",
+  editor_back: "Back",
+  editor_new_post: "New Post",
+  editor_edit_post: "Edit Post",
+  editor_split: "Split",
+  editor_title_content_required: "Title and content are required.",
+  editor_category_required: "Please select a category to publish.",
+  editor_image_uploading: "Uploading image...",
+  editor_cover_upload_failed: "Failed to upload cover image.",
+  editor_cover_delete: "Remove",
+
+  // Category Detail
+  cat_not_found: "Category not found.",
+  cat_posts_count: "posts",
+  cat_followers_count: "subscribers",
+  cat_no_posts: "No posts in this category.",
+  cat_subscribe: "Subscribe",
+  cat_subscribe_title: "Subscribe to",
+  cat_subscribe_category: "category",
+  cat_subscribe_what: "What is zlog Federation subscription?",
+  cat_subscribe_desc1: "If you run another zlog blog, you can subscribe to this category.",
+  cat_subscribe_desc2: "New posts will be automatically synced to your blog when published.",
+  cat_subscribe_desc3: "Enter your blog URL below, and a callback URL will be auto-generated to receive webhooks for new posts.",
+  cat_subscribe_blog_url: "My Blog URL",
+  cat_subscribe_callback: "Callback URL (auto-generated)",
+  cat_subscribe_success: "Subscribed! New posts will be synced automatically.",
+  cat_subscribe_failed: "Subscription failed.",
+  cat_unsubscribe: "Unsubscribe",
+  cat_unsubscribe_success: "Unsubscribed.",
+  cat_unsubscribe_failed: "Failed to unsubscribe.",
+  cat_subscribe_enter_url: "Please enter your blog URL.",
+  cat_subscribe_processing: "Processing...",
+  cat_subscribe_button: "Subscribe",
+
+  // Profile
+  profile_not_found: "Profile not found.",
+  profile_posts: "Posts",
+  profile_categories: "Categories",
+  profile_views: "Total Views",
+  profile_edit: "Edit",
+  profile_social_links: "Social Links",
+  profile_about: "About",
+
+  // Login
+  login_title: "Admin Login",
+  login_description: "Log in to manage your blog.",
+  login_email_placeholder: "Email",
+  login_password_placeholder: "Password",
+  login_submit: "Login",
+  login_logging_in: "Logging in...",
+
+  // Not Found
+  not_found_title: "Page Not Found",
+  not_found_description: "The page you requested does not exist or has been moved.",
+  not_found_go_home: "Go Home",
+
+  // Comments
+  comment_title: "Comments",
+  comment_no_comments: "No comments yet.",
+  comment_placeholder: "Write a comment...",
+  comment_name_placeholder: "Name",
+  comment_email_placeholder: "Email",
+  comment_submit: "Post Comment",
+  comment_submitting: "Posting...",
+  comment_reply: "Reply",
+  comment_deleted: "Deleted",
+  comment_login_prompt: "Sign in with social to leave a comment. Your profile picture and name will be shown automatically.",
+  comment_login_github: "Login with GitHub",
+  comment_login_google: "Login with Google",
+  comment_logout: "Logout",
+  comment_writing_as: "Commenting as",
+  comment_write_failed: "Failed to post comment.",
+  comment_login_required: "Sign in with GitHub or Google to leave a comment.",
+  comment_oauth_processing: "Processing login...",
+
+  // Admin
+  admin_title: "Admin Settings",
+  admin_save: "Save Settings",
+  admin_saving: "Saving...",
+  admin_saved: "Settings saved.",
+  admin_save_failed: "Failed to save.",
+
+  // Admin - Category
+  admin_cat_title: "Category Management",
+  admin_cat_add: "Add",
+  admin_cat_new: "New Category",
+  admin_cat_name_placeholder: "Category name",
+  admin_cat_desc_placeholder: "Description (optional)",
+  admin_cat_name_required: "Please enter a category name.",
+  admin_cat_create_failed: "Failed to create.",
+  admin_cat_update_failed: "Failed to update.",
+  admin_cat_delete_failed: "Failed to delete.",
+  admin_cat_delete_confirm: 'Delete category "{name}"?\nPosts in this category will become uncategorized.',
+  admin_cat_empty: "No categories. Click Add to create one.",
+  admin_cat_posts_count: "posts",
+
+  // Admin - Display
+  admin_display_title: "Display Settings",
+  admin_display_per_page: "Posts per page",
+  admin_display_lazy_load: "Image Lazy Loading",
+
+  // Admin - SEO
+  admin_seo_title: "SEO Settings",
+  admin_seo_blog_title: "Blog Title",
+  admin_seo_meta_desc: "Meta Description",
+  admin_seo_preview: "Google Search Preview",
+  admin_seo_preview_title: "Blog Title",
+  admin_seo_preview_desc: "Blog description will appear here.",
+
+  // Admin - Theme
+  admin_theme_title: "Header/Footer Theme Customization",
+  admin_theme_desc: "Set different backgrounds for light and dark modes. Leave empty for default theme colors.",
+  admin_theme_header: "Header",
+  admin_theme_footer: "Footer",
+  admin_theme_height: "Height",
+  admin_theme_auto: "Auto",
+  admin_theme_light_mode: "Light Mode",
+  admin_theme_dark_mode: "Dark Mode",
+  admin_theme_bg_color: "Background Color",
+  admin_theme_bg_image: "Background Image",
+  admin_theme_image_placeholder: "URL or upload file",
+
+  // Admin - Federation
+  admin_fed_title: "Federation Settings",
+  admin_fed_site_url: "Site URL",
+  admin_fed_sync_interval: "Webhook Sync Interval",
+  admin_fed_5min: "5 min",
+  admin_fed_15min: "15 min",
+  admin_fed_30min: "30 min",
+  admin_fed_1hour: "1 hour",
+
+  // Admin - Subscribers
+  admin_sub_title: "Subscriber Management",
+  admin_sub_desc: "External blogs subscribed to this blog's categories.",
+  admin_sub_loading: "Loading...",
+  admin_sub_empty: "No subscribers.",
+  admin_sub_deleted_cat: "Deleted category",
+  admin_sub_inactive: "Inactive",
+  admin_sub_callback: "Callback:",
+  admin_sub_date: "Subscribed:",
+  admin_sub_delete_confirm: 'Delete subscription from "{url}"?',
+
+  // Admin - Language
+  admin_lang_title: "Language",
+  admin_lang_label: "Default Language",
+
+  // Settings (Profile)
+  settings_title: "Profile Settings",
+  settings_avatar: "Profile Image",
+  settings_avatar_upload: "Upload Avatar",
+  settings_basic_info: "Basic Info",
+  settings_display_name: "Display Name",
+  settings_bio: "Bio",
+  settings_job_title: "Job Title",
+  settings_company: "Company",
+  settings_location: "Location",
+  settings_blog_title: "Blog Title",
+  settings_about: "About Me (Markdown)",
+  settings_about_edit: "Edit",
+  settings_about_preview: "Preview",
+  settings_about_empty: "No content.",
+  settings_account: "Account Settings",
+  settings_email: "Email",
+  settings_current_password: "Current Password",
+  settings_new_password: "New Password",
+  settings_confirm_password: "Confirm Password",
+  settings_update_account: "Update Account",
+  settings_password_mismatch: "Passwords do not match.",
+  settings_account_updated: "Account updated.",
+  settings_save: "Save Profile",
+  settings_saving: "Saving...",
+  settings_saved: "Profile saved.",
+
+  // Sidebar
+  sidebar_posts: "Posts",
+  sidebar_categories: "Categories",
+  sidebar_views: "Views",
+  sidebar_category_title: "Categories",
+
+  // Pagination
+  pagination_prev: "Previous page",
+  pagination_next: "Next page",
+  pagination_label: "Pagination",
+
+  // Shared
+  default_avatar_label: "Default avatar",
+  zlog_logo_label: "zlog logo",
+  request_failed: "Request failed.",
+  upload_failed: "Upload failed.",
+} as const;
+
+export type TranslationKeys = keyof typeof en;

@@ -1,0 +1,256 @@
+import type { TranslationKeys } from "./en";
+
+export const ko: Record<TranslationKeys, string> = {
+  // Common
+  save: "저장",
+  cancel: "취소",
+  delete: "삭제",
+  edit: "수정",
+  close: "닫기",
+  confirm: "확인",
+  loading: "로딩 중...",
+  error: "오류",
+  success: "성공",
+  back: "뒤로",
+  home: "홈",
+  login: "로그인",
+  logout: "로그아웃",
+  preview: "미리보기",
+  upload: "업로드",
+  uploading: "업로드 중",
+  reset: "초기화",
+  public: "공개",
+  private: "비공개",
+  add: "추가",
+  create: "생성",
+  search: "검색",
+
+  // Header / Nav
+  nav_home: "홈",
+  nav_profile: "프로필",
+  nav_write: "글쓰기",
+  nav_admin: "관리",
+  nav_login: "로그인",
+  nav_logout: "로그아웃",
+  nav_theme_toggle: "테마 전환",
+  nav_menu: "메뉴",
+
+  // Footer
+  footer_powered_by: "Powered by",
+
+  // Home
+  home_title: "홈",
+  home_all: "전체",
+  home_no_posts: "게시글이 없습니다.",
+  home_write_first: "첫 번째 글을 작성해보세요!",
+
+  // Post Card
+  post_external_blog: "외부 블로그",
+
+  // Post Detail
+  post_not_found: "게시글을 찾을 수 없습니다.",
+  post_go_home: "홈으로",
+  post_go_list: "목록으로",
+  post_edit: "수정",
+  post_delete: "삭제",
+  post_confirm_delete: "정말 삭제하시겠습니까?",
+  post_delete_failed: "삭제에 실패했습니다.",
+  post_view_original: "원본 글 보기",
+
+  // Post Editor
+  editor_title_placeholder: "제목을 입력하세요",
+  editor_tag_placeholder: "태그 (쉼표로 구분)",
+  editor_cover_image_placeholder: "커버 이미지 URL",
+  editor_content_placeholder: "마크다운으로 내용을 입력하세요... (이미지를 붙여넣거나 드래그하면 자동 업로드됩니다)",
+  editor_category_select: "카테고리 선택",
+  editor_publish: "발행",
+  editor_draft: "임시저장",
+  editor_back: "뒤로",
+  editor_new_post: "글쓰기",
+  editor_edit_post: "글 수정",
+  editor_split: "분할",
+  editor_title_content_required: "제목과 내용을 입력해주세요.",
+  editor_category_required: "발행하려면 카테고리를 선택해주세요.",
+  editor_image_uploading: "이미지 업로드 중...",
+  editor_cover_upload_failed: "커버 이미지 업로드에 실패했습니다.",
+  editor_cover_delete: "삭제",
+
+  // Category Detail
+  cat_not_found: "카테고리를 찾을 수 없습니다.",
+  cat_posts_count: "개 게시글",
+  cat_followers_count: "명 구독",
+  cat_no_posts: "이 카테고리에 게시글이 없습니다.",
+  cat_subscribe: "구독",
+  cat_subscribe_title: "",
+  cat_subscribe_category: "카테고리 구독",
+  cat_subscribe_what: "zlog Federation 구독이란?",
+  cat_subscribe_desc1: "다른 zlog 블로그를 운영하고 계신다면, 이 카테고리를 구독할 수 있습니다.",
+  cat_subscribe_desc2: "구독하면 이 카테고리에 새 글이 발행될 때마다 자동으로 여러분의 블로그에 동기화됩니다.",
+  cat_subscribe_desc3: "아래에 여러분의 블로그 URL을 입력하면, 콜백 URL이 자동 생성되어 웹훅으로 새 글 알림을 받게 됩니다.",
+  cat_subscribe_blog_url: "내 블로그 URL",
+  cat_subscribe_callback: "콜백 URL (자동 생성)",
+  cat_subscribe_success: "구독이 등록되었습니다! 새 글이 발행되면 자동으로 동기화됩니다.",
+  cat_subscribe_failed: "구독에 실패했습니다.",
+  cat_unsubscribe: "구독 해제",
+  cat_unsubscribe_success: "구독이 해제되었습니다.",
+  cat_unsubscribe_failed: "구독 해제에 실패했습니다.",
+  cat_subscribe_enter_url: "블로그 URL을 입력해주세요.",
+  cat_subscribe_processing: "처리 중...",
+  cat_subscribe_button: "구독하기",
+
+  // Profile
+  profile_not_found: "프로필을 찾을 수 없습니다.",
+  profile_posts: "게시글",
+  profile_categories: "카테고리",
+  profile_views: "총 조회수",
+  profile_edit: "편집",
+  profile_social_links: "소셜 링크",
+  profile_about: "소개",
+
+  // Login
+  login_title: "관리자 로그인",
+  login_description: "블로그를 관리하려면 로그인하세요.",
+  login_email_placeholder: "이메일",
+  login_password_placeholder: "비밀번호",
+  login_submit: "로그인",
+  login_logging_in: "로그인 중...",
+
+  // Not Found
+  not_found_title: "페이지를 찾을 수 없습니다",
+  not_found_description: "요청하신 페이지가 존재하지 않거나 이동되었습니다.",
+  not_found_go_home: "홈으로 돌아가기",
+
+  // Comments
+  comment_title: "댓글",
+  comment_no_comments: "아직 댓글이 없습니다.",
+  comment_placeholder: "댓글을 입력하세요...",
+  comment_name_placeholder: "이름",
+  comment_email_placeholder: "이메일",
+  comment_submit: "댓글 작성",
+  comment_submitting: "작성 중...",
+  comment_reply: "답글",
+  comment_deleted: "삭제됨",
+  comment_login_prompt: "소셜 로그인으로 댓글을 남겨보세요. 프로필 이미지와 이름이 자동으로 표시됩니다.",
+  comment_login_github: "GitHub으로 로그인",
+  comment_login_google: "Google로 로그인",
+  comment_logout: "로그아웃",
+  comment_writing_as: "(으)로 댓글 작성",
+  comment_write_failed: "댓글 작성에 실패했습니다.",
+  comment_login_required: "댓글을 남기려면 GitHub 또는 Google로 로그인해주세요.",
+  comment_oauth_processing: "로그인 처리 중...",
+
+  // Admin
+  admin_title: "관리자 설정",
+  admin_save: "설정 저장",
+  admin_saving: "저장 중...",
+  admin_saved: "설정이 저장되었습니다.",
+  admin_save_failed: "저장에 실패했습니다.",
+
+  // Admin - Category
+  admin_cat_title: "카테고리 관리",
+  admin_cat_add: "추가",
+  admin_cat_new: "새 카테고리",
+  admin_cat_name_placeholder: "카테고리 이름",
+  admin_cat_desc_placeholder: "설명 (선택)",
+  admin_cat_name_required: "카테고리 이름을 입력해주세요.",
+  admin_cat_create_failed: "생성에 실패했습니다.",
+  admin_cat_update_failed: "수정에 실패했습니다.",
+  admin_cat_delete_failed: "삭제에 실패했습니다.",
+  admin_cat_delete_confirm: '"{name}" 카테고리를 삭제하시겠습니까?\n이 카테고리에 속한 게시글은 카테고리 없음 상태가 됩니다.',
+  admin_cat_empty: "카테고리가 없습니다. 위의 추가 버튼으로 생성하세요.",
+  admin_cat_posts_count: "개",
+
+  // Admin - Display
+  admin_display_title: "표시 설정",
+  admin_display_per_page: "페이지당 게시글 수",
+  admin_display_lazy_load: "이미지 Lazy Loading",
+
+  // Admin - SEO
+  admin_seo_title: "SEO 설정",
+  admin_seo_blog_title: "블로그 제목",
+  admin_seo_meta_desc: "메타 설명",
+  admin_seo_preview: "Google 검색 미리보기",
+  admin_seo_preview_title: "블로그 제목",
+  admin_seo_preview_desc: "블로그 설명이 여기에 표시됩니다.",
+
+  // Admin - Theme
+  admin_theme_title: "헤더/푸터 테마 커스터마이징",
+  admin_theme_desc: "밝은 모드와 어두운 모드에서 각각 다른 배경색이나 배경 이미지를 설정할 수 있습니다. 비워두면 기본 테마 색상이 사용됩니다.",
+  admin_theme_header: "헤더 (Header)",
+  admin_theme_footer: "푸터 (Footer)",
+  admin_theme_height: "높이",
+  admin_theme_auto: "자동",
+  admin_theme_light_mode: "밝은 모드",
+  admin_theme_dark_mode: "어두운 모드",
+  admin_theme_bg_color: "배경색",
+  admin_theme_bg_image: "배경 이미지",
+  admin_theme_image_placeholder: "URL 또는 파일 업로드",
+
+  // Admin - Federation
+  admin_fed_title: "Federation 설정",
+  admin_fed_site_url: "사이트 URL",
+  admin_fed_sync_interval: "Webhook 동기화 주기",
+  admin_fed_5min: "5분",
+  admin_fed_15min: "15분",
+  admin_fed_30min: "30분",
+  admin_fed_1hour: "1시간",
+
+  // Admin - Subscribers
+  admin_sub_title: "구독자 관리",
+  admin_sub_desc: "이 블로그의 카테고리를 구독하고 있는 외부 블로그 목록입니다.",
+  admin_sub_loading: "불러오는 중...",
+  admin_sub_empty: "구독자가 없습니다.",
+  admin_sub_deleted_cat: "삭제된 카테고리",
+  admin_sub_inactive: "비활성",
+  admin_sub_callback: "콜백:",
+  admin_sub_date: "구독일:",
+  admin_sub_delete_confirm: '"{url}"의 구독을 삭제하시겠습니까?',
+
+  // Admin - Language
+  admin_lang_title: "언어",
+  admin_lang_label: "기본 언어",
+
+  // Settings (Profile)
+  settings_title: "프로필 설정",
+  settings_avatar: "프로필 이미지",
+  settings_avatar_upload: "아바타 업로드",
+  settings_basic_info: "기본 정보",
+  settings_display_name: "표시 이름",
+  settings_bio: "한 줄 소개",
+  settings_job_title: "직함",
+  settings_company: "소속",
+  settings_location: "활동 지역",
+  settings_blog_title: "블로그 제목",
+  settings_about: "상세 자기소개 (마크다운)",
+  settings_about_edit: "편집",
+  settings_about_preview: "미리보기",
+  settings_about_empty: "내용이 없습니다.",
+  settings_account: "계정 설정",
+  settings_email: "이메일",
+  settings_current_password: "현재 비밀번호",
+  settings_new_password: "새 비밀번호",
+  settings_confirm_password: "비밀번호 확인",
+  settings_update_account: "계정 업데이트",
+  settings_password_mismatch: "비밀번호가 일치하지 않습니다.",
+  settings_account_updated: "계정이 업데이트되었습니다.",
+  settings_save: "프로필 저장",
+  settings_saving: "저장 중...",
+  settings_saved: "프로필이 저장되었습니다.",
+
+  // Sidebar
+  sidebar_posts: "게시글",
+  sidebar_categories: "카테고리",
+  sidebar_views: "조회",
+  sidebar_category_title: "카테고리",
+
+  // Pagination
+  pagination_prev: "이전 페이지",
+  pagination_next: "다음 페이지",
+  pagination_label: "페이지네이션",
+
+  // Shared
+  default_avatar_label: "기본 아바타",
+  zlog_logo_label: "zlog 로고",
+  request_failed: "요청에 실패했습니다.",
+  upload_failed: "업로드에 실패했습니다.",
+};

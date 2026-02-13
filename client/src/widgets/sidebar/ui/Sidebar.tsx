@@ -3,11 +3,13 @@ import { Link } from "react-router";
 import { Folder } from "lucide-react";
 import { Card, CardContent, DefaultAvatar, Badge } from "@/shared/ui";
 import { api } from "@/shared/api/client";
+import { useI18n } from "@/shared/i18n";
 import type { CategoryWithStats, ProfileWithStats } from "@zlog/shared";
 
 export function Sidebar() {
   const [profile, setProfile] = useState<ProfileWithStats | null>(null);
   const [categories, setCategories] = useState<CategoryWithStats[]>([]);
+  const { t } = useI18n();
 
   useEffect(() => {
     void api.get<ProfileWithStats>("/profile").then(setProfile).catch(() => null);
@@ -26,15 +28,15 @@ export function Sidebar() {
             </div>
           </Link>
           <div className="mt-4 flex justify-around border-t border-[var(--color-border)] pt-4">
-            <div className="flex flex-col items-center"><span className="text-lg font-bold text-[var(--color-text)]">{profile.stats.totalPosts}</span><span className="text-xs text-[var(--color-text-secondary)]">게시글</span></div>
-            <div className="flex flex-col items-center"><span className="text-lg font-bold text-[var(--color-text)]">{profile.stats.totalCategories}</span><span className="text-xs text-[var(--color-text-secondary)]">카테고리</span></div>
-            <div className="flex flex-col items-center"><span className="text-lg font-bold text-[var(--color-text)]">{profile.stats.totalViews}</span><span className="text-xs text-[var(--color-text-secondary)]">조회</span></div>
+            <div className="flex flex-col items-center"><span className="text-lg font-bold text-[var(--color-text)]">{profile.stats.totalPosts}</span><span className="text-xs text-[var(--color-text-secondary)]">{t("sidebar_posts")}</span></div>
+            <div className="flex flex-col items-center"><span className="text-lg font-bold text-[var(--color-text)]">{profile.stats.totalCategories}</span><span className="text-xs text-[var(--color-text-secondary)]">{t("sidebar_categories")}</span></div>
+            <div className="flex flex-col items-center"><span className="text-lg font-bold text-[var(--color-text)]">{profile.stats.totalViews}</span><span className="text-xs text-[var(--color-text-secondary)]">{t("sidebar_views")}</span></div>
           </div>
         </CardContent></Card>
       )}
       {categories.length > 0 && (
         <Card><CardContent className="pt-6">
-          <h3 className="mb-3 flex items-center gap-2 font-semibold text-[var(--color-text)]"><Folder className="h-4 w-4" />카테고리</h3>
+          <h3 className="mb-3 flex items-center gap-2 font-semibold text-[var(--color-text)]"><Folder className="h-4 w-4" />{t("sidebar_category_title")}</h3>
           <ul className="flex flex-col gap-1">
             {categories.map((cat) => (
               <li key={cat.id}><Link to={`/category/${cat.slug}`} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-background)]"><span>{cat.name}</span><Badge variant="secondary">{cat.postCount}</Badge></Link></li>

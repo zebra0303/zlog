@@ -11,6 +11,8 @@ const CategoryDetailPage = lazy(() => import("@/pages/category-detail/ui/Categor
 const LoginPage = lazy(() => import("@/pages/login/ui/LoginPage"));
 const AdminPage = lazy(() => import("@/pages/admin/ui/AdminPage"));
 const SettingsPage = lazy(() => import("@/pages/settings-profile/ui/SettingsPage"));
+const RemotePostDetailPage = lazy(() => import("@/pages/remote-post-detail/ui/RemotePostDetailPage"));
+const OAuthCallbackPage = lazy(() => import("@/pages/oauth-callback/ui/OAuthCallbackPage"));
 const NotFoundPage = lazy(() => import("@/pages/not-found/ui/NotFoundPage"));
 
 function PageLoader() {
@@ -28,6 +30,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: withSuspense(HomePage) },
       { path: "posts/:slug", element: withSuspense(PostDetailPage) },
+      { path: "remote-posts/:id", element: withSuspense(RemotePostDetailPage) },
       { path: "write", element: withSuspense(PostEditorPage) },
       { path: "write/:id", element: withSuspense(PostEditorPage) },
       { path: "profile", element: withSuspense(ProfilePage) },
@@ -35,6 +38,7 @@ export const router = createBrowserRouter([
       { path: "login", element: withSuspense(LoginPage) },
       { path: "admin", element: withSuspense(AdminPage) },
       { path: "settings", element: withSuspense(SettingsPage) },
+      { path: "oauth-callback", element: withSuspense(OAuthCallbackPage) },
       { path: "*", element: withSuspense(NotFoundPage) },
     ],
   },

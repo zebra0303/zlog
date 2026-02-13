@@ -58,7 +58,7 @@ postsRoute.get("/", async (c) => {
     .offset((page - 1) * perPage)
     .all();
 
-  const items = postsResult.map((post) => {
+  const localItems = postsResult.map((post) => {
     const category = post.categoryId
       ? db
           .select({
@@ -78,10 +78,52 @@ postsRoute.get("/", async (c) => {
       .where(eq(schema.postTags.postId, post.id))
       .all();
 
-    return { ...post, category, tags: tagRows };
+    return { ...post, category, tags: tagRows, isRemote: false as const, remoteUri: null, remoteBlog: null };
   });
 
-  return c.json({ items, total, page, perPage, totalPages: Math.ceil(total / perPage) });
+  // 카테고리별 조회 시 remote_posts도 포함
+  let remoteItems: Array<Omit<(typeof localItems)[number], "isRemote" | "remoteUri" | "remoteBlog"> & { isRemote: boolean; remoteUri: string | null; remoteBlog: { siteUrl: string; displayName: string | null; blogTitle: string | null; avatarUrl: string | null } | null }> = [];
+  if (categoryId && status === "published") {
+    const remotePostsResult = db
+      .select()
+      .from(schema.remotePosts)
+      .where(and(eq(schema.remotePosts.localCategoryId, categoryId), eq(schema.remotePosts.remoteStatus, "published")))
+      .orderBy(desc(schema.remotePosts.remoteCreatedAt))
+      .all();
+
+    remoteItems = remotePostsResult.map((rp) => {
+      const cat = db.select({ id: schema.categories.id, name: schema.categories.name, slug: schema.categories.slug }).from(schema.categories).where(eq(schema.categories.id, categoryId)).get() ?? null;
+      const rb = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, rp.remoteBlogId)).get();
+      return {
+        id: rp.id,
+        categoryId,
+        title: rp.title,
+        slug: rp.slug,
+        content: rp.content,
+        excerpt: rp.excerpt,
+        coverImage: rp.coverImage,
+        status: "published" as const,
+        viewCount: 0,
+        createdAt: rp.remoteCreatedAt,
+        updatedAt: rp.remoteUpdatedAt,
+        deletedAt: null,
+        category: cat,
+        tags: [],
+        isRemote: true as const,
+        remoteUri: rp.remoteUri ?? null,
+        remoteBlog: rb ? { siteUrl: rb.siteUrl, displayName: rb.displayName, blogTitle: rb.blogTitle, avatarUrl: rb.avatarUrl } : null,
+      };
+    });
+  }
+
+  // 합치고 날짜 기준으로 정렬
+  const allItems = [...localItems, ...remoteItems].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // 전체 개수 (로컬 + 원격)
+  const remoteTotal = remoteItems.length;
+  const combinedTotal = total + remoteTotal;
+
+  return c.json({ items: allItems, total: combinedTotal, page, perPage, totalPages: Math.ceil(combinedTotal / perPage) });
 });
 
 postsRoute.get("/:param", async (c) => {
