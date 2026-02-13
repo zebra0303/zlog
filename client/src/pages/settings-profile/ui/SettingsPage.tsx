@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { User, Upload, Trash2, Plus, Save, KeyRound, Eye, Edit3 } from "lucide-react";
 import { Button, Input, Textarea, Card, CardContent, SEOHead, DefaultAvatar } from "@/shared/ui";
@@ -22,6 +22,55 @@ export default function SettingsPage() {
   const [accountMessage, setAccountMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [aboutPreviewMode, setAboutPreviewMode] = useState(false);
   const [aboutHtml, setAboutHtml] = useState("");
+  const [isAboutUploading, setIsAboutUploading] = useState(false);
+  const aboutTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const uploadAndInsertAboutImage = useCallback(async (file: File) => {
+    const textarea = aboutTextareaRef.current;
+    if (!textarea) return;
+    setIsAboutUploading(true);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const current = form.aboutMe ?? "";
+    const placeholder = `![${t("editor_image_uploading")}](uploading)\n`;
+    const before = current.slice(0, start);
+    const after = current.slice(end);
+    setForm((f) => ({ ...f, aboutMe: before + placeholder + after }));
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await api.upload<{ url: string }>("/upload/image", fd);
+      const markdown = `![${file.name}](${res.url})\n`;
+      setForm((f) => ({ ...f, aboutMe: (f.aboutMe ?? "").replace(placeholder, markdown) }));
+    } catch {
+      setForm((f) => ({ ...f, aboutMe: (f.aboutMe ?? "").replace(placeholder, "") }));
+    } finally {
+      setIsAboutUploading(false);
+    }
+  }, [form.aboutMe, t]);
+
+  const handleAboutPaste = useCallback(async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData.items;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) await uploadAndInsertAboutImage(file);
+        return;
+      }
+    }
+  }, [uploadAndInsertAboutImage]);
+
+  const handleAboutDrop = useCallback(async (e: React.DragEvent<HTMLTextAreaElement>) => {
+    const files = e.dataTransfer.files;
+    for (const file of files) {
+      if (file.type.startsWith("image/")) {
+        e.preventDefault();
+        await uploadAndInsertAboutImage(file);
+        return;
+      }
+    }
+  }, [uploadAndInsertAboutImage]);
 
   useEffect(() => { if (!isAuthenticated) { void navigate("/login"); return; }
     void api.get<ProfileWithStats & { email?: string }>("/profile").then((d) => {
@@ -94,7 +143,17 @@ export default function SettingsPage() {
               {aboutHtml ? <div className="prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: aboutHtml }} /> : <p className="text-sm text-[var(--color-text-secondary)]">{t("settings_about_empty")}</p>}
             </div>
           ) : (
-            <Textarea value={form.aboutMe ?? ""} onChange={(e) => setForm((f) => ({ ...f, aboutMe: e.target.value }))} rows={6} />
+            <Textarea
+              ref={aboutTextareaRef}
+              value={form.aboutMe ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, aboutMe: e.target.value }))}
+              onPaste={handleAboutPaste}
+              onDrop={handleAboutDrop}
+              onDragOver={(e) => e.preventDefault()}
+              rows={6}
+              disabled={isAboutUploading}
+              placeholder={isAboutUploading ? t("uploading") + "..." : undefined}
+            />
           )}
         </div>
       </CardContent></Card>

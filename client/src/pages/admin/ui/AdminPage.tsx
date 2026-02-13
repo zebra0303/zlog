@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router";
-import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2, Rss, Languages, Edit, Eye, EyeOff, Search } from "lucide-react";
+import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2, Rss, Languages, Edit, Eye, EyeOff, Search, RefreshCw, Link2 } from "lucide-react";
 import { Button, Input, Textarea, Card, CardContent, SEOHead, Badge, Pagination } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -525,6 +525,292 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
   );
 }
 
+// ============ Subscription Manager (내가 구독 중인 카테고리) ============
+interface MySubscription {
+  id: string;
+  isActive: boolean;
+  lastSyncedAt: string | null;
+  createdAt: string;
+  localCategoryId: string;
+  localCategoryName: string;
+  localCategorySlug: string;
+  remoteCategoryId: string;
+  remoteCategoryName: string;
+  remoteCategoryRemoteId: string;
+  remoteBlogId: string;
+  remoteBlogSiteUrl: string;
+  remoteBlogTitle: string | null;
+  remoteBlogDisplayName: string | null;
+}
+
+interface RemoteCategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+function SubscriptionManager() {
+  const [subs, setSubs] = useState<MySubscription[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<{ id: string; text: string; type: "success" | "error" } | null>(null);
+  const { t, locale } = useI18n();
+
+  // 구독 추가 폼 상태
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addUrl, setAddUrl] = useState("");
+  const [isFetchingCats, setIsFetchingCats] = useState(false);
+  const [remoteCats, setRemoteCats] = useState<RemoteCategoryOption[]>([]);
+  const [localCats, setLocalCats] = useState<CategoryWithStats[]>([]);
+  const [selectedRemoteCat, setSelectedRemoteCat] = useState("");
+  const [selectedLocalCat, setSelectedLocalCat] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [addMessage, setAddMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  const fetchSubs = () => {
+    setIsLoading(true);
+    void api.get<MySubscription[]>("/federation/subscriptions").then((data) => {
+      setSubs(data);
+      setIsLoading(false);
+    }).catch(() => setIsLoading(false));
+  };
+
+  useEffect(() => { fetchSubs(); }, []);
+
+  // 로컬 카테고리 목록 (폼 열릴 때)
+  useEffect(() => {
+    if (showAddForm && localCats.length === 0) {
+      void api.get<CategoryWithStats[]>("/categories").then(setLocalCats);
+    }
+  }, [showAddForm]);
+
+  const handleFetchRemoteCategories = async () => {
+    let url = addUrl.trim();
+    if (!url) return;
+    // URL 정규화
+    if (!url.startsWith("http")) url = `https://${url}`;
+    url = url.replace(/\/+$/, "");
+    setAddUrl(url);
+    setIsFetchingCats(true);
+    setAddMessage(null);
+    setRemoteCats([]);
+    setSelectedRemoteCat("");
+    try {
+      const res = await fetch(`${url}/api/federation/categories`, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) throw new Error("fetch failed");
+      const cats = (await res.json()) as RemoteCategoryOption[];
+      if (cats.length === 0) {
+        setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
+      } else {
+        setRemoteCats(cats);
+      }
+    } catch {
+      setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
+    } finally {
+      setIsFetchingCats(false);
+    }
+  };
+
+  const handleAddSubscribe = async () => {
+    if (!selectedRemoteCat || !selectedLocalCat) {
+      setAddMessage({ text: t("admin_mysub_add_select_both"), type: "error" });
+      return;
+    }
+    const remoteCat = remoteCats.find((c) => c.id === selectedRemoteCat);
+    if (!remoteCat) return;
+    const localCat = localCats.find((c) => c.slug === selectedLocalCat);
+    if (!localCat) return;
+
+    setIsSubscribing(true);
+    setAddMessage(null);
+    try {
+      await api.post("/federation/local-subscribe", {
+        remoteSiteUrl: addUrl.trim().replace(/\/+$/, ""),
+        remoteCategoryId: remoteCat.id,
+        remoteCategoryName: remoteCat.name,
+        remoteCategorySlug: remoteCat.slug,
+        localCategorySlug: localCat.slug,
+      });
+      setAddMessage({ text: t("admin_mysub_add_success"), type: "success" });
+      // 리셋
+      setAddUrl("");
+      setRemoteCats([]);
+      setSelectedRemoteCat("");
+      setSelectedLocalCat("");
+      setShowAddForm(false);
+      fetchSubs();
+    } catch {
+      setAddMessage({ text: t("admin_mysub_add_subscribe_failed"), type: "error" });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  const handleSync = async (sub: MySubscription) => {
+    setSyncingId(sub.id);
+    setSyncMessage(null);
+    try {
+      const res = await api.post<{ syncedCount: number; lastSyncedAt: string }>(`/federation/subscriptions/${sub.id}/sync`, {});
+      setSyncMessage({ id: sub.id, text: t("admin_mysub_sync_success", { count: String(res.syncedCount) }), type: "success" });
+      fetchSubs();
+    } catch {
+      setSyncMessage({ id: sub.id, text: t("admin_mysub_sync_failed"), type: "error" });
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const handleUnsubscribe = async (sub: MySubscription) => {
+    const name = sub.remoteCategoryName;
+    const url = sub.remoteBlogSiteUrl;
+    if (!confirm(t("admin_mysub_unsubscribe_confirm", { name, url }))) return;
+    try {
+      await api.delete(`/federation/subscriptions/${sub.id}`);
+      fetchSubs();
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+            <Link2 className="h-5 w-5" />{t("admin_mysub_title")}
+          </h2>
+          <Button variant="outline" size="sm" onClick={() => setShowAddForm((v) => !v)}>
+            <Plus className="mr-1 h-4 w-4" />{t("admin_mysub_add")}
+          </Button>
+        </div>
+        <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("admin_mysub_desc")}</p>
+
+        {/* 구독 추가 폼 */}
+        {showAddForm && (
+          <div className="mb-4 rounded-lg border border-[var(--color-primary)] bg-[var(--color-surface)] p-4">
+            <div className="flex flex-col gap-3">
+              {/* Step 1: URL 입력 + 카테고리 불러오기 */}
+              <div className="flex gap-2">
+                <Input
+                  value={addUrl}
+                  onChange={(e) => setAddUrl(e.target.value)}
+                  placeholder={t("admin_mysub_add_url_placeholder")}
+                  className="flex-1"
+                  onKeyDown={(e) => { if (e.key === "Enter") void handleFetchRemoteCategories(); }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchRemoteCategories}
+                  disabled={isFetchingCats || !addUrl.trim()}
+                >
+                  {isFetchingCats ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />{t("admin_mysub_add_fetching")}</> : t("admin_mysub_add_fetch")}
+                </Button>
+              </div>
+
+              {/* Step 2: 원격 카테고리 + 로컬 카테고리 선택 */}
+              {remoteCats.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--color-text)]">{t("admin_mysub_add_remote_cat")}</label>
+                    <select
+                      value={selectedRemoteCat}
+                      onChange={(e) => setSelectedRemoteCat(e.target.value)}
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                    >
+                      <option value="">--</option>
+                      {remoteCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-[var(--color-text)]">{t("admin_mysub_add_local_cat")}</label>
+                    <select
+                      value={selectedLocalCat}
+                      onChange={(e) => setSelectedLocalCat(e.target.value)}
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                    >
+                      <option value="">--</option>
+                      {localCats.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: 구독 버튼 */}
+              {remoteCats.length > 0 && (
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={handleAddSubscribe} disabled={isSubscribing}>
+                    {isSubscribing ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />{t("admin_mysub_add_subscribing")}</> : t("admin_mysub_add_subscribe")}
+                  </Button>
+                </div>
+              )}
+
+              {addMessage && (
+                <p className={`text-xs ${addMessage.type === "success" ? "text-green-600" : "text-red-500"}`}>{addMessage.text}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isLoading ? (
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("loading")}</p>
+        ) : subs.length === 0 ? (
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("admin_mysub_empty")}</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {subs.map((sub) => (
+              <div key={sub.id} className="rounded-lg border border-[var(--color-border)] p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-[var(--color-text)]">
+                        {sub.remoteBlogTitle || sub.remoteBlogDisplayName || sub.remoteBlogSiteUrl}
+                      </span>
+                      <Badge variant="secondary">{sub.remoteCategoryName}</Badge>
+                      <span className="text-xs text-[var(--color-text-secondary)]">→</span>
+                      <Badge variant="outline">{sub.localCategoryName}</Badge>
+                      {!sub.isActive && <Badge variant="outline" className="border-red-300 text-red-500">{t("admin_mysub_inactive")}</Badge>}
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-3 text-xs text-[var(--color-text-secondary)]">
+                      <span>{t("admin_mysub_remote_blog")} {sub.remoteBlogSiteUrl}</span>
+                      <span>
+                        {t("admin_mysub_last_synced")}{" "}
+                        {sub.lastSyncedAt
+                          ? new Date(sub.lastSyncedAt).toLocaleString(locale === "ko" ? "ko-KR" : "en-US")
+                          : t("admin_mysub_never_synced")}
+                      </span>
+                    </div>
+                    {syncMessage && syncMessage.id === sub.id && (
+                      <p className={`mt-1 text-xs ${syncMessage.type === "success" ? "text-green-600" : "text-red-500"}`}>
+                        {syncMessage.text}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    {sub.isActive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSync(sub)}
+                        disabled={syncingId === sub.id}
+                      >
+                        <RefreshCw className={`mr-1 h-3 w-3 ${syncingId === sub.id ? "animate-spin" : ""}`} />
+                        {syncingId === sub.id ? t("admin_mysub_syncing") : t("admin_mysub_sync")}
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => handleUnsubscribe(sub)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ============ Subscriber Manager ============
 interface Subscriber {
   id: string;
@@ -714,6 +1000,9 @@ export default function AdminPage() {
           <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("admin_fed_sync_interval")}</label><select value={settings.webhook_sync_interval ?? "15"} onChange={(e) => update("webhook_sync_interval", e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"><option value="5">{t("admin_fed_5min")}</option><option value="15">{t("admin_fed_15min")}</option><option value="30">{t("admin_fed_30min")}</option><option value="60">{t("admin_fed_1hour")}</option></select></div>
         </div>
       </CardContent></Card>
+
+      {/* 내가 구독 중인 카테고리 */}
+      <SubscriptionManager />
 
       {/* 구독자 관리 */}
       <SubscriberManager />

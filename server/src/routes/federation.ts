@@ -208,6 +208,101 @@ federationRoute.get("/remote-posts/:id", async (c) => {
   });
 });
 
+// ============ 관리자용: 내가 구독 중인 카테고리 목록 ============
+federationRoute.get("/subscriptions", authMiddleware, async (c) => {
+  const subs = db
+    .select({
+      id: schema.categorySubscriptions.id,
+      isActive: schema.categorySubscriptions.isActive,
+      lastSyncedAt: schema.categorySubscriptions.lastSyncedAt,
+      createdAt: schema.categorySubscriptions.createdAt,
+      localCategoryId: schema.categorySubscriptions.localCategoryId,
+      localCategoryName: schema.categories.name,
+      localCategorySlug: schema.categories.slug,
+      remoteCategoryId: schema.remoteCategories.id,
+      remoteCategoryName: schema.remoteCategories.name,
+      remoteCategoryRemoteId: schema.remoteCategories.remoteId,
+      remoteBlogId: schema.remoteBlogs.id,
+      remoteBlogSiteUrl: schema.remoteBlogs.siteUrl,
+      remoteBlogTitle: schema.remoteBlogs.blogTitle,
+      remoteBlogDisplayName: schema.remoteBlogs.displayName,
+    })
+    .from(schema.categorySubscriptions)
+    .innerJoin(schema.categories, eq(schema.categorySubscriptions.localCategoryId, schema.categories.id))
+    .innerJoin(schema.remoteCategories, eq(schema.categorySubscriptions.remoteCategoryId, schema.remoteCategories.id))
+    .innerJoin(schema.remoteBlogs, eq(schema.remoteCategories.remoteBlogId, schema.remoteBlogs.id))
+    .orderBy(desc(schema.categorySubscriptions.createdAt))
+    .all();
+
+  return c.json(subs);
+});
+
+// ============ 관리자용: 구독 카테고리 수동 싱크 ============
+federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const sub = db.select().from(schema.categorySubscriptions).where(eq(schema.categorySubscriptions.id, id)).get();
+  if (!sub) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+
+  const remoteCat = db.select().from(schema.remoteCategories).where(eq(schema.remoteCategories.id, sub.remoteCategoryId)).get();
+  if (!remoteCat) return c.json({ error: "원격 카테고리를 찾을 수 없습니다." }, 404);
+
+  const remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, remoteCat.remoteBlogId)).get();
+  if (!remoteBlog) return c.json({ error: "원격 블로그를 찾을 수 없습니다." }, 404);
+
+  try {
+    const postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts${sub.lastSyncedAt ? `?since=${sub.lastSyncedAt}` : ""}`;
+    const res = await fetch(postsUrl, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return c.json({ error: `원격 서버 응답 오류: ${res.status}` }, 502);
+    const posts = (await res.json()) as Array<{
+      id: string; title: string; slug: string; content: string;
+      excerpt?: string; coverImage?: string; uri?: string;
+      createdAt: string; updatedAt: string;
+    }>;
+
+    const now = new Date().toISOString();
+    let synced = 0;
+
+    for (const post of posts) {
+      const remoteUri = post.uri || `${remoteBlog.siteUrl}/posts/${post.id}`;
+      const existing = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.remoteUri, remoteUri)).get();
+      if (existing) {
+        db.update(schema.remotePosts).set({
+          title: post.title, slug: post.slug, content: post.content,
+          excerpt: post.excerpt ?? null, coverImage: post.coverImage ?? null,
+          remoteStatus: "published", remoteUpdatedAt: post.updatedAt, fetchedAt: now,
+          localCategoryId: sub.localCategoryId,
+        }).where(eq(schema.remotePosts.id, existing.id)).run();
+      } else {
+        db.insert(schema.remotePosts).values({
+          id: generateId(), remoteUri, remoteBlogId: remoteBlog.id,
+          remoteCategoryId: remoteCat.id, localCategoryId: sub.localCategoryId,
+          title: post.title, slug: post.slug, content: post.content,
+          excerpt: post.excerpt ?? null, coverImage: post.coverImage ?? null,
+          remoteStatus: "published", authorName: remoteBlog.displayName,
+          remoteCreatedAt: post.createdAt, remoteUpdatedAt: post.updatedAt, fetchedAt: now,
+        }).run();
+      }
+      synced++;
+    }
+
+    db.update(schema.categorySubscriptions).set({ lastSyncedAt: now }).where(eq(schema.categorySubscriptions.id, id)).run();
+
+    return c.json({ message: `${synced}개의 글이 동기화되었습니다.`, syncedCount: synced, lastSyncedAt: now });
+  } catch (err) {
+    console.error("❌ 수동 싱크 실패:", err);
+    return c.json({ error: "원격 서버에 연결할 수 없습니다." }, 502);
+  }
+});
+
+// ============ 관리자용: 구독 삭제 (비활성화) ============
+federationRoute.delete("/subscriptions/:id", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const existing = db.select().from(schema.categorySubscriptions).where(eq(schema.categorySubscriptions.id, id)).get();
+  if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  db.update(schema.categorySubscriptions).set({ isActive: false }).where(eq(schema.categorySubscriptions.id, id)).run();
+  return c.json({ message: "구독이 해제되었습니다." });
+});
+
 // ============ 관리자용: 구독자 목록 조회 ============
 federationRoute.get("/subscribers", authMiddleware, async (c) => {
   const subs = db
