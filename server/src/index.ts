@@ -5,8 +5,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(__dirname, "../..");
 // 루트 .env를 명시적으로 로드 (--env-file로 이미 로드된 경우 중복은 무시됨)
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(PROJECT_ROOT, ".env") });
 
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
@@ -35,8 +36,11 @@ app.use(
   }),
 );
 
+const CLIENT_DIST = path.resolve(PROJECT_ROOT, "client/dist");
+
 app.use("/uploads/*", serveStatic({ root: "./" }));
-app.use("/assets/*", serveStatic({ root: "./client/dist" }));
+app.use("/assets/*", serveStatic({ root: CLIENT_DIST }));
+app.use("/img/*", serveStatic({ root: CLIENT_DIST }));
 
 app.route("/api/auth", auth);
 app.route("/api/posts", postsRoute);
@@ -84,7 +88,7 @@ ${urls.join("\n")}
 </urlset>`);
 });
 
-app.get("*", serveStatic({ root: "./client/dist", path: "index.html" }));
+app.get("*", serveStatic({ root: CLIENT_DIST, path: "index.html" }));
 
 app.onError(errorHandler);
 

@@ -4,8 +4,9 @@ import * as schema from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { verifyPassword } from "../lib/password.js";
 import { createToken, authMiddleware } from "../middleware/auth.js";
+import type { AppVariables } from "../types/env.js";
 
-const auth = new Hono();
+const auth = new Hono<{ Variables: AppVariables }>();
 
 auth.post("/login", async (c) => {
   const body = await c.req.json<{ email: string; password: string }>();

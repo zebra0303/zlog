@@ -17,7 +17,7 @@ function PageLoader() {
   return <div className="flex flex-col gap-4 p-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-48 w-full" /><Skeleton className="h-4 w-96" /></div>;
 }
 
-function withSuspense(Component: React.LazyExoticComponent<() => JSX.Element>) {
+function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Element>) {
   return <Suspense fallback={<PageLoader />}><Component /></Suspense>;
 }
 

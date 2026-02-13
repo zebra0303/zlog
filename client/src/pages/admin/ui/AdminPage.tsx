@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette } from "lucide-react";
+import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2 } from "lucide-react";
 import { Button, Input, Textarea, Card, CardContent, SEOHead, Badge } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -147,24 +147,76 @@ function CategoryManager() {
   );
 }
 
-// ============ 색상 미리보기 컴포넌트 ============
-function ColorPreview({ color, label }: { color: string; label: string }) {
+// ============ 이미지 업로드 입력 ============
+function ImageUploadInput({
+  settingKey,
+  value,
+  onChange,
+  placeholder,
+}: {
+  settingKey: string;
+  value: string;
+  onChange: (url: string) => void;
+  placeholder: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await api.upload<{ url: string }>("/upload/image", fd);
+      onChange(res.url);
+    } catch {
+      /* ignore */
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
   return (
-    <div className="flex items-center gap-2">
-      <div
-        className="h-8 w-8 rounded border border-[var(--color-border)]"
-        style={{ backgroundColor: color || "transparent" }}
-      />
-      <span className="text-xs text-[var(--color-text-secondary)]">{label}</span>
+    <div>
+      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">배경 이미지</label>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 text-xs"
+        />
+        <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)]">
+          <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+          {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+          {uploading ? "업로드 중" : "업로드"}
+        </label>
+        {value && (
+          <button onClick={() => onChange("")} className="text-xs text-red-500 hover:underline">초기화</button>
+        )}
+      </div>
     </div>
   );
 }
 
 // ============ 헤더/푸터 테마 섹션 ============
 function ThemeCustomizer({ settings, update }: { settings: Record<string, string>; update: (k: string, v: string) => void }) {
+  const heightOptions = [
+    { value: "auto", label: "자동" },
+    { value: "80px", label: "80px" },
+    { value: "100px", label: "100px" },
+    { value: "120px", label: "120px" },
+    { value: "160px", label: "160px" },
+    { value: "200px", label: "200px" },
+    { value: "250px", label: "250px" },
+  ];
+
   const sections = [
     {
       title: "헤더 (Header)",
+      heightKey: "header_height",
       keys: {
         lightColor: "header_bg_color_light",
         darkColor: "header_bg_color_dark",
@@ -174,6 +226,7 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
     },
     {
       title: "푸터 (Footer)",
+      heightKey: "footer_height",
       keys: {
         lightColor: "footer_bg_color_light",
         darkColor: "footer_bg_color_dark",
@@ -196,7 +249,21 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
         <div className="flex flex-col gap-6">
           {sections.map((section) => (
             <div key={section.title} className="rounded-lg border border-[var(--color-border)] p-4">
-              <h3 className="mb-3 font-medium text-[var(--color-text)]">{section.title}</h3>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="font-medium text-[var(--color-text)]">{section.title}</h3>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-[var(--color-text-secondary)]">높이</label>
+                  <select
+                    value={settings[section.heightKey] ?? "auto"}
+                    onChange={(e) => update(section.heightKey, e.target.value)}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text)]"
+                  >
+                    {heightOptions.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* 밝은 모드 */}
                 <div className="rounded-lg bg-[var(--color-background)] p-3">
@@ -218,24 +285,18 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                           className="flex-1 text-xs"
                         />
                         {settings[section.keys.lightColor] && (
-                          <button
-                            onClick={() => update(section.keys.lightColor, "")}
-                            className="text-xs text-red-500 hover:underline"
-                          >
+                          <button onClick={() => update(section.keys.lightColor, "")} className="text-xs text-red-500 hover:underline">
                             초기화
                           </button>
                         )}
                       </div>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">배경 이미지 URL</label>
-                      <Input
-                        placeholder="https://example.com/header-light.jpg"
-                        value={settings[section.keys.lightImage] ?? ""}
-                        onChange={(e) => update(section.keys.lightImage, e.target.value)}
-                        className="text-xs"
-                      />
-                    </div>
+                    <ImageUploadInput
+                      settingKey={section.keys.lightImage}
+                      value={settings[section.keys.lightImage] ?? ""}
+                      onChange={(url) => update(section.keys.lightImage, url)}
+                      placeholder="URL 또는 파일 업로드"
+                    />
                     {/* 미리보기 */}
                     {(settings[section.keys.lightColor] || settings[section.keys.lightImage]) && (
                       <div
@@ -270,24 +331,18 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
                           className="flex-1 text-xs"
                         />
                         {settings[section.keys.darkColor] && (
-                          <button
-                            onClick={() => update(section.keys.darkColor, "")}
-                            className="text-xs text-red-500 hover:underline"
-                          >
+                          <button onClick={() => update(section.keys.darkColor, "")} className="text-xs text-red-500 hover:underline">
                             초기화
                           </button>
                         )}
                       </div>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">배경 이미지 URL</label>
-                      <Input
-                        placeholder="https://example.com/header-dark.jpg"
-                        value={settings[section.keys.darkImage] ?? ""}
-                        onChange={(e) => update(section.keys.darkImage, e.target.value)}
-                        className="text-xs"
-                      />
-                    </div>
+                    <ImageUploadInput
+                      settingKey={section.keys.darkImage}
+                      value={settings[section.keys.darkImage] ?? ""}
+                      onChange={(url) => update(section.keys.darkImage, url)}
+                      placeholder="URL 또는 파일 업로드"
+                    />
                     {/* 미리보기 */}
                     {(settings[section.keys.darkColor] || settings[section.keys.darkImage]) && (
                       <div

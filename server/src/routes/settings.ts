@@ -8,8 +8,9 @@ import { verifyPassword, hashPassword } from "../lib/password.js";
 import sharp from "sharp";
 import { mkdirSync, unlinkSync, readdirSync } from "fs";
 import path from "path";
+import type { AppVariables } from "../types/env.js";
 
-const settingsRoute = new Hono();
+const settingsRoute = new Hono<{ Variables: AppVariables }>();
 
 settingsRoute.get("/profile", async (c) => {
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
@@ -178,6 +179,32 @@ settingsRoute.put("/profile/account", authMiddleware, async (c) => {
   if (!updated) return c.json({ error: "업데이트 실패" }, 500);
   const { passwordHash: _, ...ownerData } = updated;
   return c.json({ ...ownerData, message: "계정 정보가 변경되었습니다." });
+});
+
+// ============ 범용 이미지 업로드 ============
+settingsRoute.post("/upload/image", authMiddleware, async (c) => {
+  const formData = await c.req.formData();
+  const file = formData.get("image") as File | null;
+  if (!file) return c.json({ error: "이미지 파일을 선택해주세요." }, 400);
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (!allowedTypes.includes(file.type)) return c.json({ error: "JPEG, PNG, WebP, GIF 형식만 지원합니다." }, 400);
+  if (file.size > 10 * 1024 * 1024) return c.json({ error: "파일 크기는 최대 10MB입니다." }, 400);
+
+  const uploadsDir = path.join(process.cwd(), "uploads", "images");
+  mkdirSync(uploadsDir, { recursive: true });
+
+  const uuid = generateId();
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  // 원본 비율 유지, 최대 1920px, WebP 변환
+  await sharp(buffer)
+    .resize(1920, 1920, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toFile(path.join(uploadsDir, `${uuid}.webp`));
+
+  const url = `/uploads/images/${uuid}.webp`;
+  return c.json({ url });
 });
 
 settingsRoute.get("/settings", async (c) => {

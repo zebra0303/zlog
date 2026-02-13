@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { type Database as DatabaseType } from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema.js";
 import path from "path";
@@ -9,7 +9,7 @@ const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), "data", "zlog.db
 // data 디렉토리 자동 생성
 mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
-const sqlite = new Database(DB_PATH);
+const sqlite: DatabaseType = new Database(DB_PATH);
 
 // WAL mode — 동시 읽기 성능 향상
 sqlite.pragma("journal_mode = WAL");

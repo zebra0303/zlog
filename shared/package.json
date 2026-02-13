@@ -7,5 +7,8 @@
   "types": "./types/index.ts",
   "exports": {
     ".": "./types/index.ts"
+  },
+  "scripts": {
+    "build": "echo 'shared: no build needed'"
   }
 }

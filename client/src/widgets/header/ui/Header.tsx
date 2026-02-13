@@ -6,6 +6,8 @@ import { useAuthStore } from "@/features/auth/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 
+const glass = "backdrop-blur-md bg-[var(--color-surface)]/70 rounded-xl px-3 py-1";
+
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, logout } = useAuthStore();
@@ -15,16 +17,20 @@ export function Header() {
   const handleLogout = () => { logout(); void navigate("/"); };
 
   const customStyle = getHeaderStyle(isDark);
-  const hasCustomBg = Object.keys(customStyle).length > 0;
+  const hasCustom = !!(customStyle.backgroundColor || customStyle.backgroundImage);
+  const hasCustomHeight = !!customStyle.minHeight;
 
   return (
     <header
-      className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-md"
-      style={hasCustomBg ? { ...customStyle, backdropFilter: customStyle.backgroundImage ? "none" : undefined } : undefined}
+      className={`sticky top-0 z-50 border-b border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]/80 backdrop-blur-md"}`}
+      style={hasCustom ? customStyle : undefined}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2"><ZlogLogo size={36} /><span className="text-xl font-bold text-[var(--color-text)]">zlog</span></Link>
-        <nav className="hidden items-center gap-2 md:flex">
+      <div className={`mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
+        <Link to="/" className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
+          <ZlogLogo size={36} />
+          <span className="text-xl font-bold text-[var(--color-text)]">zlog</span>
+        </Link>
+        <nav className={`hidden items-center gap-2 md:flex ${hasCustom ? glass : ""}`}>
           <Button variant="ghost" size="sm" asChild><Link to="/">홈</Link></Button>
           <Button variant="ghost" size="sm" asChild><Link to="/profile">프로필</Link></Button>
           {isAuthenticated && (<>
@@ -34,7 +40,7 @@ export function Header() {
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="테마 전환">{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
           {isAuthenticated ? <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" />로그아웃</Button> : <Button variant="outline" size="sm" asChild><Link to="/login">로그인</Link></Button>}
         </nav>
-        <div className="flex items-center gap-2 md:hidden">
+        <div className={`flex items-center gap-2 md:hidden ${hasCustom ? glass : ""}`}>
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="테마 전환">{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
           <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="메뉴">{isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</Button>
         </div>
