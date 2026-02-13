@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { MessageSquare, Heart, Reply, Github, LogOut } from "lucide-react";
-import { Button, Card, CardContent, Textarea, DefaultAvatar } from "@/shared/ui";
+import { Button, Card, CardContent, Input, Textarea, DefaultAvatar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
+import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import type { CommentWithReplies, CreateCommentRequest } from "@zlog/shared";
 
 function generateUUID(): string {
@@ -61,6 +62,7 @@ export function CommentSection({ postId }: { postId: string }) {
   const [providers, setProviders] = useState<{ github: boolean; google: boolean }>({ github: false, google: false });
   const [commenter, setCommenter] = useState<CommenterInfo | null>(getCommenter());
   const { t } = useI18n();
+  const commentMode = useSiteSettingsStore((s) => s.settings.comment_mode) ?? "sso_only";
 
   const fetchComments = useCallback(() => {
     void api.get<CommentWithReplies[]>(`/posts/${postId}/comments?visitorId=${getVisitorId()}`).then((data) => { setComments(data); setIsLoading(false); }).catch(() => setIsLoading(false));
@@ -76,11 +78,23 @@ export function CommentSection({ postId }: { postId: string }) {
     setCommenter(null);
   };
 
+  if (commentMode === "disabled") {
+    return (
+      <div>
+        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><MessageSquare className="h-5 w-5" />{t("comment_title")}</h3>
+        <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("comment_disabled")}</p>
+      </div>
+    );
+  }
+
+  const hasProviders = providers.github || providers.google;
+  const allowAnonymous = commentMode === "all";
+
   return (
     <div>
       <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><MessageSquare className="h-5 w-5" />{t("comment_title")}</h3>
 
-      {/* 로그인 상태 표시 */}
+      {/* SSO 로그인 상태 표시 */}
       {commenter ? (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
           <div className="flex items-center gap-2">
@@ -96,7 +110,7 @@ export function CommentSection({ postId }: { postId: string }) {
             <LogOut className="h-3 w-3" />{t("comment_logout")}
           </button>
         </div>
-      ) : (providers.github || providers.google) ? (
+      ) : hasProviders ? (
         <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4">
           <p className="mb-3 text-sm text-[var(--color-text-secondary)]">{t("comment_login_prompt")}</p>
           <div className="flex flex-wrap gap-2">
@@ -120,42 +134,55 @@ export function CommentSection({ postId }: { postId: string }) {
         </div>
       ) : null}
 
+      {/* 댓글 작성 폼 */}
       {commenter ? (
-        <CommentForm postId={postId} onSuccess={fetchComments} commenter={commenter} />
-      ) : (
-        !(providers.github || providers.google) && (
-          <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4 text-center">
-            <p className="text-sm text-[var(--color-text-secondary)]">{t("comment_login_required")}</p>
-          </div>
-        )
-      )}
-      <div className="mt-6 flex flex-col gap-4">{comments.map((c) => <CommentThread key={c.id} comment={c} postId={postId} onRefresh={fetchComments} depth={0} commenter={commenter} />)}</div>
+        <CommentForm postId={postId} onSuccess={fetchComments} commenter={commenter} allowAnonymous={false} />
+      ) : allowAnonymous ? (
+        <CommentForm postId={postId} onSuccess={fetchComments} commenter={null} allowAnonymous={true} />
+      ) : !hasProviders ? (
+        <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4 text-center">
+          <p className="text-sm text-[var(--color-text-secondary)]">{t("comment_login_required")}</p>
+        </div>
+      ) : null}
+
+      <div className="mt-6 flex flex-col gap-4">{comments.map((c) => <CommentThread key={c.id} comment={c} postId={postId} onRefresh={fetchComments} depth={0} commenter={commenter} allowAnonymous={allowAnonymous} />)}</div>
       {!isLoading && comments.length === 0 && <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">{t("comment_no_comments")}</p>}
     </div>
   );
 }
 
-function CommentForm({ postId, parentId, onSuccess, onCancel, commenter }: { postId: string; parentId?: string; onSuccess: () => void; onCancel?: () => void; commenter: CommenterInfo | null }) {
+function CommentForm({ postId, parentId, onSuccess, onCancel, commenter, allowAnonymous }: { postId: string; parentId?: string; onSuccess: () => void; onCancel?: () => void; commenter: CommenterInfo | null; allowAnonymous: boolean }) {
   const [content, setContent] = useState("");
+  const [anonName, setAnonName] = useState("");
+  const [anonEmail, setAnonEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
 
-  if (!commenter) return null;
+  // SSO only mode but no commenter → no form
+  if (!commenter && !allowAnonymous) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setIsSubmitting(true); setError(null);
     try {
-      const payload: Record<string, unknown> = {
-        authorName: commenter.displayName,
-        authorEmail: commenter.provider + "@oauth",
-        authorAvatarUrl: commenter.avatarUrl || undefined,
-        commenterId: commenter.commenterId || undefined,
-        content,
-        parentId,
-      };
+      const payload: Record<string, unknown> = commenter
+        ? {
+            authorName: commenter.displayName,
+            authorEmail: commenter.provider + "@oauth",
+            authorAvatarUrl: commenter.avatarUrl || undefined,
+            commenterId: commenter.commenterId || undefined,
+            content,
+            parentId,
+          }
+        : {
+            authorName: anonName,
+            authorEmail: anonEmail || "anonymous@guest",
+            content,
+            parentId,
+          };
       await api.post(`/posts/${postId}/comments`, payload);
       setContent("");
+      if (!commenter) { setAnonName(""); setAnonEmail(""); }
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("comment_write_failed"));
@@ -167,10 +194,17 @@ function CommentForm({ postId, parentId, onSuccess, onCancel, commenter }: { pos
   return (
     <Card><CardContent className="pt-4">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-          {commenter.avatarUrl ? <img src={commenter.avatarUrl} alt="" className="h-5 w-5 rounded-full" /> : <DefaultAvatar size={20} />}
-          <span>{commenter.displayName} {t("comment_writing_as")}</span>
-        </div>
+        {commenter ? (
+          <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+            {commenter.avatarUrl ? <img src={commenter.avatarUrl} alt="" className="h-5 w-5 rounded-full" /> : <DefaultAvatar size={20} />}
+            <span>{commenter.displayName} {t("comment_writing_as")}</span>
+          </div>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input placeholder={t("comment_name_placeholder")} value={anonName} onChange={(e) => setAnonName(e.target.value)} required />
+            <Input placeholder={t("comment_email_placeholder")} type="email" value={anonEmail} onChange={(e) => setAnonEmail(e.target.value)} />
+          </div>
+        )}
         <Textarea placeholder={t("comment_placeholder")} value={content} onChange={(e) => setContent(e.target.value)} required maxLength={2000} rows={3} />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <div className="flex justify-end gap-2">
@@ -182,7 +216,7 @@ function CommentForm({ postId, parentId, onSuccess, onCancel, commenter }: { pos
   );
 }
 
-function CommentThread({ comment, postId, onRefresh, depth, commenter }: { comment: CommentWithReplies; postId: string; onRefresh: () => void; depth: number; commenter: CommenterInfo | null }) {
+function CommentThread({ comment, postId, onRefresh, depth, commenter, allowAnonymous }: { comment: CommentWithReplies; postId: string; onRefresh: () => void; depth: number; commenter: CommenterInfo | null; allowAnonymous: boolean }) {
   const [showReply, setShowReply] = useState(false);
   const isDeleted = !!comment.deletedAt;
   const handleLike = async () => { try { await api.post(`/comments/${comment.id}/like`, { visitorId: getVisitorId() }); onRefresh(); } catch {} };
@@ -207,10 +241,10 @@ function CommentThread({ comment, postId, onRefresh, depth, commenter }: { comme
               {depth < 2 && <button onClick={() => setShowReply(!showReply)} className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"><Reply className="h-3.5 w-3.5" />{t("comment_reply")}</button>}
             </div>
           )}
-          {showReply && <div className="mt-3"><CommentForm postId={postId} parentId={comment.id} onSuccess={() => { setShowReply(false); onRefresh(); }} onCancel={() => setShowReply(false)} commenter={commenter} /></div>}
+          {showReply && <div className="mt-3"><CommentForm postId={postId} parentId={comment.id} onSuccess={() => { setShowReply(false); onRefresh(); }} onCancel={() => setShowReply(false)} commenter={commenter} allowAnonymous={allowAnonymous} /></div>}
         </div>
       </div>
-      {comment.replies.length > 0 && <div className="mt-3 flex flex-col gap-3">{comment.replies.map((r) => <CommentThread key={r.id} comment={r} postId={postId} onRefresh={onRefresh} depth={depth + 1} commenter={commenter} />)}</div>}
+      {comment.replies.length > 0 && <div className="mt-3 flex flex-col gap-3">{comment.replies.map((r) => <CommentThread key={r.id} comment={r} postId={postId} onRefresh={onRefresh} depth={depth + 1} commenter={commenter} allowAnonymous={allowAnonymous} />)}</div>}
     </div>
   );
 }

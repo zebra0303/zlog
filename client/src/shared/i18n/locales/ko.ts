@@ -140,6 +140,7 @@ export const ko: Record<TranslationKeys, string> = {
   comment_writing_as: "(으)로 댓글 작성",
   comment_write_failed: "댓글 작성에 실패했습니다.",
   comment_login_required: "댓글을 남기려면 GitHub 또는 Google로 로그인해주세요.",
+  comment_disabled: "댓글이 비활성화되어 있습니다.",
   comment_oauth_processing: "로그인 처리 중...",
 
   // Admin
@@ -178,6 +179,10 @@ export const ko: Record<TranslationKeys, string> = {
   admin_display_title: "표시 설정",
   admin_display_per_page: "페이지당 게시글 수",
   admin_display_lazy_load: "이미지 Lazy Loading",
+  admin_comment_mode: "댓글 모드",
+  admin_comment_mode_sso: "SSO 로그인만 허용",
+  admin_comment_mode_all: "모두 허용 (SSO + 익명)",
+  admin_comment_mode_disabled: "비활성화",
 
   // Admin - SEO
   admin_seo_title: "SEO 설정",

@@ -122,7 +122,19 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   // OAuth 아바타 URL도 검증
   const authorAvatarUrl = body.authorAvatarUrl ? sanitizeUrl(body.authorAvatarUrl) : null;
 
-  if (!body.commenterId) {
+  // comment_mode 설정 조회
+  const commentModeSetting = db
+    .select()
+    .from(schema.siteSettings)
+    .where(eq(schema.siteSettings.key, "comment_mode"))
+    .get();
+  const commentMode = commentModeSetting?.value ?? "sso_only";
+
+  if (commentMode === "disabled") {
+    return c.json({ error: "Comments are disabled." }, 403);
+  }
+
+  if (commentMode === "sso_only" && !body.commenterId) {
     return c.json({ error: "Social login is required to post a comment." }, 403);
   }
   if (!authorName || !content) {
