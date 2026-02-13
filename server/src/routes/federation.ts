@@ -3,6 +3,7 @@ import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and, desc, gt } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
+import { authMiddleware } from "../middleware/auth.js";
 import type { WebhookEvent } from "@zlog/shared";
 
 const federationRoute = new Hono();
@@ -118,6 +119,35 @@ federationRoute.post("/webhook", async (c) => {
   }
 
   return c.json({ message: "웹훅 처리 완료" });
+});
+
+// ============ 관리자용: 구독자 목록 조회 ============
+federationRoute.get("/subscribers", authMiddleware, async (c) => {
+  const subs = db
+    .select({
+      id: schema.subscribers.id,
+      categoryId: schema.subscribers.categoryId,
+      categoryName: schema.categories.name,
+      subscriberUrl: schema.subscribers.subscriberUrl,
+      callbackUrl: schema.subscribers.callbackUrl,
+      isActive: schema.subscribers.isActive,
+      createdAt: schema.subscribers.createdAt,
+    })
+    .from(schema.subscribers)
+    .leftJoin(schema.categories, eq(schema.subscribers.categoryId, schema.categories.id))
+    .orderBy(desc(schema.subscribers.createdAt))
+    .all();
+
+  return c.json(subs);
+});
+
+// ============ 관리자용: 구독자 삭제 ============
+federationRoute.delete("/subscribers/:id", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const existing = db.select().from(schema.subscribers).where(eq(schema.subscribers.id, id)).get();
+  if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  db.delete(schema.subscribers).where(eq(schema.subscribers.id, id)).run();
+  return c.json({ message: "구독자가 삭제되었습니다." });
 });
 
 export default federationRoute;

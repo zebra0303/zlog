@@ -5,6 +5,7 @@ import { PostCard } from "@/entities/post/ui/PostCard";
 import { Pagination, SEOHead, Skeleton, Card, CardContent, Badge, Button, Input } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
+import { useAuthStore } from "@/features/auth/model/store";
 import type { CategoryWithStats, PostWithCategory, PaginatedResponse } from "@zlog/shared";
 
 // ============ 구독 다이얼로그 ============
@@ -158,6 +159,7 @@ export default function CategoryDetailPage() {
   const [descHtml, setDescHtml] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showSubscribe, setShowSubscribe] = useState(false);
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     if (!slug) return;
@@ -202,15 +204,17 @@ export default function CategoryDetailPage() {
                     <Badge variant="outline">{category.followerCount}명 구독</Badge>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSubscribe(true)}
-                  className="shrink-0"
-                >
-                  <Rss className="mr-1 h-4 w-4" />
-                  구독
-                </Button>
+                {!isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSubscribe(true)}
+                    className="shrink-0"
+                  >
+                    <Rss className="mr-1 h-4 w-4" />
+                    구독
+                  </Button>
+                )}
               </div>
               {descHtml && (
                 <div

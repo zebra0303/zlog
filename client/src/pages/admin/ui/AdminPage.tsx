@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2 } from "lucide-react";
+import { Settings, FileText, Globe, Save, Folder, Plus, Pencil, Trash2, Check, X, Palette, Upload, Loader2, Rss } from "lucide-react";
 import { Button, Input, Textarea, Card, CardContent, SEOHead, Badge } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -366,6 +366,102 @@ function ThemeCustomizer({ settings, update }: { settings: Record<string, string
   );
 }
 
+// ============ 구독자 관리 컴포넌트 ============
+interface Subscriber {
+  id: string;
+  categoryId: string;
+  categoryName: string | null;
+  subscriberUrl: string;
+  callbackUrl: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+function SubscriberManager() {
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchSubscribers = () => {
+    setIsLoading(true);
+    void api
+      .get<Subscriber[]>("/federation/subscribers")
+      .then((data) => {
+        setSubscribers(data);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    fetchSubscribers();
+  }, []);
+
+  const handleDelete = async (sub: Subscriber) => {
+    if (!confirm(`"${sub.subscriberUrl}"의 구독을 삭제하시겠습니까?`)) return;
+    setDeletingId(sub.id);
+    try {
+      await api.delete(`/federation/subscribers/${sub.id}`);
+      fetchSubscribers();
+    } catch {
+      /* ignore */
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+          <Rss className="h-5 w-5" />구독자 관리
+        </h2>
+        <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
+          이 블로그의 카테고리를 구독하고 있는 외부 블로그 목록입니다.
+        </p>
+
+        {isLoading ? (
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">불러오는 중...</p>
+        ) : subscribers.length === 0 ? (
+          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">구독자가 없습니다.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {subscribers.map((sub) => (
+              <div
+                key={sub.id}
+                className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3"
+              >
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-[var(--color-text)]">{sub.subscriberUrl}</span>
+                    <Badge variant="secondary">{sub.categoryName ?? "삭제된 카테고리"}</Badge>
+                    {!sub.isActive && <Badge variant="outline">비활성</Badge>}
+                  </div>
+                  <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                    콜백: {sub.callbackUrl}
+                  </p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    구독일: {new Date(sub.createdAt).toLocaleDateString("ko-KR")}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(sub)}
+                  disabled={deletingId === sub.id}
+                  aria-label="삭제"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ============ 메인 AdminPage ============
 export default function AdminPage() {
   const { isAuthenticated } = useAuthStore();
@@ -438,6 +534,9 @@ export default function AdminPage() {
           <div><label className="mb-1 block text-sm font-medium text-[var(--color-text)]">Webhook 동기화 주기</label><select value={settings.webhook_sync_interval ?? "15"} onChange={(e) => update("webhook_sync_interval", e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"><option value="5">5분</option><option value="15">15분</option><option value="30">30분</option><option value="60">1시간</option></select></div>
         </div>
       </CardContent></Card>
+
+      {/* 구독자 관리 */}
+      <SubscriberManager />
     </div>
   );
 }
