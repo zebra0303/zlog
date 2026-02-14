@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { MessageSquare, Heart, Reply, Github, LogOut, Pencil, Trash2 } from "lucide-react";
+import { MessageSquare, Heart, Reply, Link2, LogOut, Pencil, Trash2 } from "lucide-react";
 import { Button, Card, CardContent, Input, Textarea, DefaultAvatar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { timeAgo } from "@/shared/lib/formatDate";
@@ -20,7 +20,10 @@ function generateUUID(): string {
 
 function getVisitorId(): string {
   let id = localStorage.getItem("zlog_visitor_id");
-  if (!id) { id = generateUUID(); localStorage.setItem("zlog_visitor_id", id); }
+  if (!id) {
+    id = generateUUID();
+    localStorage.setItem("zlog_visitor_id", id);
+  }
   return id;
 }
 
@@ -60,19 +63,37 @@ function GoogleIcon({ className }: { className?: string }) {
 export function CommentSection({ postId }: { postId: string }) {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [providers, setProviders] = useState<{ github: boolean; google: boolean }>({ github: false, google: false });
+  const [providers, setProviders] = useState<{ github: boolean; google: boolean }>({
+    github: false,
+    google: false,
+  });
   const [commenter, setCommenter] = useState<CommenterInfo | null>(getCommenter());
   const { t } = useI18n();
   const commentMode = useSiteSettingsStore((s) => s.settings.comment_mode) ?? "sso_only";
   const isAdmin = useAuthStore((s) => s.isAuthenticated);
 
   const fetchComments = useCallback(() => {
-    void api.get<CommentWithReplies[]>(`/posts/${postId}/comments?visitorId=${getVisitorId()}`).then((data) => { setComments(data); setIsLoading(false); }).catch(() => setIsLoading(false));
+    void api
+      .get<CommentWithReplies[]>(`/posts/${postId}/comments?visitorId=${getVisitorId()}`)
+      .then((data) => {
+        setComments(data);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
   }, [postId]);
 
-  useEffect(() => { fetchComments(); }, [fetchComments]);
   useEffect(() => {
-    void api.get<{ github: boolean; google: boolean }>("/oauth/providers").then(setProviders).catch(() => {});
+    fetchComments();
+  }, [fetchComments]);
+  useEffect(() => {
+    void api
+      .get<{ github: boolean; google: boolean }>("/oauth/providers")
+      .then(setProviders)
+      .catch(() => {
+        setProviders({ github: false, google: false });
+      });
   }, []);
 
   const handleLogout = () => {
@@ -83,8 +104,13 @@ export function CommentSection({ postId }: { postId: string }) {
   if (commentMode === "disabled") {
     return (
       <div>
-        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><MessageSquare className="h-5 w-5" />{t("comment_title")}</h3>
-        <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">{t("comment_disabled")}</p>
+        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+          <MessageSquare className="h-5 w-5" />
+          {t("comment_title")}
+        </h3>
+        <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">
+          {t("comment_disabled")}
+        </p>
       </div>
     );
   }
@@ -95,42 +121,69 @@ export function CommentSection({ postId }: { postId: string }) {
 
   return (
     <div>
-      <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]"><MessageSquare className="h-5 w-5" />{t("comment_title")}</h3>
+      <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+        <MessageSquare className="h-5 w-5" />
+        {t("comment_title")}
+      </h3>
 
       {/* SSO 로그인 상태 표시 (anonymous_only 모드에서는 숨김) */}
       {showSsoLogin && commenter ? (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
           <div className="flex items-center gap-2">
             {commenter.avatarUrl ? (
-              <img src={commenter.avatarUrl} alt={commenter.displayName} className="h-6 w-6 rounded-full" />
+              <img
+                src={commenter.avatarUrl}
+                alt={commenter.displayName}
+                className="h-6 w-6 rounded-full"
+              />
             ) : (
               <DefaultAvatar size={24} />
             )}
-            <span className="text-sm font-medium text-[var(--color-text)]">{commenter.displayName}</span>
-            <span className="text-xs text-[var(--color-text-secondary)]">({commenter.provider})</span>
+            <span className="text-sm font-medium text-[var(--color-text)]">
+              {commenter.displayName}
+            </span>
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              ({commenter.provider})
+            </span>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
-            <LogOut className="h-3 w-3" />{t("comment_logout")}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+          >
+            <LogOut className="h-3 w-3" />
+            {t("comment_logout")}
           </button>
         </div>
       ) : showSsoLogin && hasProviders ? (
         <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4">
-          <p className="mb-3 text-sm text-[var(--color-text-secondary)]">{t("comment_login_prompt")}</p>
+          <p className="mb-3 text-sm text-[var(--color-text-secondary)]">
+            {t("comment_login_prompt")}
+          </p>
           <div className="flex flex-wrap gap-2">
             {providers.github && (
-              <Button variant="outline" size="sm" onClick={() => {
-                localStorage.setItem("zlog_oauth_return", window.location.href);
-                window.location.href = "/api/oauth/github";
-              }}>
-                <Github className="mr-1 h-4 w-4" />{t("comment_login_github")}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  localStorage.setItem("zlog_oauth_return", window.location.href);
+                  window.location.href = "/api/oauth/github";
+                }}
+              >
+                <Link2 className="mr-1 h-4 w-4" />
+                {t("comment_login_github")}
               </Button>
             )}
             {providers.google && (
-              <Button variant="outline" size="sm" onClick={() => {
-                localStorage.setItem("zlog_oauth_return", window.location.href);
-                window.location.href = "/api/oauth/google";
-              }}>
-                <GoogleIcon className="mr-1 h-4 w-4" />{t("comment_login_google")}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  localStorage.setItem("zlog_oauth_return", window.location.href);
+                  window.location.href = "/api/oauth/google";
+                }}
+              >
+                <GoogleIcon className="mr-1 h-4 w-4" />
+                {t("comment_login_google")}
               </Button>
             )}
           </div>
@@ -139,22 +192,65 @@ export function CommentSection({ postId }: { postId: string }) {
 
       {/* 댓글 작성 폼 */}
       {showSsoLogin && commenter ? (
-        <CommentForm postId={postId} onSuccess={fetchComments} commenter={commenter} allowAnonymous={false} />
+        <CommentForm
+          postId={postId}
+          onSuccess={fetchComments}
+          commenter={commenter}
+          allowAnonymous={false}
+        />
       ) : allowAnonymous ? (
-        <CommentForm postId={postId} onSuccess={fetchComments} commenter={null} allowAnonymous={true} />
+        <CommentForm
+          postId={postId}
+          onSuccess={fetchComments}
+          commenter={null}
+          allowAnonymous={true}
+        />
       ) : showSsoLogin && !hasProviders ? (
         <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4 text-center">
-          <p className="text-sm text-[var(--color-text-secondary)]">{t("comment_login_required")}</p>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {t("comment_login_required")}
+          </p>
         </div>
       ) : null}
 
-      <div className="mt-6 flex flex-col gap-4">{comments.map((c) => <CommentThread key={c.id} comment={c} postId={postId} onRefresh={fetchComments} depth={0} commenter={commenter} allowAnonymous={allowAnonymous} isAdmin={isAdmin} />)}</div>
-      {!isLoading && comments.length === 0 && <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">{t("comment_no_comments")}</p>}
+      <div className="mt-6 flex flex-col gap-4">
+        {comments.map((c) => (
+          <CommentThread
+            key={c.id}
+            comment={c}
+            postId={postId}
+            onRefresh={fetchComments}
+            depth={0}
+            commenter={commenter}
+            allowAnonymous={allowAnonymous}
+            isAdmin={isAdmin}
+          />
+        ))}
+      </div>
+      {!isLoading && comments.length === 0 && (
+        <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">
+          {t("comment_no_comments")}
+        </p>
+      )}
     </div>
   );
 }
 
-function CommentForm({ postId, parentId, onSuccess, onCancel, commenter, allowAnonymous }: { postId: string; parentId?: string; onSuccess: () => void; onCancel?: () => void; commenter: CommenterInfo | null; allowAnonymous: boolean }) {
+function CommentForm({
+  postId,
+  parentId,
+  onSuccess,
+  onCancel,
+  commenter,
+  allowAnonymous,
+}: {
+  postId: string;
+  parentId?: string;
+  onSuccess: () => void;
+  onCancel?: () => void;
+  commenter: CommenterInfo | null;
+  allowAnonymous: boolean;
+}) {
   const [content, setContent] = useState("");
   const [anonName, setAnonName] = useState("");
   const [anonEmail, setAnonEmail] = useState("");
@@ -166,28 +262,34 @@ function CommentForm({ postId, parentId, onSuccess, onCancel, commenter, allowAn
   // SSO only mode but no commenter → no form
   if (!commenter && !allowAnonymous) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setIsSubmitting(true); setError(null);
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
     try {
       const payload: Record<string, unknown> = commenter
         ? {
             authorName: commenter.displayName,
             authorEmail: commenter.provider + "@oauth",
-            authorAvatarUrl: commenter.avatarUrl || undefined,
-            commenterId: commenter.commenterId || undefined,
+            authorAvatarUrl: commenter.avatarUrl,
+            commenterId: commenter.commenterId,
             content,
             parentId,
           }
         : {
             authorName: anonName,
-            authorEmail: anonEmail || "anonymous@guest",
+            authorEmail: anonEmail.length > 0 ? anonEmail : "anonymous@guest",
             password: anonPassword,
             content,
             parentId,
           };
       await api.post(`/posts/${postId}/comments`, payload);
       setContent("");
-      if (!commenter) { setAnonName(""); setAnonEmail(""); setAnonPassword(""); }
+      if (!commenter) {
+        setAnonName("");
+        setAnonEmail("");
+        setAnonPassword("");
+      }
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("comment_write_failed"));
@@ -197,32 +299,93 @@ function CommentForm({ postId, parentId, onSuccess, onCancel, commenter, allowAn
   };
 
   return (
-    <Card><CardContent className="pt-4">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {commenter ? (
-          <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-            {commenter.avatarUrl ? <img src={commenter.avatarUrl} alt="" className="h-5 w-5 rounded-full" /> : <DefaultAvatar size={20} />}
-            <span>{commenter.displayName} {t("comment_writing_as")}</span>
+    <Card>
+      <CardContent className="pt-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          {commenter ? (
+            <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+              {commenter.avatarUrl ? (
+                <img src={commenter.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+              ) : (
+                <DefaultAvatar size={20} />
+              )}
+              <span>
+                {commenter.displayName} {t("comment_writing_as")}
+              </span>
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-3">
+              <Input
+                placeholder={t("comment_name_placeholder")}
+                value={anonName}
+                onChange={(e) => {
+                  setAnonName(e.target.value);
+                }}
+                required
+              />
+              <Input
+                placeholder={t("comment_email_placeholder")}
+                type="email"
+                value={anonEmail}
+                onChange={(e) => {
+                  setAnonEmail(e.target.value);
+                }}
+              />
+              <Input
+                placeholder={t("comment_password_placeholder")}
+                type="password"
+                value={anonPassword}
+                onChange={(e) => {
+                  setAnonPassword(e.target.value);
+                }}
+                required
+              />
+            </div>
+          )}
+          <Textarea
+            placeholder={t("comment_placeholder")}
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+            }}
+            required
+            maxLength={2000}
+            rows={3}
+          />
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="flex justify-end gap-2">
+            {onCancel && (
+              <Button variant="ghost" size="sm" type="button" onClick={onCancel}>
+                {t("cancel")}
+              </Button>
+            )}
+            <Button size="sm" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t("comment_submitting") : t("comment_submit")}
+            </Button>
           </div>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-3">
-            <Input placeholder={t("comment_name_placeholder")} value={anonName} onChange={(e) => setAnonName(e.target.value)} required />
-            <Input placeholder={t("comment_email_placeholder")} type="email" value={anonEmail} onChange={(e) => setAnonEmail(e.target.value)} />
-            <Input placeholder={t("comment_password_placeholder")} type="password" value={anonPassword} onChange={(e) => setAnonPassword(e.target.value)} required />
-          </div>
-        )}
-        <Textarea placeholder={t("comment_placeholder")} value={content} onChange={(e) => setContent(e.target.value)} required maxLength={2000} rows={3} />
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        <div className="flex justify-end gap-2">
-          {onCancel && <Button variant="ghost" size="sm" type="button" onClick={onCancel}>{t("cancel")}</Button>}
-          <Button size="sm" type="submit" disabled={isSubmitting}>{isSubmitting ? t("comment_submitting") : t("comment_submit")}</Button>
-        </div>
-      </form>
-    </CardContent></Card>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
-function CommentThread({ comment, postId, onRefresh, depth, commenter, allowAnonymous, isAdmin }: { comment: CommentWithReplies; postId: string; onRefresh: () => void; depth: number; commenter: CommenterInfo | null; allowAnonymous: boolean; isAdmin: boolean }) {
+function CommentThread({
+  comment,
+  postId,
+  onRefresh,
+  depth,
+  commenter,
+  allowAnonymous,
+  isAdmin,
+}: {
+  comment: CommentWithReplies;
+  postId: string;
+  onRefresh: () => void;
+  depth: number;
+  commenter: CommenterInfo | null;
+  allowAnonymous: boolean;
+  isAdmin: boolean;
+}) {
   const [showReply, setShowReply] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -232,24 +395,34 @@ function CommentThread({ comment, postId, onRefresh, depth, commenter, allowAnon
   const [deletePassword, setDeletePassword] = useState("");
   const [showDeletePassword, setShowDeletePassword] = useState(false);
   const isDeleted = !!comment.deletedAt;
-  const handleLike = async () => { try { await api.post(`/comments/${comment.id}/like`, { visitorId: getVisitorId() }); onRefresh(); } catch {} };
+  const handleLike = async () => {
+    try {
+      await api.post(`/comments/${comment.id}/like`, { visitorId: getVisitorId() });
+      onRefresh();
+    } catch {
+      return;
+    }
+  };
   const { t } = useI18n();
 
   const avatarUrl = comment.authorAvatarUrl;
 
   // 수정 가능 여부: SSO 본인 또는 익명(hasPassword)
-  const isSsoOwner = commenter && comment.commenterId && commenter.commenterId === comment.commenterId;
+  const isSsoOwner = Boolean(
+    commenter?.commenterId && commenter.commenterId === comment.commenterId,
+  );
   const isAnonComment = !comment.commenterId && comment.hasPassword;
   const canEdit = !isDeleted && (isSsoOwner || isAnonComment);
   // 삭제 가능 여부: 관리자 또는 SSO 본인 또는 익명(hasPassword)
   const canDelete = !isDeleted && (isAdmin || isSsoOwner || isAnonComment);
 
   const handleEdit = async () => {
-    setIsEditSubmitting(true); setEditError(null);
+    setIsEditSubmitting(true);
+    setEditError(null);
     try {
       const payload: Record<string, unknown> = { content: editContent };
-      if (isSsoOwner && commenter) {
-        payload.commenterId = commenter.commenterId;
+      if (isSsoOwner) {
+        payload.commenterId = commenter?.commenterId;
       } else if (isAnonComment) {
         payload.password = editPassword;
       }
@@ -266,8 +439,8 @@ function CommentThread({ comment, postId, onRefresh, depth, commenter, allowAnon
 
   const handleDelete = async (password?: string) => {
     const payload: Record<string, unknown> = {};
-    if (isSsoOwner && commenter) {
-      payload.commenterId = commenter.commenterId;
+    if (isSsoOwner) {
+      payload.commenterId = commenter?.commenterId;
     } else if (isAnonComment && password) {
       payload.password = password;
     }
@@ -323,49 +496,169 @@ function CommentThread({ comment, postId, onRefresh, depth, commenter, allowAnon
         )}
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-[var(--color-text)]">{isDeleted ? t("comment_deleted") : comment.authorName}</span>
-            {comment.isEdited && !isDeleted && <span className="text-xs text-[var(--color-text-secondary)]">{t("comment_edited")}</span>}
-            <span className="text-xs text-[var(--color-text-secondary)]">{timeAgo(comment.createdAt)}</span>
+            <span className="font-medium text-[var(--color-text)]">
+              {isDeleted ? t("comment_deleted") : comment.authorName}
+            </span>
+            {comment.isEdited && !isDeleted && (
+              <span className="text-xs text-[var(--color-text-secondary)]">
+                {t("comment_edited")}
+              </span>
+            )}
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              {timeAgo(comment.createdAt)}
+            </span>
           </div>
 
           {isEditing && !isDeleted ? (
             <div className="mt-2 flex flex-col gap-2">
-              <Textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} maxLength={2000} rows={3} />
+              <Textarea
+                value={editContent}
+                onChange={(e) => {
+                  setEditContent(e.target.value);
+                }}
+                maxLength={2000}
+                rows={3}
+              />
               {isAnonComment && !isSsoOwner && (
-                <Input type="password" placeholder={t("comment_edit_password_prompt")} value={editPassword} onChange={(e) => setEditPassword(e.target.value)} />
+                <Input
+                  type="password"
+                  placeholder={t("comment_edit_password_prompt")}
+                  value={editPassword}
+                  onChange={(e) => {
+                    setEditPassword(e.target.value);
+                  }}
+                />
               )}
               {editError && <p className="text-xs text-red-500">{editError}</p>}
               <div className="flex gap-2">
-                <Button size="sm" onClick={handleEdit} disabled={isEditSubmitting}>{isEditSubmitting ? "..." : t("comment_edit_save")}</Button>
-                <Button variant="ghost" size="sm" onClick={() => { setIsEditing(false); setEditError(null); setEditPassword(""); }}>{t("cancel")}</Button>
+                <Button size="sm" onClick={handleEdit} disabled={isEditSubmitting}>
+                  {isEditSubmitting ? "..." : t("comment_edit_save")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditError(null);
+                    setEditPassword("");
+                  }}
+                >
+                  {t("cancel")}
+                </Button>
               </div>
             </div>
           ) : (
-            <p className={`mt-1 text-sm ${isDeleted ? "italic text-[var(--color-text-secondary)]" : "text-[var(--color-text)]"}`}>{comment.content}</p>
+            <p
+              className={`mt-1 text-sm ${isDeleted ? "text-[var(--color-text-secondary)] italic" : "text-[var(--color-text)]"}`}
+            >
+              {comment.content}
+            </p>
           )}
 
           {!isDeleted && !isEditing && (
             <div className="mt-2 flex items-center gap-3">
-              <button onClick={handleLike} className={`flex items-center gap-1 text-xs transition-colors ${comment.isLikedByMe ? "text-[var(--color-accent)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]"}`}><Heart className={`h-3.5 w-3.5 ${comment.isLikedByMe ? "fill-current" : ""}`} />{comment.likeCount > 0 && comment.likeCount}</button>
-              {depth < 2 && <button onClick={() => setShowReply(!showReply)} className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"><Reply className="h-3.5 w-3.5" />{t("comment_reply")}</button>}
-              {canEdit && <button onClick={onEditClick} className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"><Pencil className="h-3.5 w-3.5" />{t("comment_edit")}</button>}
-              {canDelete && <button onClick={onDeleteClick} className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-red-500"><Trash2 className="h-3.5 w-3.5" />{t("comment_delete")}</button>}
+              <button
+                onClick={handleLike}
+                className={`flex items-center gap-1 text-xs transition-colors ${comment.isLikedByMe ? "text-[var(--color-accent)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]"}`}
+              >
+                <Heart className={`h-3.5 w-3.5 ${comment.isLikedByMe ? "fill-current" : ""}`} />
+                {comment.likeCount > 0 && comment.likeCount}
+              </button>
+              {depth < 2 && (
+                <button
+                  onClick={() => {
+                    setShowReply(!showReply);
+                  }}
+                  className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"
+                >
+                  <Reply className="h-3.5 w-3.5" />
+                  {t("comment_reply")}
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={onEditClick}
+                  className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  {t("comment_edit")}
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={onDeleteClick}
+                  className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-red-500"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {t("comment_delete")}
+                </button>
+              )}
             </div>
           )}
 
           {/* 익명 댓글 삭제 비밀번호 입력 */}
           {showDeletePassword && (
             <div className="mt-2 flex items-center gap-2">
-              <Input type="password" placeholder={t("comment_delete_password_prompt")} value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="max-w-xs" />
-              <Button size="sm" onClick={onDeletePasswordSubmit}>{t("comment_delete")}</Button>
-              <Button variant="ghost" size="sm" onClick={() => { setShowDeletePassword(false); setDeletePassword(""); }}>{t("cancel")}</Button>
+              <Input
+                type="password"
+                placeholder={t("comment_delete_password_prompt")}
+                value={deletePassword}
+                onChange={(e) => {
+                  setDeletePassword(e.target.value);
+                }}
+                className="max-w-xs"
+              />
+              <Button size="sm" onClick={onDeletePasswordSubmit}>
+                {t("comment_delete")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowDeletePassword(false);
+                  setDeletePassword("");
+                }}
+              >
+                {t("cancel")}
+              </Button>
             </div>
           )}
 
-          {showReply && <div className="mt-3"><CommentForm postId={postId} parentId={comment.id} onSuccess={() => { setShowReply(false); onRefresh(); }} onCancel={() => setShowReply(false)} commenter={commenter} allowAnonymous={allowAnonymous} /></div>}
+          {showReply && (
+            <div className="mt-3">
+              <CommentForm
+                postId={postId}
+                parentId={comment.id}
+                onSuccess={() => {
+                  setShowReply(false);
+                  onRefresh();
+                }}
+                onCancel={() => {
+                  setShowReply(false);
+                }}
+                commenter={commenter}
+                allowAnonymous={allowAnonymous}
+              />
+            </div>
+          )}
         </div>
       </div>
-      {comment.replies.length > 0 && <div className="mt-3 flex flex-col gap-3">{comment.replies.map((r) => <CommentThread key={r.id} comment={r} postId={postId} onRefresh={onRefresh} depth={depth + 1} commenter={commenter} allowAnonymous={allowAnonymous} isAdmin={isAdmin} />)}</div>}
+      {comment.replies.length > 0 && (
+        <div className="mt-3 flex flex-col gap-3">
+          {comment.replies.map((r) => (
+            <CommentThread
+              key={r.id}
+              comment={r}
+              postId={postId}
+              onRefresh={onRefresh}
+              depth={depth + 1}
+              commenter={commenter}
+              allowAnonymous={allowAnonymous}
+              isAdmin={isAdmin}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

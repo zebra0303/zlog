@@ -4,11 +4,11 @@ import * as schema from "../db/schema.js";
 import { eq, sql, asc } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
-import { createSlug, createUniqueSlug } from "../lib/slug.js";
+import { createUniqueSlug } from "../lib/slug.js";
 
 const categoriesRoute = new Hono();
 
-categoriesRoute.get("/", async (c) => {
+categoriesRoute.get("/", (c) => {
   const cats = db
     .select()
     .from(schema.categories)
@@ -38,7 +38,7 @@ categoriesRoute.get("/", async (c) => {
   return c.json(result);
 });
 
-categoriesRoute.get("/:slug", async (c) => {
+categoriesRoute.get("/:slug", (c) => {
   const slug = c.req.param("slug");
   const cat = db.select().from(schema.categories).where(eq(schema.categories.slug, slug)).get();
 
@@ -147,7 +147,7 @@ categoriesRoute.put("/:id", authMiddleware, async (c) => {
   return c.json(result);
 });
 
-categoriesRoute.delete("/:id", authMiddleware, async (c) => {
+categoriesRoute.delete("/:id", authMiddleware, (c) => {
   const id = c.req.param("id");
   const existing = db.select().from(schema.categories).where(eq(schema.categories.id, id)).get();
   if (!existing) {

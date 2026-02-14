@@ -69,7 +69,7 @@ Disallow: /api/
 Sitemap: ${siteUrl}/sitemap.xml`);
 });
 
-app.get("/sitemap.xml", async (c) => {
+app.get("/sitemap.xml", (c) => {
   const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
   const posts = db
     .select({ slug: schema.posts.slug, updatedAt: schema.posts.updatedAt })
@@ -112,7 +112,7 @@ function buildRssXml(
 ): string {
   const rssItems = items.map((item) => {
     const link = `${siteUrl}/posts/${item.slug}`;
-    const desc = item.excerpt || item.content.replace(/[#*`>\[\]!()_~-]/g, "").slice(0, 300);
+    const desc = item.excerpt ?? item.content.replace(/[#*`>[\]!()_~-]/g, "").slice(0, 300);
     return `    <item>
       <title>${escapeXml(item.title)}</title>
       <link>${link}</link>

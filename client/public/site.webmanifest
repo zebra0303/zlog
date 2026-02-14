@@ -1,7 +1,7 @@
 {
   "name": "zlog",
   "short_name": "zlog",
-  "description": "분산형 자체 호스팅 개인 블로그",
+  "description": "관심 있는 모든 글, 내 블로그 하나로",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FAF9FF",

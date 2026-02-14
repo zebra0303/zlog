@@ -14,17 +14,40 @@ export default function PostEditorPage() {
   const { id } = useParams<{ id: string }>(); const navigate = useNavigate(); const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
   const [title, setTitle] = useState(""); const [content, setContent] = useState(""); const [categoryId, setCategoryId] = useState("");
-  const [tags, setTags] = useState(""); const [status, setStatus] = useState<"draft" | "published">("draft"); const [coverImage, setCoverImage] = useState("");
+  const [tags, setTags] = useState(""); const [coverImage, setCoverImage] = useState("");
   const [preview, setPreview] = useState(""); const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [categories, setCategories] = useState<CategoryWithStats[]>([]); const [isSaving, setIsSaving] = useState(false); const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { if (!isAuthenticated) void navigate("/login"); }, [isAuthenticated, navigate]);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      void navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
   useEffect(() => { void api.get<CategoryWithStats[]>("/categories").then(setCategories); }, []);
-  useEffect(() => { if (!id) return; void api.get<PostWithCategory>(`/posts/${id}`).then((p) => { setTitle(p.title); setContent(p.content); setCategoryId(p.categoryId ?? ""); setStatus(p.status as "draft"|"published"); setCoverImage(p.coverImage ?? ""); setTags(p.tags.map((tg) => tg.name).join(", ")); }); }, [id]);
-  useEffect(() => { const timer = setTimeout(() => { void parseMarkdown(content).then(setPreview); }, 150); return () => clearTimeout(timer); }, [content]);
+  useEffect(() => {
+    if (!id) return;
+    void api.get<PostWithCategory>(`/posts/${id}`).then((p) => {
+      setTitle(p.title);
+      setContent(p.content);
+      setCategoryId(p.categoryId ?? "");
+      setCoverImage(p.coverImage ?? "");
+      setTags(p.tags.map((tg) => tg.name).join(", "));
+    });
+  }, [id]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void parseMarkdown(content).then((html) => {
+        setPreview(html);
+      });
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [content]);
 
   const uploadAndInsertImage = useCallback(async (file: File) => {
     const textarea = textareaRef.current;
@@ -110,7 +133,7 @@ export default function PostEditorPage() {
       const saved = id
         ? await api.put<{ slug: string }>(`/posts/${id}`, payload)
         : await api.post<{ slug: string }>("/posts", payload);
-      if (s === "published" && saved?.slug) {
+      if (s === "published" && saved.slug) {
         void navigate(`/posts/${saved.slug}`);
       } else {
         void navigate("/");
@@ -122,51 +145,75 @@ export default function PostEditorPage() {
     <div className="flex flex-col gap-4">
       <SEOHead title={id ? t("editor_edit_post") : t("editor_new_post")} />
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}><ArrowLeft className="mr-1 h-4 w-4" />{t("editor_back")}</Button>
+        <Button variant="ghost" size="sm" onClick={() => {
+          void navigate(-1);
+        }}><ArrowLeft className="mr-1 h-4 w-4" />{t("editor_back")}</Button>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-[var(--color-border)]">
-            <button onClick={() => setViewMode("edit")} className={`px-3 py-1.5 text-sm ${viewMode === "edit" ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"} rounded-l-lg`}><Edit3 className="h-4 w-4" /></button>
-            <button onClick={() => setViewMode("split")} className={`px-3 py-1.5 text-sm ${viewMode === "split" ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"}`}><Columns className="h-4 w-4" /></button>
-            <button onClick={() => setViewMode("preview")} className={`px-3 py-1.5 text-sm ${viewMode === "preview" ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"} rounded-r-lg`}><Eye className="h-4 w-4" /></button>
+          <div className="flex rounded-lg border border-border">
+            <button type="button" onClick={() => {
+              setViewMode("edit");
+            }} aria-label={t("edit")} title={t("edit")} className={`px-3 py-1.5 text-sm ${viewMode === "edit" ? "bg-primary text-white" : "text-text-secondary"} rounded-l-lg`}><Edit3 className="h-4 w-4" /></button>
+            <button type="button" onClick={() => {
+              setViewMode("split");
+            }} aria-label="Split view" title="Split view" className={`px-3 py-1.5 text-sm ${viewMode === "split" ? "bg-primary text-white" : "text-text-secondary"}`}><Columns className="h-4 w-4" /></button>
+            <button type="button" onClick={() => {
+              setViewMode("preview");
+            }} aria-label={t("preview")} title={t("preview")} className={`px-3 py-1.5 text-sm ${viewMode === "preview" ? "bg-primary text-white" : "text-text-secondary"} rounded-r-lg`}><Eye className="h-4 w-4" /></button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => handleSave("draft")} disabled={isSaving}>{t("editor_draft")}</Button>
-          <Button size="sm" onClick={() => handleSave("published")} disabled={isSaving}><Save className="mr-1 h-4 w-4" />{isSaving ? t("loading") : t("editor_publish")}</Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            void handleSave("draft");
+          }} disabled={isSaving}>{t("editor_draft")}</Button>
+          <Button size="sm" onClick={() => {
+            void handleSave("published");
+          }} disabled={isSaving}><Save className="mr-1 h-4 w-4" />{isSaving ? t("loading") : t("editor_publish")}</Button>
         </div>
       </div>
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20">{error}</div>}
       {isUploading && <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-600 dark:bg-blue-900/20 flex items-center gap-2"><ImageIcon className="h-4 w-4 animate-pulse" />{t("editor_image_uploading")}</div>}
       <div className="flex flex-wrap gap-3">
-        <Input placeholder={t("editor_title_placeholder")} value={title} onChange={(e) => setTitle(e.target.value)} className="flex-1 text-lg font-bold" />
-        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"><option value="">{t("editor_category_select")}</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+        <Input placeholder={t("editor_title_placeholder")} value={title} onChange={(e) => {
+          setTitle(e.target.value);
+        }} className="flex-1 text-lg font-bold" />
+        <select value={categoryId} title={t("editor_category_select")} aria-label={t("editor_category_select")} onChange={(e) => {
+          setCategoryId(e.target.value);
+        }} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text"><option value="">{t("editor_category_select")}</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
       </div>
       <div className="flex gap-3">
-        <Input placeholder={t("editor_tag_placeholder")} value={tags} onChange={(e) => setTags(e.target.value)} className="flex-1" />
+        <Input placeholder={t("editor_tag_placeholder")} value={tags} onChange={(e) => {
+          setTags(e.target.value);
+        }} className="flex-1" />
         <div className="flex flex-1 items-center gap-2">
-          <Input placeholder={t("editor_cover_image_placeholder")} value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="flex-1" />
-          <label className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs text-[var(--color-text)] hover:bg-[var(--color-background)]">
+          <Input placeholder={t("editor_cover_image_placeholder")} value={coverImage} onChange={(e) => {
+            setCoverImage(e.target.value);
+          }} className="flex-1" />
+          <label className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-xs text-text hover:bg-background">
             <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={isCoverUploading} />
             {isCoverUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
             {isCoverUploading ? t("uploading") : t("upload")}
           </label>
-          {coverImage && <button onClick={() => setCoverImage("")} className="shrink-0 text-xs text-red-500 hover:underline">{t("editor_cover_delete")}</button>}
+          {coverImage && <button type="button" onClick={() => {
+            setCoverImage("");
+          }} className="shrink-0 text-xs text-red-500 hover:underline">{t("editor_cover_delete")}</button>}
         </div>
       </div>
-      <div className="flex min-h-[500px] gap-4">
+      <div className="flex min-h-125 gap-4">
         {(viewMode === "edit" || viewMode === "split") && (
           <div className={viewMode === "split" ? "w-1/2" : "w-full"}>
             <textarea
               ref={textareaRef}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                setContent(e.target.value);
+              }}
               onPaste={handlePaste}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               placeholder={t("editor_content_placeholder")}
-              className="h-full min-h-[500px] w-full resize-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 font-mono text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              className="h-full min-h-125 w-full resize-none rounded-lg border border-border bg-surface p-4 font-mono text-sm text-text placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         )}
-        {(viewMode === "preview" || viewMode === "split") && <Card className={viewMode === "split" ? "w-1/2 overflow-auto" : "w-full"}><CardContent className="pt-6"><div className="prose prose-lg max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: preview }} />{!preview && <p className="text-[var(--color-text-secondary)]">{t("preview")}...</p>}</CardContent></Card>}
+        {(viewMode === "preview" || viewMode === "split") && <Card className={viewMode === "split" ? "w-1/2 overflow-auto" : "w-full"}><CardContent className="pt-6"><div className="prose prose-lg max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: preview }} />{!preview && <p className="text-text-secondary">{t("preview")}...</p>}</CardContent></Card>}
       </div>
     </div>
   );

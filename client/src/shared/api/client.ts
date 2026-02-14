@@ -3,6 +3,25 @@ const API_BASE = "/api";
 class ApiClient {
   private token: string | null = null;
 
+  private async getErrorMessage(res: Response, fallback: string): Promise<string> {
+    const text = await res.text().catch(() => "");
+    if (!text) return fallback;
+
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (typeof parsed === "object" && parsed !== null && "error" in parsed) {
+        const errorValue = (parsed as { error?: unknown }).error;
+        if (typeof errorValue === "string" && errorValue.trim()) {
+          return errorValue;
+        }
+      }
+    } catch {
+      return fallback;
+    }
+
+    return fallback;
+  }
+
   setToken(token: string | null) {
     this.token = token;
     if (token) { localStorage.setItem("zlog_token", token); }
@@ -10,23 +29,22 @@ class ApiClient {
   }
 
   getToken(): string | null {
-    if (!this.token) { this.token = localStorage.getItem("zlog_token"); }
+    this.token ??= localStorage.getItem("zlog_token");
     return this.token;
   }
 
   private getHeaders(contentType?: string): HeadersInit {
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
     if (contentType) headers["Content-Type"] = contentType;
     const token = this.getToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (token) headers.Authorization = `Bearer ${token}`;
     return headers;
   }
 
   async get<T>(path: string): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, { headers: this.getHeaders() });
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: "요청에 실패했습니다." }));
-      throw new Error((error as { error?: string }).error ?? `HTTP ${res.status}`);
+      throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }
     return res.json() as Promise<T>;
   }
@@ -37,8 +55,7 @@ class ApiClient {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: "요청에 실패했습니다." }));
-      throw new Error((error as { error?: string }).error ?? `HTTP ${res.status}`);
+      throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }
     return res.json() as Promise<T>;
   }
@@ -49,8 +66,7 @@ class ApiClient {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: "요청에 실패했습니다." }));
-      throw new Error((error as { error?: string }).error ?? `HTTP ${res.status}`);
+      throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }
     return res.json() as Promise<T>;
   }
@@ -62,20 +78,18 @@ class ApiClient {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: "요청에 실패했습니다." }));
-      throw new Error((error as { error?: string }).error ?? `HTTP ${res.status}`);
+      throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }
     return res.json() as Promise<T>;
   }
 
   async upload<T>(path: string, formData: FormData): Promise<T> {
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
     const token = this.getToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: formData });
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: "업로드에 실패했습니다." }));
-      throw new Error((error as { error?: string }).error ?? `HTTP ${res.status}`);
+      throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }
     return res.json() as Promise<T>;
   }

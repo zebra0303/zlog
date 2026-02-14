@@ -21,13 +21,14 @@ function SubscribeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const { t } = useI18n();
+  const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
 
-  const callbackUrl = blogUrl.trim()
-    ? `${blogUrl.trim().replace(/\/$/, "")}/api/federation/webhook`
+  const callbackUrl = normalizedBlogUrl
+    ? `${normalizedBlogUrl}/api/federation/webhook`
     : "";
 
   const handleSubscribe = async () => {
-    if (!blogUrl.trim()) {
+    if (!normalizedBlogUrl) {
       setResult({ type: "error", text: t("cat_subscribe_enter_url") });
       return;
     }
@@ -37,11 +38,11 @@ function SubscribeDialog({
       const remoteSiteUrl = window.location.origin;
       await api.post("/federation/subscribe", {
         categoryId: category.id,
-        subscriberUrl: blogUrl.trim().replace(/\/$/, ""),
+        subscriberUrl: normalizedBlogUrl,
         callbackUrl,
       });
       try {
-        await fetch(`${blogUrl.trim().replace(/\/$/, "")}/api/federation/local-subscribe`, {
+        await fetch(`${normalizedBlogUrl}/api/federation/local-subscribe`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -67,7 +68,7 @@ function SubscribeDialog({
   };
 
   const handleUnsubscribe = async () => {
-    if (!blogUrl.trim()) {
+    if (!normalizedBlogUrl) {
       setResult({ type: "error", text: t("cat_subscribe_enter_url") });
       return;
     }
@@ -77,10 +78,10 @@ function SubscribeDialog({
       const remoteSiteUrl = window.location.origin;
       await api.post("/federation/unsubscribe", {
         categoryId: category.id,
-        subscriberUrl: blogUrl.trim().replace(/\/$/, ""),
+        subscriberUrl: normalizedBlogUrl,
       });
       try {
-        await fetch(`${blogUrl.trim().replace(/\/$/, "")}/api/federation/local-unsubscribe`, {
+        await fetch(`${normalizedBlogUrl}/api/federation/local-unsubscribe`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -106,29 +107,31 @@ function SubscribeDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg rounded-xl border border-border bg-surface shadow-xl"
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
       >
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] p-4">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
-            <Rss className="h-5 w-5 text-[var(--color-primary)]" />
-            {t("cat_subscribe_title")} "{category.name}" {t("cat_subscribe_category")}
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
+            <Rss className="h-5 w-5 text-primary" />
+            {t("cat_subscribe_title")} &quot;{category.name}&quot; {t("cat_subscribe_category")}
           </h2>
-          <button onClick={onClose} className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
+          <button type="button" onClick={onClose} aria-label={t("close")} className="text-text-secondary hover:text-text">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="p-4">
-          <div className="mb-4 rounded-lg bg-[var(--color-background)] p-3">
+          <div className="mb-4 rounded-lg bg-background p-3">
             <div className="mb-2 flex items-start gap-2">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary)]" />
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div>
-                <h3 className="text-sm font-medium text-[var(--color-text)]">{t("cat_subscribe_what")}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                <h3 className="text-sm font-medium text-text">{t("cat_subscribe_what")}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-text-secondary">
                   {t("cat_subscribe_desc1")} {t("cat_subscribe_desc2")}
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                <p className="mt-1 text-xs leading-relaxed text-text-secondary">
                   {t("cat_subscribe_desc3")}
                 </p>
               </div>
@@ -137,17 +140,19 @@ function SubscribeDialog({
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">{t("cat_subscribe_blog_url")}</label>
+              <label className="mb-1 block text-sm font-medium text-text">{t("cat_subscribe_blog_url")}</label>
               <Input
                 placeholder="https://myblog.example.com"
                 value={blogUrl}
-                onChange={(e) => setBlogUrl(e.target.value)}
+                onChange={(e) => {
+                  setBlogUrl(e.target.value);
+                }}
               />
             </div>
             {callbackUrl && (
               <div>
-                <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">{t("cat_subscribe_callback")}</label>
-                <div className="flex items-center gap-2 rounded-lg bg-[var(--color-background)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
+                <label className="mb-1 block text-xs text-text-secondary">{t("cat_subscribe_callback")}</label>
+                <div className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-xs text-text-secondary">
                   <ExternalLink className="h-3 w-3 shrink-0" />
                   <span className="truncate">{callbackUrl}</span>
                 </div>
@@ -163,10 +168,10 @@ function SubscribeDialog({
             )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={handleUnsubscribe} disabled={isSubmitting || !blogUrl.trim()}>
+              <Button variant="outline" size="sm" onClick={handleUnsubscribe} disabled={isSubmitting || !normalizedBlogUrl}>
                 {t("cat_unsubscribe")}
               </Button>
-              <Button size="sm" onClick={handleSubscribe} disabled={isSubmitting || !blogUrl.trim()}>
+              <Button size="sm" onClick={handleSubscribe} disabled={isSubmitting || !normalizedBlogUrl}>
                 <Rss className="mr-1 h-4 w-4" />
                 {isSubmitting ? t("cat_subscribe_processing") : t("cat_subscribe_button")}
               </Button>
@@ -208,16 +213,18 @@ export default function CategoryDetailPage() {
         setPosts(d);
         setIsLoading(false);
       })
-      .catch(() => setIsLoading(false));
+      .catch(() => {
+        setIsLoading(false);
+      });
   }, [slug, currentPage]);
 
   if (!category && !isLoading)
     return (
-      <p className="py-20 text-center text-[var(--color-text-secondary)]">{t("cat_not_found")}</p>
+      <p className="py-20 text-center text-text-secondary">{t("cat_not_found")}</p>
     );
 
   return (
-    <div>
+    <div className="min-w-0 overflow-x-hidden">
       {category && (
         <>
           <SEOHead title={category.name} description={category.description ?? undefined} />
@@ -225,9 +232,9 @@ export default function CategoryDetailPage() {
             <CardContent className="pt-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h1 className="mb-2 text-2xl font-bold text-[var(--color-text)]">{category.name}</h1>
+                  <h1 className="mb-2 text-2xl font-bold text-text">{category.name}</h1>
                   {category.description && (
-                    <p className="mb-3 text-[var(--color-text-secondary)]">{category.description}</p>
+                    <p className="mb-3 text-text-secondary">{category.description}</p>
                   )}
                   <div className="flex flex-wrap gap-3">
                     <Badge variant="secondary">{category.postCount} {t("cat_posts_count")}</Badge>
@@ -239,7 +246,7 @@ export default function CategoryDetailPage() {
                     href={`/category/${category.slug}/rss.xml`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm text-text-secondary transition-colors hover:border-primary hover:text-primary"
                     title="RSS Feed"
                   >
                     <Rss className="h-4 w-4" />
@@ -249,7 +256,9 @@ export default function CategoryDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowSubscribe(true)}
+                      onClick={() => {
+                        setShowSubscribe(true);
+                      }}
                     >
                       <Rss className="mr-1 h-4 w-4" />
                       {t("cat_subscribe")}
@@ -294,13 +303,18 @@ export default function CategoryDetailPage() {
           </div>
         </>
       ) : (
-        <p className="py-10 text-center text-[var(--color-text-secondary)]">
+        <p className="py-10 text-center text-text-secondary">
           {t("cat_no_posts")}
         </p>
       )}
 
       {showSubscribe && category && (
-        <SubscribeDialog category={category} onClose={() => setShowSubscribe(false)} />
+        <SubscribeDialog
+          category={category}
+          onClose={() => {
+            setShowSubscribe(false);
+          }}
+        />
       )}
     </div>
   );

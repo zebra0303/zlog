@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { MapPin, Briefcase, Building2, Globe, Mail, Github, Twitter, Linkedin, Youtube, Facebook, Instagram, MessageCircle, Cloud, AtSign, Rss, Link as LinkIcon, Settings } from "lucide-react";
+import { MapPin, Briefcase, Building2, Globe, Mail, MessageCircle, Cloud, AtSign, Rss, Link as LinkIcon, Settings } from "lucide-react";
 import { Card, CardContent, Button, DefaultAvatar, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -8,16 +8,26 @@ import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useI18n } from "@/shared/i18n";
 import type { ProfileWithStats } from "@zlog/shared";
 
-const ICONS: Record<string, React.ReactNode> = { github:<Github className="h-5 w-5"/>, twitter:<Twitter className="h-5 w-5"/>, instagram:<Instagram className="h-5 w-5"/>, linkedin:<Linkedin className="h-5 w-5"/>, youtube:<Youtube className="h-5 w-5"/>, facebook:<Facebook className="h-5 w-5"/>, threads:<AtSign className="h-5 w-5"/>, mastodon:<MessageCircle className="h-5 w-5"/>, bluesky:<Cloud className="h-5 w-5"/>, website:<Globe className="h-5 w-5"/>, email:<Mail className="h-5 w-5"/>, rss:<Rss className="h-5 w-5"/>, custom:<LinkIcon className="h-5 w-5"/> };
+const ICONS: Record<string, React.ReactNode> = { github:<LinkIcon className="h-5 w-5"/>, twitter:<LinkIcon className="h-5 w-5"/>, instagram:<LinkIcon className="h-5 w-5"/>, linkedin:<LinkIcon className="h-5 w-5"/>, youtube:<LinkIcon className="h-5 w-5"/>, facebook:<LinkIcon className="h-5 w-5"/>, threads:<AtSign className="h-5 w-5"/>, mastodon:<MessageCircle className="h-5 w-5"/>, bluesky:<Cloud className="h-5 w-5"/>, website:<Globe className="h-5 w-5"/>, email:<Mail className="h-5 w-5"/>, rss:<Rss className="h-5 w-5"/>, custom:<LinkIcon className="h-5 w-5"/> };
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileWithStats | null>(null); const [aboutHtml, setAboutHtml] = useState(""); const [isLoading, setIsLoading] = useState(true); const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
-  useEffect(() => { void api.get<ProfileWithStats>("/profile").then(async (d) => { setProfile(d); if (d.aboutMe) setAboutHtml(await parseMarkdown(d.aboutMe)); setIsLoading(false); }).catch(() => setIsLoading(false)); }, []);
+  useEffect(() => {
+    void api.get<ProfileWithStats>("/profile")
+      .then(async (d) => {
+        setProfile(d);
+        if (d.aboutMe) setAboutHtml(await parseMarkdown(d.aboutMe));
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }, []);
   if (isLoading) return <div className="flex flex-col gap-4"><Skeleton className="h-32 w-full" /><Skeleton className="h-48 w-full" /></div>;
   if (!profile) return <p className="text-center text-[var(--color-text-secondary)]">{t("profile_not_found")}</p>;
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden">
       <SEOHead title={profile.displayName} description={profile.bio ?? undefined} />
       <Card><CardContent className="pt-6">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">

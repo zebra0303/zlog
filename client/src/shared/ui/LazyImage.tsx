@@ -16,22 +16,37 @@ export function LazyImage({ src, alt, className, fallback, ...props }: LazyImage
     const el = imgRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry?.isIntersecting) { setIsInView(true); observer.disconnect(); } },
+      ([entry]) => {
+        if (!entry) return;
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
       { rootMargin: CONFIG.LAZY_LOAD_MARGIN },
     );
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   if (hasError && fallback) return <>{fallback}</>;
 
   return (
     <div ref={imgRef} className={cn("relative overflow-hidden", className)}>
-      {!isLoaded && <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20" />}
+      {!isLoaded && <div className="absolute inset-0 animate-pulse bg-linear-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20" />}
       {isInView && (
         <img src={src} alt={alt}
-          className={cn("h-full w-full object-cover transition-opacity duration-[400ms]", isLoaded ? "opacity-100" : "opacity-0")}
-          onLoad={() => setIsLoaded(true)} onError={() => setHasError(true)} {...props} />
+          className={cn("h-full w-full object-cover transition-opacity duration-400", isLoaded ? "opacity-100" : "opacity-0")}
+          onLoad={() => {
+            setIsLoaded(true);
+          }}
+          onError={() => {
+            setHasError(true);
+          }}
+          {...props}
+        />
       )}
     </div>
   );

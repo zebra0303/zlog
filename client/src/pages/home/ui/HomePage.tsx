@@ -28,7 +28,15 @@ export default function HomePage() {
     params.set("page", String(currentPage));
     if (currentCategory) params.set("category", currentCategory);
     if (currentSearch) params.set("search", currentSearch);
-    void api.get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`).then((data) => { setPosts(data); setIsLoading(false); }).catch(() => setIsLoading(false));
+    void api
+      .get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`)
+      .then((data) => {
+        setPosts(data);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
   }, [currentPage, currentCategory, currentSearch]);
 
   // Sync searchInput when URL search param changes externally (e.g. clearing category)
@@ -48,7 +56,9 @@ export default function HomePage() {
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => updateSearch(value), 300);
+    debounceRef.current = setTimeout(() => {
+      updateSearch(value);
+    }, 300);
   };
 
   const clearSearch = () => {
@@ -75,15 +85,17 @@ export default function HomePage() {
 
       {/* 검색 */}
       <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
         <Input
           value={searchInput}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={(e) => {
+            handleSearchChange(e.target.value);
+          }}
           placeholder={t("home_search_placeholder")}
           className="pl-9 pr-8"
         />
         {searchInput && (
-          <button onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text)]" aria-label={t("home_search_clear")}>
+          <button type="button" onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text" aria-label={t("home_search_clear")}>
             <X className="h-4 w-4" />
           </button>
         )}
@@ -96,11 +108,11 @@ export default function HomePage() {
         <div className="mt-8"><Pagination currentPage={posts.page} totalPages={posts.totalPages} onPageChange={handlePageChange} /></div></>
       ) : hasSearch ? (
         <div className="py-20 text-center">
-          <p className="text-lg text-[var(--color-text-secondary)]">{t("home_no_search_results", { query: currentSearch })}</p>
-          <button onClick={clearSearch} className="mt-3 text-sm text-[var(--color-primary)] hover:underline">{t("home_search_clear")}</button>
+          <p className="text-lg text-text-secondary">{t("home_no_search_results", { query: currentSearch })}</p>
+          <button type="button" onClick={clearSearch} className="mt-3 text-sm text-primary hover:underline">{t("home_search_clear")}</button>
         </div>
       ) : (
-        <div className="py-20 text-center"><p className="text-lg text-[var(--color-text-secondary)]">{t("home_no_posts")}</p><p className="mt-2 text-sm text-[var(--color-text-secondary)]">{t("home_write_first")}</p></div>
+        <div className="py-20 text-center"><p className="text-lg text-text-secondary">{t("home_no_posts")}</p><p className="mt-2 text-sm text-text-secondary">{t("home_write_first")}</p></div>
       )}
     </div>
   );

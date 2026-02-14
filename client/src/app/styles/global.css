@@ -22,13 +22,40 @@
   --color-border: #2D2D3A;
 }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: var(--color-background);
   color: var(--color-text);
   transition: background-color 0.2s, color 0.2s;
+  overflow-x: hidden;
+}
+
+#root {
+  overflow-x: hidden;
+}
+
+.prose {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.prose img,
+.prose video,
+.prose iframe,
+.prose table,
+.prose pre {
+  max-width: 100%;
+}
+
+.prose table {
+  display: block;
+  overflow-x: auto;
 }
 
 *:focus-visible {
