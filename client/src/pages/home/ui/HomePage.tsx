@@ -174,16 +174,16 @@ export default function HomePage() {
           href={currentCategory ? `/category/${currentCategory}/rss.xml` : "/rss.xml"}
           target="_blank"
           rel="noopener noreferrer"
-          className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-sm transition-colors"
+          className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
           title="RSS Feed"
         >
-          <Rss className="h-4 w-4" />
+          <Rss className="h-3.5 w-3.5" />
           RSS
         </a>
         {selectedCategory && !isAuthenticated && (
-          <Button variant="outline" size="sm" className="shrink-0" onClick={() => { setShowSubscribe(true); }}>
-            <Rss className="mr-1 h-4 w-4" />{t("cat_subscribe")}
-          </Button>
+          <button type="button" className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-semibold text-text-secondary transition-colors hover:border-primary hover:text-primary" onClick={() => { setShowSubscribe(true); }}>
+            <Rss className="h-3.5 w-3.5" />{t("cat_subscribe")}
+          </button>
         )}
       </div>
 
