@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
-import { Search, X } from "lucide-react";
+import { Search, X, Rss } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
 import { Input, Pagination, SEOHead, Skeleton } from "@/shared/ui";
@@ -78,9 +78,14 @@ export default function HomePage() {
   return (
     <div>
       <SEOHead title={t("home_title")} />
-      <div className="mb-4 flex flex-wrap gap-2">
-        <CategoryBadge slug="all" name={t("home_all")} isActive={!currentCategory} />
-        {categories.map((cat) => <CategoryBadge key={cat.id} slug={cat.slug} name={cat.name} isActive={currentCategory === cat.slug} />)}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="flex flex-1 flex-wrap gap-2">
+          <CategoryBadge slug="all" name={t("home_all")} isActive={!currentCategory} />
+          {categories.map((cat) => <CategoryBadge key={cat.id} slug={cat.slug} name={cat.name} isActive={currentCategory === cat.slug} />)}
+        </div>
+        <a href="/rss.xml" target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-400 dark:hover:bg-orange-900" aria-label="RSS Feed">
+          <Rss className="h-3.5 w-3.5" />RSS
+        </a>
       </div>
 
       {/* 검색 */}
