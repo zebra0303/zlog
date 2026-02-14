@@ -22,7 +22,8 @@ oauthRoute.get("/github/callback", async (c) => {
 
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return c.json({ error: "GitHub OAuth가 설정되지 않았습니다." }, 500);
+  if (!clientId || !clientSecret)
+    return c.json({ error: "GitHub OAuth가 설정되지 않았습니다." }, 500);
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/github/callback`;
 
@@ -30,7 +31,12 @@ oauthRoute.get("/github/callback", async (c) => {
   const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code, redirect_uri: redirectUri }),
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: redirectUri,
+    }),
   });
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
   if (!tokenData.access_token) return c.json({ error: "토큰 발급 실패" }, 400);
@@ -39,7 +45,14 @@ oauthRoute.get("/github/callback", async (c) => {
   const userRes = await fetch("https://api.github.com/user", {
     headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: "application/json" },
   });
-  const user = (await userRes.json()) as { id: number; login: string; name?: string; avatar_url?: string; email?: string; html_url?: string };
+  const user = (await userRes.json()) as {
+    id: number;
+    login: string;
+    name?: string;
+    avatar_url?: string;
+    email?: string;
+    html_url?: string;
+  };
 
   // 이메일이 없으면 별도 API로 조회
   let email = user.email;
@@ -48,7 +61,11 @@ oauthRoute.get("/github/callback", async (c) => {
       const emailRes = await fetch("https://api.github.com/user/emails", {
         headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: "application/json" },
       });
-      const emails = (await emailRes.json()) as { email: string; primary: boolean; verified: boolean }[];
+      const emails = (await emailRes.json()) as {
+        email: string;
+        primary: boolean;
+        verified: boolean;
+      }[];
       email = emails.find((e) => e.primary && e.verified)?.email ?? emails[0]?.email ?? undefined;
     } catch {
       // ignore
@@ -61,7 +78,14 @@ oauthRoute.get("/github/callback", async (c) => {
   const profileUrl = user.html_url ?? null;
 
   // commenter upsert
-  const commenter = await upsertCommenter("github", providerId, displayName, email ?? null, avatarUrl, profileUrl);
+  const commenter = upsertCommenter(
+    "github",
+    providerId,
+    displayName,
+    email ?? null,
+    avatarUrl,
+    profileUrl,
+  );
 
   // 클라이언트로 리다이렉트 (commenter 정보를 쿼리 파라미터로)
   const params = new URLSearchParams({
@@ -89,7 +113,8 @@ oauthRoute.get("/google/callback", async (c) => {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return c.json({ error: "Google OAuth가 설정되지 않았습니다." }, 500);
+  if (!clientId || !clientSecret)
+    return c.json({ error: "Google OAuth가 설정되지 않았습니다." }, 500);
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/google/callback`;
 
@@ -97,7 +122,13 @@ oauthRoute.get("/google/callback", async (c) => {
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
+    body: new URLSearchParams({
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    }),
   });
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
   if (!tokenData.access_token) return c.json({ error: "토큰 발급 실패" }, 400);
@@ -106,14 +137,19 @@ oauthRoute.get("/google/callback", async (c) => {
   const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
-  const user = (await userRes.json()) as { id: string; name?: string; email?: string; picture?: string };
+  const user = (await userRes.json()) as {
+    id: string;
+    name?: string;
+    email?: string;
+    picture?: string;
+  };
 
   const providerId = user.id;
   const displayName = user.name ?? "Google User";
   const email = user.email ?? null;
   const avatarUrl = user.picture ?? null;
 
-  const commenter = await upsertCommenter("google", providerId, displayName, email, avatarUrl, null);
+  const commenter = upsertCommenter("google", providerId, displayName, email, avatarUrl, null);
 
   const params = new URLSearchParams({
     commenterId: commenter.id,
@@ -125,7 +161,7 @@ oauthRoute.get("/google/callback", async (c) => {
 });
 
 // ============ 현재 commenter 정보 조회 ============
-oauthRoute.get("/commenter/:id", async (c) => {
+oauthRoute.get("/commenter/:id", (c) => {
   const id = c.req.param("id");
   const commenter = db.select().from(schema.commenters).where(eq(schema.commenters.id, id)).get();
   if (!commenter) return c.json({ error: "찾을 수 없습니다." }, 404);
@@ -141,7 +177,7 @@ oauthRoute.get("/providers", (c) => {
 });
 
 // ============ Helper ============
-async function upsertCommenter(
+function upsertCommenter(
   provider: "github" | "google",
   providerId: string,
   displayName: string,
@@ -153,7 +189,9 @@ async function upsertCommenter(
   const existing = db
     .select()
     .from(schema.commenters)
-    .where(and(eq(schema.commenters.provider, provider), eq(schema.commenters.providerId, providerId)))
+    .where(
+      and(eq(schema.commenters.provider, provider), eq(schema.commenters.providerId, providerId)),
+    )
     .get();
 
   if (existing) {
@@ -166,9 +204,29 @@ async function upsertCommenter(
 
   const id = generateId();
   db.insert(schema.commenters)
-    .values({ id, provider, providerId, displayName, email, avatarUrl, profileUrl, createdAt: now, updatedAt: now })
+    .values({
+      id,
+      provider,
+      providerId,
+      displayName,
+      email,
+      avatarUrl,
+      profileUrl,
+      createdAt: now,
+      updatedAt: now,
+    })
     .run();
-  return { id, provider, providerId, displayName, email, avatarUrl, profileUrl, createdAt: now, updatedAt: now };
+  return {
+    id,
+    provider,
+    providerId,
+    displayName,
+    email,
+    avatarUrl,
+    profileUrl,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 export default oauthRoute;

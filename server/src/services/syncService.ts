@@ -7,14 +7,16 @@
 
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { fixRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
 
 /**
  * 단일 구독의 글을 pull 동기화
  */
-export async function syncSubscription(sub: typeof schema.categorySubscriptions.$inferSelect): Promise<number> {
+export async function syncSubscription(
+  sub: typeof schema.categorySubscriptions.$inferSelect,
+): Promise<number> {
   const remoteCat = db
     .select()
     .from(schema.remoteCategories)
@@ -54,7 +56,7 @@ export async function syncSubscription(sub: typeof schema.categorySubscriptions.
   let synced = 0;
 
   for (const post of posts) {
-    const rawUri = post.uri || `${remoteBlog.siteUrl}/posts/${post.id}`;
+    const rawUri = post.uri ?? `${remoteBlog.siteUrl}/posts/${post.id}`;
     const remoteUri = rawUri.replace(/^https?:\/\/[^/]+/, remoteBlog.siteUrl);
     const fixedContent = fixRemoteContentUrls(post.content, remoteBlog.siteUrl);
     const fixedCover = fixRemoteUrl(post.coverImage ?? null, remoteBlog.siteUrl);
@@ -138,7 +140,10 @@ export async function syncAllSubscriptions(): Promise<void> {
         .from(schema.remoteCategories)
         .where(eq(schema.remoteCategories.id, sub.remoteCategoryId))
         .get();
-      console.error(`⚠️ 구독 동기화 실패 (${remoteCat?.name ?? sub.id}):`, err instanceof Error ? err.message : err);
+      console.error(
+        `⚠️ 구독 동기화 실패 (${remoteCat?.name ?? sub.id}):`,
+        err instanceof Error ? err.message : err,
+      );
     }
   }
 

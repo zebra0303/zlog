@@ -10,7 +10,7 @@ import { triggerStaleSync } from "../services/syncService.js";
 
 const postsRoute = new Hono();
 
-postsRoute.get("/", async (c) => {
+postsRoute.get("/", (c) => {
   const page = Math.max(1, Number(c.req.query("page")) || 1);
   const categorySlug = c.req.query("category");
   const search = c.req.query("search");
@@ -35,6 +35,7 @@ postsRoute.get("/", async (c) => {
 
   const conditions: ReturnType<typeof eq>[] = [];
   if (status === "all") {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     conditions.push(or(eq(schema.posts.status, "published"), eq(schema.posts.status, "draft"))!);
   } else {
     conditions.push(eq(schema.posts.status, status as "draft" | "published" | "deleted"));
@@ -84,11 +85,27 @@ postsRoute.get("/", async (c) => {
       .where(eq(schema.postTags.postId, post.id))
       .all();
 
-    return { ...post, category, tags: tagRows, isRemote: false as const, remoteUri: null, remoteBlog: null };
+    return {
+      ...post,
+      category,
+      tags: tagRows,
+      isRemote: false as const,
+      remoteUri: null,
+      remoteBlog: null,
+    };
   });
 
   // published 상태 조회 시 remote_posts도 포함 (검색 제외)
-  let remoteItems: (Omit<(typeof localItems)[number], "isRemote" | "remoteUri" | "remoteBlog"> & { isRemote: boolean; remoteUri: string | null; remoteBlog: { siteUrl: string; displayName: string | null; blogTitle: string | null; avatarUrl: string | null } | null })[] = [];
+  let remoteItems: (Omit<(typeof localItems)[number], "isRemote" | "remoteUri" | "remoteBlog"> & {
+    isRemote: boolean;
+    remoteUri: string | null;
+    remoteBlog: {
+      siteUrl: string;
+      displayName: string | null;
+      blogTitle: string | null;
+      avatarUrl: string | null;
+    } | null;
+  })[] = [];
   if (status === "published" && !search) {
     const remoteConditions = [eq(schema.remotePosts.remoteStatus, "published")];
     if (categoryId) {
@@ -103,9 +120,21 @@ postsRoute.get("/", async (c) => {
 
     remoteItems = remotePostsResult.map((rp) => {
       const cat = rp.localCategoryId
-        ? db.select({ id: schema.categories.id, name: schema.categories.name, slug: schema.categories.slug }).from(schema.categories).where(eq(schema.categories.id, rp.localCategoryId)).get() ?? null
+        ? (db
+            .select({
+              id: schema.categories.id,
+              name: schema.categories.name,
+              slug: schema.categories.slug,
+            })
+            .from(schema.categories)
+            .where(eq(schema.categories.id, rp.localCategoryId))
+            .get() ?? null)
         : null;
-      const rb = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, rp.remoteBlogId)).get();
+      const rb = db
+        .select()
+        .from(schema.remoteBlogs)
+        .where(eq(schema.remoteBlogs.id, rp.remoteBlogId))
+        .get();
       return {
         id: rp.id,
         categoryId: rp.localCategoryId,
@@ -122,14 +151,23 @@ postsRoute.get("/", async (c) => {
         category: cat,
         tags: [],
         isRemote: true as const,
-        remoteUri: rp.remoteUri ?? null,
-        remoteBlog: rb ? { siteUrl: rb.siteUrl, displayName: rb.displayName, blogTitle: rb.blogTitle, avatarUrl: rb.avatarUrl } : null,
+        remoteUri: rp.remoteUri,
+        remoteBlog: rb
+          ? {
+              siteUrl: rb.siteUrl,
+              displayName: rb.displayName,
+              blogTitle: rb.blogTitle,
+              avatarUrl: rb.avatarUrl,
+            }
+          : null,
       };
     });
   }
 
   // 합치고 날짜 기준으로 정렬
-  const allItems = [...localItems, ...remoteItems].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const allItems = [...localItems, ...remoteItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
   // 원격 게시글이 포함될 때 stale한 구독을 백그라운드 동기화 트리거
   if (remoteItems.length > 0) {
@@ -140,10 +178,16 @@ postsRoute.get("/", async (c) => {
   const remoteTotal = remoteItems.length;
   const combinedTotal = total + remoteTotal;
 
-  return c.json({ items: allItems, total: combinedTotal, page, perPage, totalPages: Math.ceil(combinedTotal / perPage) });
+  return c.json({
+    items: allItems,
+    total: combinedTotal,
+    page,
+    perPage,
+    totalPages: Math.ceil(combinedTotal / perPage),
+  });
 });
 
-postsRoute.get("/:param", async (c) => {
+postsRoute.get("/:param", (c) => {
   const param = c.req.param("param");
   // UUID v7 패턴이면 ID로 조회, 아니면 slug로 조회
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
@@ -205,7 +249,7 @@ postsRoute.post("/", authMiddleware, async (c) => {
   const slug = createUniqueSlug(body.title, existingSlugs);
   const now = new Date().toISOString();
   const id = generateId();
-  const excerpt = body.excerpt ?? body.content.replace(/[#*`>\-\[\]()!]/g, "").slice(0, 200);
+  const excerpt = body.excerpt ?? body.content.replace(/[#*`>\-[\]()!]/g, "").slice(0, 200);
 
   db.insert(schema.posts)
     .values({
@@ -216,7 +260,7 @@ postsRoute.post("/", authMiddleware, async (c) => {
       content: body.content,
       excerpt,
       coverImage: body.coverImage ?? null,
-      status: (body.status as "draft" | "published") ?? "draft",
+      status: (body.status ?? "draft") as "draft" | "published",
       viewCount: 0,
       createdAt: now,
       updatedAt: now,
@@ -282,7 +326,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
   if (body.content !== undefined) {
     updateData.content = body.content;
     if (!body.excerpt) {
-      updateData.excerpt = body.content.replace(/[#*`>\-\[\]()!]/g, "").slice(0, 200);
+      updateData.excerpt = body.content.replace(/[#*`>\-[\]()!]/g, "").slice(0, 200);
     }
   }
   if (body.excerpt !== undefined) updateData.excerpt = body.excerpt;
@@ -324,7 +368,8 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
         }
       } else if (existing.status === "published" && !body.status) {
         // published 상태를 유지하면서 내용이 변경된 경우 (커버이미지, 본문 등)
-        const contentChanged = (body.title !== undefined && body.title !== existing.title) ||
+        const contentChanged =
+          (body.title !== undefined && body.title !== existing.title) ||
           (body.content !== undefined && body.content !== existing.content) ||
           (body.coverImage !== undefined && body.coverImage !== existing.coverImage) ||
           (body.excerpt !== undefined && body.excerpt !== existing.excerpt) ||
@@ -340,7 +385,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
   return c.json(result);
 });
 
-postsRoute.delete("/:id", authMiddleware, async (c) => {
+postsRoute.delete("/:id", authMiddleware, (c) => {
   const id = c.req.param("id");
   const existing = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
   if (!existing) {

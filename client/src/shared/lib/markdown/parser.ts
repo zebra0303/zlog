@@ -61,8 +61,8 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     const formatPromises = matches
       .filter((m) => m[1] && isFormattable(m[1]))
       .map(async (m) => {
-        const lang = m[1] as string;
-        const code = m[2] as string;
+        const lang = m[1] ?? "";
+        const code = m[2] ?? "";
         const formatted = await formatCode(code, lang);
         return { original: m[0], formatted: `\`\`\`${lang}\n${formatted}\n\`\`\`` };
       });

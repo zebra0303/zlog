@@ -12,21 +12,23 @@ const commentsRoute = new Hono();
  * HTML 태그 및 XSS 위험 요소 제거 — 평문 텍스트만 허용
  */
 function sanitizePlainText(input: string): string {
-  return input
-    // HTML 태그 모두 제거
-    .replace(/<[^>]*>/g, "")
-    // HTML 엔티티 인코딩되지 않은 위험 문자 치환
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    // javascript: / data: URI 스킴 제거
-    .replace(/javascript\s*:/gi, "")
-    .replace(/data\s*:/gi, "")
-    // on* 이벤트 핸들러 패턴 제거
-    .replace(/on\w+\s*=/gi, "")
-    .trim();
+  return (
+    input
+      // HTML 태그 모두 제거
+      .replace(/<[^>]*>/g, "")
+      // HTML 엔티티 인코딩되지 않은 위험 문자 치환
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;")
+      // javascript: / data: URI 스킴 제거
+      .replace(/javascript\s*:/gi, "")
+      .replace(/data\s*:/gi, "")
+      // on* 이벤트 핸들러 패턴 제거
+      .replace(/on\w+\s*=/gi, "")
+      .trim()
+  );
 }
 
 /**
@@ -57,7 +59,9 @@ function getCommentMode(): string {
 }
 
 /** JWT 토큰에서 관리자 여부 확인 (optional) */
-async function isAdmin(c: { req: { header: (name: string) => string | undefined } }): Promise<boolean> {
+async function isAdmin(c: {
+  req: { header: (name: string) => string | undefined };
+}): Promise<boolean> {
   const authHeader = c.req.header("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return false;
   const token = authHeader.slice(7);
@@ -93,7 +97,7 @@ function buildCommentTree(
 }
 
 // ==================== GET 댓글 목록 ====================
-commentsRoute.get("/posts/:postId/comments", async (c) => {
+commentsRoute.get("/posts/:postId/comments", (c) => {
   const postId = c.req.param("postId");
   const visitorId = c.req.query("visitorId") ?? "";
 
@@ -123,7 +127,11 @@ commentsRoute.get("/posts/:postId/comments", async (c) => {
           .get()
       : null;
 
-    return { ...stripPassword(comment), likeCount: likeCountResult?.count ?? 0, isLikedByMe: !!isLiked };
+    return {
+      ...stripPassword(comment),
+      likeCount: likeCountResult?.count ?? 0,
+      isLikedByMe: !!isLiked,
+    };
   });
 
   const tree = buildCommentTree(commentsWithLikes);
@@ -145,9 +153,9 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   }>();
 
   // 입력값 sanitize (평문 텍스트만 허용, XSS 방지)
-  const authorName = sanitizePlainText(body.authorName ?? "");
-  const authorEmail = sanitizePlainText(body.authorEmail ?? "");
-  const content = sanitizePlainText(body.content ?? "");
+  const authorName = sanitizePlainText(body.authorName);
+  const authorEmail = sanitizePlainText(body.authorEmail);
+  const content = sanitizePlainText(body.content);
   const authorUrl = body.authorUrl ? sanitizeUrl(body.authorUrl) : null;
   const authorAvatarUrl = body.authorAvatarUrl ? sanitizeUrl(body.authorAvatarUrl) : null;
 
@@ -241,7 +249,7 @@ commentsRoute.put("/comments/:id", async (c) => {
     return c.json({ error: "Comment not found." }, 404);
   }
 
-  const content = sanitizePlainText(body.content ?? "");
+  const content = sanitizePlainText(body.content);
   if (!content) {
     return c.json({ error: "Content is required." }, 400);
   }

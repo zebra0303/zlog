@@ -16,11 +16,7 @@ auth.post("/login", async (c) => {
     return c.json({ error: "이메일과 비밀번호를 입력해주세요." }, 400);
   }
 
-  const ownerRecord = db
-    .select()
-    .from(schema.owner)
-    .where(eq(schema.owner.email, email))
-    .get();
+  const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.email, email)).get();
 
   if (!ownerRecord) {
     return c.json({ error: "이메일 또는 비밀번호가 올바르지 않습니다." }, 401);
@@ -36,7 +32,7 @@ auth.post("/login", async (c) => {
   return c.json({ token, owner: ownerData });
 });
 
-auth.get("/me", authMiddleware, async (c) => {
+auth.get("/me", authMiddleware, (c) => {
   const ownerRecord = c.get("owner");
   const { passwordHash: _, ...ownerData } = ownerRecord;
   return c.json(ownerData);

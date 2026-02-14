@@ -12,16 +12,30 @@ import type { AppVariables } from "../types/env.js";
 
 const settingsRoute = new Hono<{ Variables: AppVariables }>();
 
-settingsRoute.get("/profile", async (c) => {
+settingsRoute.get("/profile", (c) => {
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
   if (!ownerRecord) return c.json({ error: "프로필을 찾을 수 없습니다." }, 404);
 
   const { passwordHash: _, ...ownerData } = ownerRecord;
-  const socialLinksData = db.select().from(schema.socialLinks).orderBy(schema.socialLinks.sortOrder).all();
+  const socialLinksData = db
+    .select()
+    .from(schema.socialLinks)
+    .orderBy(schema.socialLinks.sortOrder)
+    .all();
 
-  const totalPosts = db.select({ count: sql<number>`count(*)` }).from(schema.posts).where(eq(schema.posts.status, "published")).get();
-  const totalCategories = db.select({ count: sql<number>`count(*)` }).from(schema.categories).get();
-  const totalViews = db.select({ total: sql<number>`coalesce(sum(view_count), 0)` }).from(schema.posts).get();
+  const totalPosts = db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.posts)
+    .where(eq(schema.posts.status, "published"))
+    .get();
+  const totalCategories = db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.categories)
+    .get();
+  const totalViews = db
+    .select({ total: sql<number>`coalesce(sum(view_count), 0)` })
+    .from(schema.posts)
+    .get();
 
   return c.json({
     ...ownerData,
@@ -37,8 +51,14 @@ settingsRoute.get("/profile", async (c) => {
 settingsRoute.put("/profile", authMiddleware, async (c) => {
   const ownerId = c.get("ownerId");
   const body = await c.req.json<{
-    displayName?: string; bio?: string; aboutMe?: string; jobTitle?: string;
-    company?: string; location?: string; blogTitle?: string; blogDescription?: string;
+    displayName?: string;
+    bio?: string;
+    aboutMe?: string;
+    jobTitle?: string;
+    company?: string;
+    location?: string;
+    blogTitle?: string;
+    blogDescription?: string;
   }>();
 
   const now = new Date().toISOString();
@@ -66,7 +86,8 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
   if (!file) return c.json({ error: "이미지 파일을 선택해주세요." }, 400);
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (!allowedTypes.includes(file.type)) return c.json({ error: "JPEG, PNG, WebP, GIF 형식만 지원합니다." }, 400);
+  if (!allowedTypes.includes(file.type))
+    return c.json({ error: "JPEG, PNG, WebP, GIF 형식만 지원합니다." }, 400);
   if (file.size > 5 * 1024 * 1024) return c.json({ error: "파일 크기는 최대 5MB입니다." }, 400);
 
   const uploadsBase = path.join(process.cwd(), "uploads", "avatar");
@@ -79,8 +100,14 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
   const buffer = Buffer.from(await file.arrayBuffer());
 
   await sharp(buffer).toFile(path.join(uploadsBase, "original", `${uuid}.${ext}`));
-  await sharp(buffer).resize(256, 256, { fit: "cover" }).webp({ quality: 85 }).toFile(path.join(uploadsBase, "256", `${uuid}.webp`));
-  await sharp(buffer).resize(64, 64, { fit: "cover" }).webp({ quality: 85 }).toFile(path.join(uploadsBase, "64", `${uuid}.webp`));
+  await sharp(buffer)
+    .resize(256, 256, { fit: "cover" })
+    .webp({ quality: 85 })
+    .toFile(path.join(uploadsBase, "256", `${uuid}.webp`));
+  await sharp(buffer)
+    .resize(64, 64, { fit: "cover" })
+    .webp({ quality: 85 })
+    .toFile(path.join(uploadsBase, "64", `${uuid}.webp`));
 
   const current = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
   if (current?.avatarUrl) {
@@ -91,42 +118,62 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
           for (const f of readdirSync(path.join(uploadsBase, dir))) {
             if (f.startsWith(oldUuid)) unlinkSync(path.join(uploadsBase, dir, f));
           }
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
     }
   }
 
   const avatarUrl = `/uploads/avatar/256/${uuid}.webp`;
-  db.update(schema.owner).set({
-    avatarUrl, avatarOriginalName: file.name, avatarMimeType: file.type,
-    avatarSizeBytes: file.size, updatedAt: new Date().toISOString(),
-  }).where(eq(schema.owner.id, ownerId)).run();
+  db.update(schema.owner)
+    .set({
+      avatarUrl,
+      avatarOriginalName: file.name,
+      avatarMimeType: file.type,
+      avatarSizeBytes: file.size,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(schema.owner.id, ownerId))
+    .run();
 
   return c.json({ avatarUrl });
 });
 
-settingsRoute.delete("/profile/avatar", authMiddleware, async (c) => {
+settingsRoute.delete("/profile/avatar", authMiddleware, (c) => {
   const ownerId = c.get("ownerId");
-  db.update(schema.owner).set({
-    avatarUrl: null, avatarOriginalName: null, avatarMimeType: null,
-    avatarSizeBytes: null, updatedAt: new Date().toISOString(),
-  }).where(eq(schema.owner.id, ownerId)).run();
+  db.update(schema.owner)
+    .set({
+      avatarUrl: null,
+      avatarOriginalName: null,
+      avatarMimeType: null,
+      avatarSizeBytes: null,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(schema.owner.id, ownerId))
+    .run();
   return c.json({ message: "아바타가 삭제되었습니다." });
 });
 
-settingsRoute.get("/profile/social-links", async (c) => {
+settingsRoute.get("/profile/social-links", (c) => {
   return c.json(db.select().from(schema.socialLinks).orderBy(schema.socialLinks.sortOrder).all());
 });
 
 settingsRoute.put("/profile/social-links", authMiddleware, async (c) => {
-  const body = await c.req.json<{ links: { platform: string; url: string; label?: string; sortOrder?: number }[] }>();
+  const body = await c.req.json<{
+    links: { platform: string; url: string; label?: string; sortOrder?: number }[];
+  }>();
   db.delete(schema.socialLinks).run();
-  for (let i = 0; i < body.links.length; i++) {
-    const link = body.links[i]!;
-    db.insert(schema.socialLinks).values({
-      id: generateId(), platform: link.platform, url: link.url,
-      label: link.label ?? null, sortOrder: link.sortOrder ?? i,
-    }).run();
+  for (const [i, link] of body.links.entries()) {
+    db.insert(schema.socialLinks)
+      .values({
+        id: generateId(),
+        platform: link.platform,
+        url: link.url,
+        label: link.label ?? null,
+        sortOrder: link.sortOrder ?? i,
+      })
+      .run();
   }
   return c.json(db.select().from(schema.socialLinks).orderBy(schema.socialLinks.sortOrder).all());
 });
@@ -188,7 +235,8 @@ settingsRoute.post("/upload/image", authMiddleware, async (c) => {
   if (!file) return c.json({ error: "이미지 파일을 선택해주세요." }, 400);
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (!allowedTypes.includes(file.type)) return c.json({ error: "JPEG, PNG, WebP, GIF 형식만 지원합니다." }, 400);
+  if (!allowedTypes.includes(file.type))
+    return c.json({ error: "JPEG, PNG, WebP, GIF 형식만 지원합니다." }, 400);
   if (file.size > 10 * 1024 * 1024) return c.json({ error: "파일 크기는 최대 10MB입니다." }, 400);
 
   const uploadsDir = path.join(process.cwd(), "uploads", "images");
@@ -207,7 +255,7 @@ settingsRoute.post("/upload/image", authMiddleware, async (c) => {
   return c.json({ url });
 });
 
-settingsRoute.get("/settings", async (c) => {
+settingsRoute.get("/settings", (c) => {
   const settings = db.select().from(schema.siteSettings).all();
   const result: Record<string, string> = {};
   for (const s of settings) result[s.key] = s.value;
@@ -218,9 +266,16 @@ settingsRoute.put("/settings", authMiddleware, async (c) => {
   const body = await c.req.json<Record<string, string>>();
   const now = new Date().toISOString();
   for (const [key, value] of Object.entries(body)) {
-    const existing = db.select().from(schema.siteSettings).where(eq(schema.siteSettings.key, key)).get();
+    const existing = db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, key))
+      .get();
     if (existing) {
-      db.update(schema.siteSettings).set({ value, updatedAt: now }).where(eq(schema.siteSettings.key, key)).run();
+      db.update(schema.siteSettings)
+        .set({ value, updatedAt: now })
+        .where(eq(schema.siteSettings.key, key))
+        .run();
     } else {
       db.insert(schema.siteSettings).values({ id: generateId(), key, value, updatedAt: now }).run();
     }

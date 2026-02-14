@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 /**
  * 첫 실행 시 테이블 생성 + 관리자 계정 + 기본 설정
  */
-export async function bootstrap() {
+export function bootstrap() {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS owner (
       id TEXT PRIMARY KEY,
@@ -189,7 +189,9 @@ export async function bootstrap() {
 
   // comments 테이블에 commenter_id 컬럼 추가 (마이그레이션)
   try {
-    sqlite.exec("ALTER TABLE comments ADD COLUMN commenter_id TEXT REFERENCES commenters(id) ON DELETE SET NULL");
+    sqlite.exec(
+      "ALTER TABLE comments ADD COLUMN commenter_id TEXT REFERENCES commenters(id) ON DELETE SET NULL",
+    );
   } catch {
     // 이미 존재하면 무시
   }

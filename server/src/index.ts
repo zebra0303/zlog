@@ -93,8 +93,14 @@ app.get("/sitemap.xml", (c) => {
   const urls = [
     `<url><loc>${siteUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
     `<url><loc>${siteUrl}/profile</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`,
-    ...categories.map((cat) => `<url><loc>${siteUrl}/category/${cat.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`),
-    ...posts.map((post) => `<url><loc>${siteUrl}/posts/${post.slug}</loc><lastmod>${post.updatedAt}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>`),
+    ...categories.map(
+      (cat) =>
+        `<url><loc>${siteUrl}/category/${cat.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+    ),
+    ...posts.map(
+      (post) =>
+        `<url><loc>${siteUrl}/posts/${post.slug}</loc><lastmod>${post.updatedAt}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
+    ),
   ];
 
   c.header("Content-Type", "application/xml");
@@ -107,7 +113,12 @@ ${urls.join("\n")}
 // ============ RSS 피드 ============
 
 function escapeXml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 function toRfc822(dateStr: string): string {
@@ -119,7 +130,14 @@ function buildRssXml(
   channelTitle: string,
   channelDesc: string,
   channelLink: string,
-  items: { title: string; slug: string; excerpt: string | null; content: string; createdAt: string; categoryName?: string }[],
+  items: {
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    content: string;
+    createdAt: string;
+    categoryName?: string;
+  }[],
 ): string {
   const rssItems = items.map((item) => {
     const link = `${siteUrl}/posts/${item.slug}`;
@@ -170,7 +188,13 @@ app.get("/rss.xml", (c) => {
     .limit(20)
     .all();
 
-  const xml = buildRssXml(siteUrl, blogTitle, blogDesc, siteUrl, posts.map((p) => ({ ...p, categoryName: p.categoryName ?? undefined })));
+  const xml = buildRssXml(
+    siteUrl,
+    blogTitle,
+    blogDesc,
+    siteUrl,
+    posts.map((p) => ({ ...p, categoryName: p.categoryName ?? undefined })),
+  );
   c.header("Content-Type", "application/rss+xml; charset=utf-8");
   return c.body(xml);
 });
@@ -182,10 +206,16 @@ app.get("/category/:slug/rss.xml", (c) => {
   const ownerInfo = db.select().from(schema.owner).get();
   const blogTitle = ownerInfo?.blogTitle ?? "Blog";
 
-  const category = db.select().from(schema.categories).where(eq(schema.categories.slug, slug)).get();
+  const category = db
+    .select()
+    .from(schema.categories)
+    .where(eq(schema.categories.slug, slug))
+    .get();
   if (!category) {
     c.header("Content-Type", "application/rss+xml; charset=utf-8");
-    return c.body(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Not Found</title></channel></rss>`);
+    return c.body(
+      `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Not Found</title></channel></rss>`,
+    );
   }
 
   const posts = db
@@ -204,7 +234,13 @@ app.get("/category/:slug/rss.xml", (c) => {
 
   const channelTitle = `${blogTitle} - ${category.name}`;
   const channelLink = `${siteUrl}/category/${category.slug}`;
-  const xml = buildRssXml(siteUrl, channelTitle, category.description ?? "", channelLink, posts.map((p) => ({ ...p, categoryName: category.name })));
+  const xml = buildRssXml(
+    siteUrl,
+    channelTitle,
+    category.description ?? "",
+    channelLink,
+    posts.map((p) => ({ ...p, categoryName: category.name })),
+  );
   c.header("Content-Type", "application/rss+xml; charset=utf-8");
   return c.body(xml);
 });
@@ -215,8 +251,8 @@ app.onError(errorHandler);
 
 const port = Number(process.env.PORT) || 3000;
 
-async function main() {
-  await bootstrap();
+function main() {
+  bootstrap();
   startSyncWorker();
   serve({ fetch: app.fetch, port }, () => {
     console.log(`🦓 zlog 서버가 포트 ${port}에서 실행 중입니다.`);
@@ -224,4 +260,4 @@ async function main() {
   });
 }
 
-void main();
+main();

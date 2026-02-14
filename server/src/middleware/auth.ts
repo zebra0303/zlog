@@ -18,7 +18,7 @@ export async function createToken(ownerId: string): Promise<string> {
 export async function verifyToken(token: string): Promise<string | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET_KEY());
-    return (payload.sub!) ?? null;
+    return payload.sub ?? null;
   } catch {
     return null;
   }

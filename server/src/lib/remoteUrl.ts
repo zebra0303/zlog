@@ -21,9 +21,15 @@ export function fixRemoteUrl(url: string | null, remoteSiteUrl: string): string 
  */
 export function fixRemoteContentUrls(content: string, remoteSiteUrl: string): string {
   let fixed = content;
-  fixed = fixed.replace(/(\!\[.*?\]\()(\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
-  fixed = fixed.replace(/(\!\[.*?\]\()https?:\/\/[^/\s"')]+(\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
+  fixed = fixed.replace(/(!\[.*?\]\()(\/\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
+  fixed = fixed.replace(
+    /(!\[.*?\]\()https?:\/\/[^/\s"')]+(\/(uploads|img)\/[^)]+\))/g,
+    `$1${remoteSiteUrl}$2`,
+  );
   fixed = fixed.replace(/(src=["'])(\/(uploads|img)\/)/g, `$1${remoteSiteUrl}$2`);
-  fixed = fixed.replace(/(src=["'])https?:\/\/[^/\s"']+(\/(uploads|img)\/)/g, `$1${remoteSiteUrl}$2`);
+  fixed = fixed.replace(
+    /(src=["'])https?:\/\/[^/\s"']+(\/(uploads|img)\/)/g,
+    `$1${remoteSiteUrl}$2`,
+  );
   return fixed;
 }
