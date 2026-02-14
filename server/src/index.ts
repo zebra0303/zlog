@@ -14,6 +14,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { bootstrap } from "./services/bootstrap.js";
+import { startSyncWorker } from "./services/syncService.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import auth from "./routes/auth.js";
 import postsRoute from "./routes/posts.js";
@@ -216,6 +217,7 @@ const port = Number(process.env.PORT) || 3000;
 
 async function main() {
   await bootstrap();
+  startSyncWorker();
   serve({ fetch: app.fetch, port }, () => {
     console.log(`🦓 zlog 서버가 포트 ${port}에서 실행 중입니다.`);
     console.log(`📋 환경변수 로드됨: ADMIN_EMAIL=${process.env.ADMIN_EMAIL ?? "(미설정)"}`);

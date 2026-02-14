@@ -4,6 +4,7 @@ import * as schema from "../db/schema.js";
 import { eq, and, desc, gt } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { fixRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
 import type { WebhookEvent } from "@zlog/shared";
 
 const federationRoute = new Hono();
@@ -17,33 +18,6 @@ function resolveRelativeUrls(content: string, siteUrl: string): string {
 function resolveUrl(url: string | null, siteUrl: string): string | null {
   if (!url) return url;
   return url.startsWith("/") ? siteUrl + url : url;
-}
-
-/**
- * 수신 측에서 사용: content 내 이미지 URL의 도메인을 실제 원격 블로그 URL로 치환
- * - 상대 경로: /uploads/... → remoteSiteUrl/uploads/...
- * - 잘못된 도메인: http://localhost/uploads/... → remoteSiteUrl/uploads/...
- * - 마크다운 ![...](...) 및 HTML <img src="..."> 모두 처리
- */
-function fixRemoteContentUrls(content: string, remoteSiteUrl: string): string {
-  let fixed = content;
-  // 1) 마크다운 이미지 상대 경로
-  fixed = fixed.replace(/(\!\[.*?\]\()(\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
-  // 2) 마크다운 이미지 잘못된 절대 URL → 올바른 도메인으로 교체
-  fixed = fixed.replace(/(\!\[.*?\]\()https?:\/\/[^/\s"')]+(\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
-  // 3) HTML img src 상대 경로
-  fixed = fixed.replace(/(src=["'])(\/(uploads|img)\/)/g, `$1${remoteSiteUrl}$2`);
-  // 4) HTML img src 잘못된 절대 URL → 올바른 도메인으로 교체
-  fixed = fixed.replace(/(src=["'])https?:\/\/[^/\s"']+(\/(uploads|img)\/)/g, `$1${remoteSiteUrl}$2`);
-  return fixed;
-}
-
-/** 단일 URL의 도메인을 실제 원격 블로그 URL로 치환 */
-function fixRemoteUrl(url: string | null, remoteSiteUrl: string): string | null {
-  if (!url) return url;
-  if (url.startsWith("/")) return remoteSiteUrl + url;
-  // 잘못된 도메인 교체 (예: http://localhost/uploads/... → remoteSiteUrl/uploads/...)
-  return url.replace(/^https?:\/\/[^/]+(\/(uploads|img)\/)/, `${remoteSiteUrl}$1`);
 }
 
 federationRoute.get("/info", async (c) => {
