@@ -27,6 +27,15 @@ const processor = unified()
 export async function parseMarkdown(markdown: string): Promise<string> {
   let processed = markdown;
 
+  // mermaid 코드블록을 placeholder로 추출 (Prettier/highlight에서 제외)
+  // HTML 코멘트는 rehype-sanitize가 제거하므로, 일반 텍스트 마커 사용
+  const mermaidBlocks: string[] = [];
+  processed = processed.replace(/```mermaid\n([\s\S]*?)```/g, (_match, code: string) => {
+    const idx = mermaidBlocks.length;
+    mermaidBlocks.push(code.trim());
+    return `MERMAID_BLOCK_${idx}_PLACEHOLDER`;
+  });
+
   processed = processed.replace(/@\[youtube\]\(([^)]+)\)/g, (_match, id: string) => {
     const videoId = id.includes("youtube.com") ? new URL(id).searchParams.get("v") ?? id : id.includes("youtu.be") ? id.split("/").pop() ?? id : id;
     return `<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius:8px;aspect-ratio:16/9;"></iframe>`;
@@ -41,7 +50,6 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     return `<iframe src="https://codesandbox.io/embed/${id}" style="width:100%;height:500px;border:0;border-radius:8px;overflow:hidden;" allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking" sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"></iframe>`;
   });
 
-  // 코드블록 자동 포맷팅: ```lang ... ``` 패턴을 찾아 Prettier로 포맷
   // 코드블록 자동 포맷팅: ```lang ... ``` 패턴을 찾아 Prettier로 포맷
   const codeBlockRegex = /```(\w+)\n([\s\S]*?)```/g;
   const matches = [...processed.matchAll(codeBlockRegex)];
@@ -78,6 +86,21 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     /(<div class="code-block-wrapper">[\s\S]*?<\/code><\/pre>)/g,
     "$1</div>",
   );
+
+  // mermaid placeholder를 렌더링용 div로 교체
+  // unified 파이프라인 통과 후 <p>MERMAID_BLOCK_0_PLACEHOLDER</p> 형태로 남음
+  for (let i = 0; i < mermaidBlocks.length; i++) {
+    const raw = mermaidBlocks[i] ?? "";
+    const encoded = raw
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    html = html.replace(
+      new RegExp(`<p>MERMAID_BLOCK_${i}_PLACEHOLDER</p>|MERMAID_BLOCK_${i}_PLACEHOLDER`, "g"),
+      `<div class="mermaid-block" data-mermaid="${encoded}"><div class="mermaid-loading">Loading diagram...</div></div>`,
+    );
+  }
 
   return html;
 }

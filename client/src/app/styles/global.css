@@ -196,3 +196,52 @@ pre code.hljs {
 .dark .hljs-strong { color: #c9d1d9; font-weight: bold; }
 .dark .hljs-addition { color: #aff5b4; background-color: #033a16; }
 .dark .hljs-deletion { color: #ffdcd7; background-color: #67060c; }
+
+/* Mermaid 다이어그램 컨테이너 */
+.mermaid-block {
+  display: flex;
+  justify-content: center;
+  margin: 1.5em 0;
+  padding: 1em;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #fafbfc;
+  overflow-x: auto;
+}
+
+.dark .mermaid-block {
+  background: #161b22;
+  border-color: #30363d;
+}
+
+.mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-loading {
+  color: #6b7280;
+  font-size: 0.875rem;
+  padding: 2em 0;
+}
+
+.dark .mermaid-loading {
+  color: #8b949e;
+}
+
+.mermaid-error {
+  margin: 0;
+  padding: 1em;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  color: #991b1b;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}
+
+.dark .mermaid-error {
+  background: #450a0a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
