@@ -109,13 +109,15 @@ sequenceDiagram
 
 #### How It Works
 
-1. **Subscribe**: From your admin dashboard, enter a remote blog URL, select a category to follow, and map it to one of your local categories.
+1. **Subscribe**: From your admin dashboard, enter a remote blog URL, select a category to follow, and map it to one of your local categories. The subscription request is sent server-to-server (no CORS issues).
 
 2. **Automatic Delivery**: When the publisher writes a new post, ZLOG sends a webhook to all subscribers. The post content (with properly resolved image URLs) is stored locally.
 
-3. **Seamless Display**: Remote posts appear in your category listings alongside your own posts, sorted by date. Each remote post shows a "View Original" link to the source blog.
+3. **Seamless Display**: Remote posts appear in your category listings alongside your own posts, sorted by date. Each remote post shows a "View Original" link to the source blog. Remote posts also appear in the "All" tab on the homepage.
 
-4. **Manual Sync**: If webhooks are missed, you can trigger a manual sync from the admin dashboard to fetch all posts from a subscribed category.
+4. **Background Sync**: A background worker automatically syncs all subscriptions periodically (default: every 15 minutes, configurable via `WEBHOOK_SYNC_INTERVAL`). This ensures no posts are missed even if webhooks fail. The worker uses incremental sync (`?since=lastSyncedAt`) for efficiency.
+
+5. **Manual Sync**: You can also trigger a manual sync from the admin dashboard at any time to immediately fetch the latest posts.
 
 ### RSS Feed
 
@@ -137,6 +139,7 @@ The admin dashboard provides a complete subscription management interface:
 - **My Subscriptions**: View all categories you're subscribed to, with last sync time
 - **Add Subscription**: Enter a remote blog URL → fetch categories → select & map to local category
 - **Manual Sync**: One-click sync button to fetch latest posts from a subscription
+- **Auto Sync**: Background worker syncs all subscriptions automatically (configurable interval)
 - **Unsubscribe**: Remove subscriptions you no longer want
 - **Subscriber List**: See which external blogs are subscribed to your categories
 
@@ -257,6 +260,8 @@ erDiagram
 - **SQLite**: zero-config database, single file backup
 - **JWT authentication** for admin
 - **RESTful API** with Hono framework
+- **Background sync worker**: automatic periodic federation sync with GC optimization
+- **Server-proxied federation**: all cross-origin calls are server-to-server (no CORS dependency)
 
 ---
 
@@ -277,6 +282,7 @@ flowchart TB
         API[RESTful API]
         Auth[JWT + OAuth2]
         Fed[Federation Engine]
+        Sync[Background Sync Worker]
         Img[Sharp Image Processing]
     end
 
@@ -418,6 +424,7 @@ For developers who want to integrate with ZLOG's federation:
 | `GET` | `/api/federation/info` | Blog metadata |
 | `GET` | `/api/federation/categories` | Public categories |
 | `GET` | `/api/federation/categories/:id/posts` | Posts in a category |
+| `GET` | `/api/federation/posts/:id` | Single post detail (live verification) |
 | `POST` | `/api/federation/subscribe` | Subscribe to a category |
 | `POST` | `/api/federation/unsubscribe` | Unsubscribe |
 | `POST` | `/api/federation/webhook` | Receive content updates |

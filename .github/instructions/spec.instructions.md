@@ -159,12 +159,13 @@ zlog/
 │       │   └── errorHandler.ts   # 글로벌 에러 핸들링
 │       ├── services/
 │       │   ├── bootstrap.ts      # 첫 실행 시 테이블 생성 + 관리자 계정 생성
-│       │   └── feedService.ts    # Webhook 배포 (구독자들에게 이벤트 전송)
-│       ├── jobs/                 # 주기적 폴링 동기화 (향후 구현)
+│       │   ├── feedService.ts    # Webhook 배포 (구독자들에게 이벤트 전송)
+│       │   └── syncService.ts    # 백그라운드 동기화 워커 (주기적 폴링, GC 최적화)
 │       └── lib/
 │           ├── uuid.ts           # UUID v7 생성
 │           ├── slug.ts           # URL-safe 슬러그 생성 (한글 지원)
-│           └── password.ts       # SHA-512 해싱 + timing-safe 비교
+│           ├── password.ts       # SHA-512 해싱 + timing-safe 비교
+│           └── remoteUrl.ts      # 원격 URL 정규화 헬퍼 (fixRemoteUrl, fixRemoteContentUrls)
 │
 ├── shared/                       # 프론트/백 공유 타입
 │   └── types/
@@ -372,7 +373,11 @@ zlog/
 
 **Webhook 이벤트**: `post.published`, `post.updated`, `post.deleted`, `post.unpublished`
 
-**동기화 전략**: Webhook (실시간) + 주기적 폴링 (15분, 설정 가능, 실패 대비)
+**동기화 전략**: Webhook (실시간 푸시) + 백그라운드 폴링 워커 (기본 15분 주기, 설정 가능) + 수동 동기화
+- 백그라운드 워커: 서버 시작 5초 후 첫 실행, 이후 `webhook_sync_interval` 분 간격으로 반복
+- 증분 동기화: `?since=lastSyncedAt` 파라미터로 변경분만 가져옴
+- GC 최적화: 동기화 후 `globalThis.gc()` 호출 (Node.js `--expose-gc` 플래그 필요)
+- 구독 요청은 서버 간 통신으로 처리 (CORS 의존성 없음)
 
 ### 5.7 기타
 
@@ -619,10 +624,11 @@ WEBHOOK_SYNC_INTERVAL=15
 
 1. B → `GET A/api/federation/info` → A 블로그 정보 확인
 2. B → `GET A/api/federation/categories` → A의 카테고리 목록 조회
-3. B → `POST A/api/federation/subscribe` `{categoryId, subscriberUrl, callbackUrl}` → 구독 등록
+3. B → `POST A/api/federation/subscribe` `{categoryId, subscriberUrl, callbackUrl}` → 구독 등록 (B의 서버가 A에 직접 요청, CORS 무관)
 4. A가 새 글 발행 → `POST B/callbackUrl` (webhook) `{event: "post.published", post, categoryId}`
 5. B가 webhook 수신 → remotePosts 테이블에 캐시
-6. 폴링 보완: B가 주기적으로 `GET A/api/federation/categories/:id/posts?since=...` 호출
+6. 백그라운드 폴링: B의 syncService가 주기적으로 `GET A/api/federation/categories/:id/posts?since=...` 호출 (증분 동기화)
+7. 수동 동기화: 관리자가 대시보드에서 즉시 동기화 트리거 가능
 
 ### 원격 글 표시
 
