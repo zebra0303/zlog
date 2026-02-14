@@ -107,8 +107,14 @@ export default function PostEditorPage() {
     try {
       const tagList = tags.split(",").map((tg) => tg.trim()).filter(Boolean);
       const payload: CreatePostRequest = { title, content, categoryId: categoryId || undefined, status: s, tags: tagList.length > 0 ? tagList : undefined, coverImage: coverImage || undefined };
-      if (id) await api.put(`/posts/${id}`, payload); else await api.post("/posts", payload);
-      void navigate("/");
+      const saved = id
+        ? await api.put<{ slug: string }>(`/posts/${id}`, payload)
+        : await api.post<{ slug: string }>("/posts", payload);
+      if (s === "published" && saved?.slug) {
+        void navigate(`/posts/${saved.slug}`);
+      } else {
+        void navigate("/");
+      }
     } catch (err) { setError(err instanceof Error ? err.message : t("request_failed")); } finally { setIsSaving(false); }
   };
 
