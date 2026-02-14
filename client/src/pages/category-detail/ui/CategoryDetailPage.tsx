@@ -230,7 +230,7 @@ export default function CategoryDetailPage() {
           <SEOHead title={category.name} description={category.description ?? undefined} />
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
                   <h1 className="mb-2 text-2xl font-bold text-text">{category.name}</h1>
                   {category.description && (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
-import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut, Home, User, LogIn, Rss } from "lucide-react";
+import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut, Home, User, LogIn } from "lucide-react";
 import { Button, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
@@ -116,9 +116,6 @@ export function Header() {
                 <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
                   setIsMobileMenuOpen(false);
                 }}><User className="h-4 w-4 text-text-secondary" />{t("nav_profile")}</Link>
-                <a href="/rss.xml" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" target="_blank" rel="noopener noreferrer" onClick={() => {
-                  setIsMobileMenuOpen(false);
-                }}><Rss className="h-4 w-4 text-orange-500" />RSS</a>
                 {isAuthenticated && (<>
                   <Link to="/write" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
                     setIsMobileMenuOpen(false);
