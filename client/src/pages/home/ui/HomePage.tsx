@@ -10,7 +10,13 @@ import { useI18n } from "@/shared/i18n";
 import type { PostWithCategory, CategoryWithStats, PaginatedResponse } from "@zlog/shared";
 
 // ============ Subscribe Dialog ============
-function SubscribeDialog({ category, onClose }: { category: CategoryWithStats; onClose: () => void }) {
+function SubscribeDialog({
+  category,
+  onClose,
+}: {
+  category: CategoryWithStats;
+  onClose: () => void;
+}) {
   const [blogUrl, setBlogUrl] = useState("");
   const { t } = useI18n();
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
@@ -31,31 +37,74 @@ function SubscribeDialog({ category, onClose }: { category: CategoryWithStats; o
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-xl border border-border bg-surface shadow-xl" onClick={(e) => { e.stopPropagation(); }}>
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-text"><Rss className="h-5 w-5 text-primary" />{t("cat_subscribe_title")} &quot;{category.name}&quot; {t("cat_subscribe_category")}</h2>
-          <button type="button" onClick={onClose} aria-label={t("close")} className="text-text-secondary hover:text-text"><X className="h-5 w-5" /></button>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="border-border bg-surface w-full max-w-lg rounded-xl border shadow-xl"
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        <div className="border-border flex items-center justify-between border-b p-4">
+          <h2 className="text-text flex items-center gap-2 text-lg font-semibold">
+            <Rss className="text-primary h-5 w-5" />
+            {t("cat_subscribe_title")} &quot;{category.name}&quot; {t("cat_subscribe_category")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("close")}
+            className="text-text-secondary hover:text-text"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
         <div className="p-4">
-          <div className="mb-4 rounded-lg bg-background p-3">
+          <div className="bg-background mb-4 rounded-lg p-3">
             <div className="mb-2 flex items-start gap-2">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <Info className="text-primary mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <h3 className="text-sm font-medium text-text">{t("cat_subscribe_what")}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-text-secondary">{t("cat_subscribe_desc1")} {t("cat_subscribe_desc2")}</p>
-                <p className="mt-1 text-xs leading-relaxed text-text-secondary">{t("cat_subscribe_desc3_v2")}</p>
+                <h3 className="text-text text-sm font-medium">{t("cat_subscribe_what")}</h3>
+                <p className="text-text-secondary mt-1 text-xs leading-relaxed">
+                  {t("cat_subscribe_desc1")} {t("cat_subscribe_desc2")}
+                </p>
+                <p className="text-text-secondary mt-1 text-xs leading-relaxed">
+                  {t("cat_subscribe_desc3_v2")}
+                </p>
               </div>
             </div>
           </div>
           <div className="flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-text">{t("cat_subscribe_blog_url")}</label>
-              <Input placeholder="https://myblog.example.com" value={blogUrl} onChange={(e) => { setBlogUrl(e.target.value); }} onKeyDown={(e) => { if (e.key === "Enter") handleSubscribe(); }} />
+              <label className="text-text mb-1 block text-sm font-medium">
+                {t("cat_subscribe_blog_url")}
+              </label>
+              <Input
+                placeholder="https://myblog.example.com"
+                value={blogUrl}
+                onChange={(e) => {
+                  setBlogUrl(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSubscribe();
+                }}
+              />
             </div>
-            {normalizedBlogUrl && (<div className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-xs text-text-secondary"><ExternalLink className="h-3 w-3 shrink-0" /><span className="truncate">{t("cat_subscribe_redirect_desc", { url: normalizedBlogUrl })}</span></div>)}
+            {normalizedBlogUrl && (
+              <div className="bg-background text-text-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
+                <ExternalLink className="h-3 w-3 shrink-0" />
+                <span className="truncate">
+                  {t("cat_subscribe_redirect_desc", { url: normalizedBlogUrl })}
+                </span>
+              </div>
+            )}
             <div className="flex justify-end">
-              <Button size="sm" onClick={handleSubscribe} disabled={!normalizedBlogUrl}><ExternalLink className="mr-1 h-4 w-4" />{t("cat_subscribe_go_admin")}</Button>
+              <Button size="sm" onClick={handleSubscribe} disabled={!normalizedBlogUrl}>
+                <ExternalLink className="mr-1 h-4 w-4" />
+                {t("cat_subscribe_go_admin")}
+              </Button>
             </div>
           </div>
         </div>
@@ -79,7 +128,7 @@ export default function HomePage() {
   const { t } = useI18n();
 
   const selectedCategory = currentCategory
-    ? categories.find((c) => c.slug === currentCategory) ?? null
+    ? (categories.find((c) => c.slug === currentCategory) ?? null)
     : null;
 
   useEffect(() => {
@@ -143,7 +192,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <SEOHead title={t("home_title")} />
+      <SEOHead title={selectedCategory?.name} />
       <div className="mb-4 flex items-start gap-2">
         <div className="flex flex-1 flex-wrap gap-2">
           <CategoryBadge slug="all" name={t("home_all")} isActive={!currentCategory} />
@@ -167,8 +216,15 @@ export default function HomePage() {
           RSS
         </a>
         {selectedCategory && !isAuthenticated && (
-          <button type="button" className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-semibold text-text-secondary transition-colors hover:border-primary hover:text-primary" onClick={() => { setShowSubscribe(true); }}>
-            <Rss className="h-3.5 w-3.5" />{t("cat_subscribe")}
+          <button
+            type="button"
+            className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+            onClick={() => {
+              setShowSubscribe(true);
+            }}
+          >
+            <Rss className="h-3.5 w-3.5" />
+            {t("cat_subscribe")}
           </button>
         )}
       </div>
@@ -238,7 +294,12 @@ export default function HomePage() {
       )}
 
       {showSubscribe && selectedCategory && (
-        <SubscribeDialog category={selectedCategory} onClose={() => { setShowSubscribe(false); }} />
+        <SubscribeDialog
+          category={selectedCategory}
+          onClose={() => {
+            setShowSubscribe(false);
+          }}
+        />
       )}
     </div>
   );
