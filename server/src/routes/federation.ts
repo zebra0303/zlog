@@ -263,7 +263,7 @@ federationRoute.get("/remote-posts/:id", async (c) => {
     if (remotePostId) {
       try {
         const res = await fetch(`${remoteBlog.siteUrl}/api/federation/posts/${remotePostId}`, {
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(5000),
         });
         const now = new Date().toISOString();
         if (res.status === 404) {
