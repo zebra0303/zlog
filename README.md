@@ -1,4 +1,4 @@
-# ZLOG — Distributed Self-Hosted Blog System
+# ZLOG — Every Blog You Care About, One Dashboard
 
 > **Your blog, your data, your network.**
 > ZLOG is a lightweight, self-hosted personal blog system with built-in **cross-blog subscription** and **RSS feed** support — enabling a decentralized network of independent blogs.
@@ -462,5 +462,5 @@ For developers who want to integrate with ZLOG's federation:
 ---
 
 <p align="center">
-  <strong>ZLOG</strong> — Because your words deserve a home you own.
+  <strong>ZLOG</strong> — Every story you care about, right on your blog.
 </p>
