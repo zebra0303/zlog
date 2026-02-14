@@ -14,7 +14,7 @@ import { fixRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
 /**
  * 단일 구독의 글을 pull 동기화
  */
-async function syncSubscription(sub: typeof schema.categorySubscriptions.$inferSelect): Promise<number> {
+export async function syncSubscription(sub: typeof schema.categorySubscriptions.$inferSelect): Promise<number> {
   const remoteCat = db
     .select()
     .from(schema.remoteCategories)
@@ -151,6 +151,53 @@ export async function syncAllSubscriptions(): Promise<void> {
 }
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;
+
+// 최근 트리거된 구독 ID를 추적하여 중복 동기화 방지
+const recentlyTriggered = new Set<string>();
+
+/**
+ * 게시글 목록 조회 시 stale한 구독을 백그라운드에서 동기화
+ * - 마지막 동기화 이후 충분한 시간이 경과한 구독만 대상
+ * - 동일 구독에 대한 중복 트리거 방지 (30초 쿨다운)
+ */
+export function triggerStaleSync(): void {
+  const subs = db
+    .select()
+    .from(schema.categorySubscriptions)
+    .where(eq(schema.categorySubscriptions.isActive, true))
+    .all();
+
+  if (subs.length === 0) return;
+
+  const now = Date.now();
+  // stale 기준: 마지막 동기화 이후 3분 이상 경과
+  const staleThresholdMs = 3 * 60 * 1000;
+
+  const staleSubs = subs.filter((sub) => {
+    if (recentlyTriggered.has(sub.id)) return false;
+    if (!sub.lastSyncedAt) return true;
+    return now - new Date(sub.lastSyncedAt).getTime() > staleThresholdMs;
+  });
+
+  if (staleSubs.length === 0) return;
+
+  // 중복 방지: 트리거된 구독 ID를 30초간 기록
+  for (const sub of staleSubs) {
+    recentlyTriggered.add(sub.id);
+    setTimeout(() => recentlyTriggered.delete(sub.id), 30000);
+  }
+
+  // 비동기로 백그라운드 실행 (응답을 블로킹하지 않음)
+  void (async () => {
+    for (const sub of staleSubs) {
+      try {
+        await syncSubscription(sub);
+      } catch {
+        // 개별 실패 무시
+      }
+    }
+  })();
+}
 
 /**
  * 백그라운드 동기화 워커 시작

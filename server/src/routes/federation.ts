@@ -289,13 +289,15 @@ federationRoute.get("/remote-posts/:id", async (c) => {
           };
           // 원본이 업데이트되었다면 로컬 캐시 갱신
           if (original.updatedAt > rp.remoteUpdatedAt) {
+            const fixedContent = fixRemoteContentUrls(original.content, remoteBlog.siteUrl);
+            const fixedCover = fixRemoteUrl(original.coverImage ?? null, remoteBlog.siteUrl);
             db.update(schema.remotePosts)
               .set({
                 title: original.title,
                 slug: original.slug,
-                content: original.content,
+                content: fixedContent,
                 excerpt: original.excerpt ?? null,
-                coverImage: original.coverImage ?? null,
+                coverImage: fixedCover,
                 remoteUpdatedAt: original.updatedAt,
                 fetchedAt: now,
               })

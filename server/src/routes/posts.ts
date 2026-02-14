@@ -6,6 +6,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
 import { sendWebhookToSubscribers } from "../services/feedService.js";
+import { triggerStaleSync } from "../services/syncService.js";
 
 const postsRoute = new Hono();
 
@@ -129,6 +130,11 @@ postsRoute.get("/", async (c) => {
 
   // 합치고 날짜 기준으로 정렬
   const allItems = [...localItems, ...remoteItems].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // 원격 게시글이 포함될 때 stale한 구독을 백그라운드 동기화 트리거
+  if (remoteItems.length > 0) {
+    triggerStaleSync();
+  }
 
   // 전체 개수 (로컬 + 원격)
   const remoteTotal = remoteItems.length;
@@ -303,17 +309,28 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
     }
   }
 
-  if (body.status && body.status !== existing.status) {
-    const updatedPost = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
-    if (updatedPost) {
-      const catId = body.categoryId ?? existing.categoryId;
-      if (catId) {
+  const updatedPost = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
+  if (updatedPost) {
+    const catId = body.categoryId ?? existing.categoryId;
+    if (catId) {
+      if (body.status && body.status !== existing.status) {
+        // status가 변경된 경우
         if (body.status === "published") {
           void sendWebhookToSubscribers("post.published", updatedPost, catId);
         } else if (body.status === "deleted") {
           void sendWebhookToSubscribers("post.deleted", updatedPost, catId);
         } else if (body.status === "draft" && existing.status === "published") {
           void sendWebhookToSubscribers("post.unpublished", updatedPost, catId);
+        }
+      } else if (existing.status === "published" && !body.status) {
+        // published 상태를 유지하면서 내용이 변경된 경우 (커버이미지, 본문 등)
+        const contentChanged = (body.title !== undefined && body.title !== existing.title) ||
+          (body.content !== undefined && body.content !== existing.content) ||
+          (body.coverImage !== undefined && body.coverImage !== existing.coverImage) ||
+          (body.excerpt !== undefined && body.excerpt !== existing.excerpt) ||
+          (body.categoryId !== undefined && body.categoryId !== existing.categoryId);
+        if (contentChanged) {
+          void sendWebhookToSubscribers("post.updated", updatedPost, catId);
         }
       }
     }
