@@ -158,7 +158,7 @@ export default function HomePage() {
   return (
     <div>
       <SEOHead title={t("home_title")} />
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex items-start gap-2">
         <div className="flex flex-1 flex-wrap gap-2">
           <CategoryBadge slug="all" name={t("home_all")} isActive={!currentCategory} />
           {categories.map((cat) => (
