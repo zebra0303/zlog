@@ -1,9 +1,12 @@
 {
   "name": "zlog",
   "short_name": "zlog",
+  "id": "/",
   "description": "관심 있는 모든 글, 내 블로그 하나로",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#FAF9FF",
   "theme_color": "#6C5CE7",
   "icons": [

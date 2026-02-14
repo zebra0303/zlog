@@ -147,16 +147,16 @@ export function Header() {
           max-height: 4rem !important;
         }
         .header-animated[data-compact="true"] .header-inner {
-          padding-top: 0.3rem !important;
-          padding-bottom: 0.5rem !important;
+          padding-top: 0.35rem !important;
+          padding-bottom: 0.35rem !important;
         }
         @media (min-width: 768px) {
           .header-animated[data-compact="true"] {
             max-height: 4.15rem !important;
           }
           .header-animated[data-compact="true"] .header-inner {
-            padding-top: 0.4rem !important;
-            padding-bottom: 0.6rem !important;
+            padding-top: 0.45rem !important;
+            padding-bottom: 0.45rem !important;
           }
         }
         @media (min-width: 1024px) {
@@ -164,8 +164,8 @@ export function Header() {
             max-height: 4.25rem !important;
           }
           .header-animated[data-compact="true"] .header-inner {
-            padding-top: 0.45rem !important;
-            padding-bottom: 0.65rem !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
           }
         }
       `}</style>
