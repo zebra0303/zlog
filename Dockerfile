@@ -39,4 +39,4 @@ RUN mkdir -p /app/data /app/uploads/avatar/original /app/uploads/avatar/256 /app
 ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
-CMD ["node", "server/dist/index.js"]
+CMD ["node", "--expose-gc", "server/dist/index.js"]

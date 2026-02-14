@@ -143,6 +143,11 @@ export async function syncAllSubscriptions(): Promise<void> {
   }
 
   console.log(`✅ 동기화 완료: ${totalSynced}개 글 동기화됨`);
+
+  // 동기화 후 GC 트리거 (fetch 응답, JSON 파싱 등 임시 객체 정리)
+  if (typeof globalThis.gc === "function") {
+    globalThis.gc();
+  }
 }
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;
