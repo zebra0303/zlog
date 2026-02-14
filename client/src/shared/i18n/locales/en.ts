@@ -57,6 +57,7 @@ export const en = {
   post_confirm_delete: "Are you sure you want to delete this post?",
   post_delete_failed: "Failed to delete the post.",
   post_view_original: "View original post",
+  remote_post_deleted_alert: "The original post has been deleted by the author. This synced post will also be removed.",
 
   // Post Editor
   editor_title_placeholder: "Enter title",

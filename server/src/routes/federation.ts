@@ -247,13 +247,72 @@ federationRoute.post("/local-unsubscribe", async (c) => {
   return c.json({ message: "로컬 구독이 해제되었습니다." });
 });
 
-// ============ 외부 글 상세보기 ============
+// ============ 외부 글 상세보기 (원본 상태 실시간 확인) ============
 federationRoute.get("/remote-posts/:id", async (c) => {
   const id = c.req.param("id");
   const rp = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.id, id)).get();
-  if (rp?.remoteStatus !== "published") return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+  if (!rp) return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
 
   const remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, rp.remoteBlogId)).get();
+
+  // 원본 블로그에서 최신 상태 확인 (백그라운드 검증)
+  if (remoteBlog && rp.remoteUri) {
+    // remoteUri 형태: "https://blog.example.com/posts/{postId}"
+    const uriParts = rp.remoteUri.split("/posts/");
+    const remotePostId = uriParts.length > 1 ? uriParts[uriParts.length - 1] : null;
+    if (remotePostId) {
+      try {
+        const res = await fetch(`${remoteBlog.siteUrl}/api/federation/posts/${remotePostId}`, {
+          signal: AbortSignal.timeout(8000),
+        });
+        const now = new Date().toISOString();
+        if (res.status === 404) {
+          // 원본이 삭제됨 → 로컬 상태 업데이트
+          db.update(schema.remotePosts)
+            .set({ remoteStatus: "deleted", fetchedAt: now })
+            .where(eq(schema.remotePosts.id, id))
+            .run();
+          return c.json({
+            ...rp,
+            remoteStatus: "deleted",
+            remoteBlog: remoteBlog ? { siteUrl: remoteBlog.siteUrl, displayName: remoteBlog.displayName, blogTitle: remoteBlog.blogTitle, avatarUrl: remoteBlog.avatarUrl } : null,
+          });
+        } else if (res.ok) {
+          const original = await res.json() as {
+            title: string; slug: string; content: string;
+            excerpt?: string | null; coverImage?: string | null;
+            updatedAt: string;
+          };
+          // 원본이 업데이트되었다면 로컬 캐시 갱신
+          if (original.updatedAt > rp.remoteUpdatedAt) {
+            db.update(schema.remotePosts)
+              .set({
+                title: original.title,
+                slug: original.slug,
+                content: original.content,
+                excerpt: original.excerpt ?? null,
+                coverImage: original.coverImage ?? null,
+                remoteUpdatedAt: original.updatedAt,
+                fetchedAt: now,
+              })
+              .where(eq(schema.remotePosts.id, id))
+              .run();
+            // 갱신된 데이터로 응답
+            const updated = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.id, id)).get();
+            return c.json({
+              ...updated,
+              remoteBlog: remoteBlog ? { siteUrl: remoteBlog.siteUrl, displayName: remoteBlog.displayName, blogTitle: remoteBlog.blogTitle, avatarUrl: remoteBlog.avatarUrl } : null,
+            });
+          }
+        }
+        // res가 다른 상태(502, timeout 등)이면 기존 캐시 그대로 반환
+      } catch {
+        // 네트워크 오류 시 기존 캐시 반환
+      }
+    }
+  }
+
+  if (rp.remoteStatus !== "published") return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
 
   return c.json({
     ...rp,

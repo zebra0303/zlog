@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useNavigate } from "react-router";
 import { Calendar, Globe, ArrowLeft, ExternalLink } from "lucide-react";
 import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
@@ -31,6 +31,7 @@ interface RemotePost {
 export default function RemotePostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [post, setPost] = useState<RemotePost | null>(null);
   const [htmlContent, setHtmlContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +43,12 @@ export default function RemotePostDetailPage() {
     void api
       .get<RemotePost>(`/federation/remote-posts/${id}`)
       .then(async (data) => {
+        // 원본이 삭제된 경우
+        if (data.remoteStatus === "deleted") {
+          alert(t("remote_post_deleted_alert"));
+          void navigate("/");
+          return;
+        }
         setPost(data);
         setHtmlContent(await parseMarkdown(data.content));
         setIsLoading(false);
@@ -50,7 +57,7 @@ export default function RemotePostDetailPage() {
         setError(err instanceof Error ? err.message : "Failed to load remote post");
         setIsLoading(false);
       });
-  }, [id]);
+  }, [id, navigate, t]);
 
   if (isLoading)
     return (
