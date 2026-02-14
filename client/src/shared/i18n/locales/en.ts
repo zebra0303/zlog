@@ -98,6 +98,8 @@ export const en = {
   cat_subscribe_enter_url: "Please enter your blog URL.",
   cat_subscribe_processing: "Processing...",
   cat_subscribe_button: "Subscribe",
+  cat_subscribe_select_category: "Select category to subscribe",
+  cat_subscribe_select_placeholder: "Select a category",
 
   // Profile
   profile_not_found: "Profile not found.",

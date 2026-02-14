@@ -100,6 +100,8 @@ export const ko: Record<TranslationKeys, string> = {
   cat_subscribe_enter_url: "블로그 URL을 입력해주세요.",
   cat_subscribe_processing: "처리 중...",
   cat_subscribe_button: "구독하기",
+  cat_subscribe_select_category: "구독할 카테고리 선택",
+  cat_subscribe_select_placeholder: "카테고리를 선택하세요",
 
   // Profile
   profile_not_found: "프로필을 찾을 수 없습니다.",
