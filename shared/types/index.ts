@@ -202,7 +202,9 @@ export interface CreatePostRequest {
   excerpt?: string;
 }
 
-export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
+export interface UpdatePostRequest extends Partial<CreatePostRequest> {
+  id?: string;
+}
 
 export interface CreateCategoryRequest {
   name: string;
@@ -281,12 +283,12 @@ export interface UpdateProfileRequest {
 }
 
 export interface UpdateSocialLinksRequest {
-  links: Array<{
+  links: {
     platform: string;
     url: string;
     label?: string;
     sortOrder?: number;
-  }>;
+  }[];
 }
 
 export interface SiteSettingsMap {

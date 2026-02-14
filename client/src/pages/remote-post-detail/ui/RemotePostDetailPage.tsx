@@ -92,7 +92,7 @@ export default function RemotePostDetailPage() {
             {post.remoteBlog?.displayName ?? t("post_external_blog")}
           </Badge>
         </div>
-        <h1 className="mb-3 text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
+        <h1 className="mb-3 text-2xl md:text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
         <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
           {post.authorName && <span>{post.authorName}</span>}
           <span className="flex items-center gap-1">

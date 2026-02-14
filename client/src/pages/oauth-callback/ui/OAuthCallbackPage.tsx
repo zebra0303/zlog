@@ -15,11 +15,11 @@ export default function OAuthCallbackPage() {
     if (commenterId && displayName) {
       localStorage.setItem(
         "zlog_commenter",
-        JSON.stringify({ commenterId, displayName, avatarUrl: avatarUrl || "", provider: provider || "" }),
+        JSON.stringify({ commenterId, displayName, avatarUrl: avatarUrl ?? "", provider: provider ?? "" }),
       );
     }
 
-    const returnUrl = localStorage.getItem("zlog_oauth_return") || "/";
+    const returnUrl = localStorage.getItem("zlog_oauth_return") ?? "/";
     localStorage.removeItem("zlog_oauth_return");
     window.location.href = returnUrl;
   }, [searchParams]);

@@ -4,22 +4,22 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-primary: #6C5CE7;
-  --color-primary-light: #A29BFE;
-  --color-accent: #FF6B6B;
-  --color-background: #FAF9FF;
-  --color-surface: #FFFFFF;
-  --color-text: #1A1A2E;
-  --color-text-secondary: #6B7280;
-  --color-border: #E5E7EB;
+  --color-primary: #6c5ce7;
+  --color-primary-light: #a29bfe;
+  --color-accent: #ff6b6b;
+  --color-background: #faf9ff;
+  --color-surface: #ffffff;
+  --color-text: #1a1a2e;
+  --color-text-secondary: #6b7280;
+  --color-border: #e5e7eb;
 }
 
 .dark {
-  --color-background: #0F0F14;
-  --color-surface: #1A1A24;
-  --color-text: #F0F0F5;
-  --color-text-secondary: #9CA3AF;
-  --color-border: #2D2D3A;
+  --color-background: #0f0f14;
+  --color-surface: #1a1a24;
+  --color-text: #f0f0f5;
+  --color-text-secondary: #9ca3af;
+  --color-border: #2d2d3a;
 }
 
 html {
@@ -27,16 +27,38 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: var(--color-background);
   color: var(--color-text);
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .prose {
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* 모바일 최적화: prose 헤딩 반응형 크기 + 한글 줄바꿈 */
+.prose h1 {
+  font-size: clamp(1.6rem, 5vw, 2.25rem) !important;
+  line-height: 1.3 !important;
+  word-break: keep-all;
+}
+
+.prose h2 {
+  font-size: clamp(1.3rem, 4vw, 1.75rem) !important;
+  line-height: 1.3 !important;
+  word-break: keep-all;
+}
+
+.prose h3 {
+  font-size: clamp(1.1rem, 3.5vw, 1.4rem) !important;
+  line-height: 1.35 !important;
+  word-break: keep-all;
 }
 
 .prose img,
@@ -113,7 +135,9 @@ body {
   color: #57606a;
   cursor: pointer;
   border-radius: 0.25rem;
-  transition: color 0.15s, background-color 0.15s;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
   font-size: 0.7rem;
   line-height: 1;
 }
@@ -183,11 +207,15 @@ pre code.hljs {
 .dark .hljs-template-tag,
 .dark .hljs-template-variable,
 .dark .hljs-type,
-.dark .hljs-variable.language_ { color: #ff7b72; }
+.dark .hljs-variable.language_ {
+  color: #ff7b72;
+}
 .dark .hljs-title,
 .dark .hljs-title.class_,
 .dark .hljs-title.class_.inherited__,
-.dark .hljs-title.function_ { color: #d2a8ff; }
+.dark .hljs-title.function_ {
+  color: #d2a8ff;
+}
 .dark .hljs-attr,
 .dark .hljs-attribute,
 .dark .hljs-literal,
@@ -197,26 +225,55 @@ pre code.hljs {
 .dark .hljs-variable,
 .dark .hljs-selector-attr,
 .dark .hljs-selector-class,
-.dark .hljs-selector-id { color: #79c0ff; }
+.dark .hljs-selector-id {
+  color: #79c0ff;
+}
 .dark .hljs-regexp,
 .dark .hljs-string,
-.dark .hljs-meta .hljs-string { color: #a5d6ff; }
+.dark .hljs-meta .hljs-string {
+  color: #a5d6ff;
+}
 .dark .hljs-built_in,
-.dark .hljs-symbol { color: #ffa657; }
+.dark .hljs-symbol {
+  color: #ffa657;
+}
 .dark .hljs-comment,
 .dark .hljs-code,
-.dark .hljs-formula { color: #8b949e; }
+.dark .hljs-formula {
+  color: #8b949e;
+}
 .dark .hljs-name,
 .dark .hljs-quote,
 .dark .hljs-selector-tag,
-.dark .hljs-selector-pseudo { color: #7ee787; }
-.dark .hljs-subst { color: #c9d1d9; }
-.dark .hljs-section { color: #1f6feb; font-weight: bold; }
-.dark .hljs-bullet { color: #f2cc60; }
-.dark .hljs-emphasis { color: #c9d1d9; font-style: italic; }
-.dark .hljs-strong { color: #c9d1d9; font-weight: bold; }
-.dark .hljs-addition { color: #aff5b4; background-color: #033a16; }
-.dark .hljs-deletion { color: #ffdcd7; background-color: #67060c; }
+.dark .hljs-selector-pseudo {
+  color: #7ee787;
+}
+.dark .hljs-subst {
+  color: #c9d1d9;
+}
+.dark .hljs-section {
+  color: #1f6feb;
+  font-weight: bold;
+}
+.dark .hljs-bullet {
+  color: #f2cc60;
+}
+.dark .hljs-emphasis {
+  color: #c9d1d9;
+  font-style: italic;
+}
+.dark .hljs-strong {
+  color: #c9d1d9;
+  font-weight: bold;
+}
+.dark .hljs-addition {
+  color: #aff5b4;
+  background-color: #033a16;
+}
+.dark .hljs-deletion {
+  color: #ffdcd7;
+  background-color: #67060c;
+}
 
 /* Mermaid 다이어그램 컨테이너 */
 .mermaid-block {
@@ -229,11 +286,13 @@ pre code.hljs {
   background: #fafbfc;
   overflow-x: auto;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .mermaid-block:hover {
-  border-color: #6C5CE7;
+  border-color: #6c5ce7;
   box-shadow: 0 0 0 1px rgba(108, 92, 231, 0.2);
 }
 
@@ -289,8 +348,12 @@ pre code.hljs {
 }
 
 @keyframes mermaid-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .mermaid-modal-content {

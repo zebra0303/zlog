@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
-import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut } from "lucide-react";
+import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut, Home, User, LogIn } from "lucide-react";
 import { Button, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
@@ -82,7 +82,7 @@ export function Header() {
         className={`sticky top-0 z-60 relative border-b border-border header-animated ${hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
         style={headerStyle}
       >
-        <div className={`header-inner mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
+        <div className={`header-inner relative mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
           <Link to="/" className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
             <ZlogLogo size={36} />
             <span className="text-xl font-bold text-text">zlog</span>
@@ -107,31 +107,32 @@ export function Header() {
               setIsMobileMenuOpen(!isMobileMenuOpen);
             }} aria-label={t("nav_menu")}>{isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</Button>
           </div>
+          {isMobileMenuOpen && (
+            <div className="absolute right-2 top-[calc(100%+1px)] z-70 w-44 rounded-xl border border-border bg-surface/95 backdrop-blur-md shadow-lg md:hidden">
+              <nav className="flex flex-col py-1.5">
+                <Link to="/" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
+                  setIsMobileMenuOpen(false);
+                }}><Home className="h-4 w-4 text-text-secondary" />{t("nav_home")}</Link>
+                <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
+                  setIsMobileMenuOpen(false);
+                }}><User className="h-4 w-4 text-text-secondary" />{t("nav_profile")}</Link>
+                {isAuthenticated && (<>
+                  <Link to="/write" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
+                    setIsMobileMenuOpen(false);
+                  }}><PenSquare className="h-4 w-4 text-text-secondary" />{t("nav_write")}</Link>
+                  <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
+                    setIsMobileMenuOpen(false);
+                  }}><Settings className="h-4 w-4 text-text-secondary" />{t("nav_admin")}</Link>
+                  <div className="mx-3 my-1 border-t border-border/50" />
+                  <button className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-background/80" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}><LogOut className="h-4 w-4" />{t("nav_logout")}</button>
+                </>)}
+                {!isAuthenticated && <Link to="/login" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-background/80" onClick={() => {
+                  setIsMobileMenuOpen(false);
+                }}><LogIn className="h-4 w-4" />{t("nav_login")}</Link>}
+              </nav>
+            </div>
+          )}
         </div>
-        {isMobileMenuOpen && (
-          <div className="absolute inset-x-0 top-full z-70 border-t border-border bg-surface p-4 shadow-lg md:hidden">
-            <nav className="flex flex-col gap-2">
-              <Link to="/" className="rounded-lg px-4 py-3 text-text hover:bg-background" onClick={() => {
-                setIsMobileMenuOpen(false);
-              }}>{t("nav_home")}</Link>
-              <Link to="/profile" className="rounded-lg px-4 py-3 text-text hover:bg-background" onClick={() => {
-                setIsMobileMenuOpen(false);
-              }}>{t("nav_profile")}</Link>
-              {isAuthenticated && (<>
-                <Link to="/write" className="rounded-lg px-4 py-3 text-text hover:bg-background" onClick={() => {
-                  setIsMobileMenuOpen(false);
-                }}>{t("nav_write")}</Link>
-                <Link to="/admin" className="rounded-lg px-4 py-3 text-text hover:bg-background" onClick={() => {
-                  setIsMobileMenuOpen(false);
-                }}>{t("nav_admin")}</Link>
-                <button className="rounded-lg px-4 py-3 text-left text-red-500 hover:bg-background" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>{t("nav_logout")}</button>
-              </>)}
-              {!isAuthenticated && <Link to="/login" className="rounded-lg px-4 py-3 text-primary hover:bg-background" onClick={() => {
-                setIsMobileMenuOpen(false);
-              }}>{t("nav_login")}</Link>}
-            </nav>
-          </div>
-        )}
       </header>
       <style>{`
         .header-animated {

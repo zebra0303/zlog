@@ -66,13 +66,13 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     const { settings } = get();
     const bgColor = isDark ? settings.header_bg_color_dark : settings.header_bg_color_light;
     const bgImage = isDark ? settings.header_bg_image_dark : settings.header_bg_image_light;
-    return !!(bgColor || bgImage);
+    return !!(bgColor ?? bgImage);
   },
 
   hasFooterCustomBg: (isDark: boolean) => {
     const { settings } = get();
     const bgColor = isDark ? settings.footer_bg_color_dark : settings.footer_bg_color_light;
     const bgImage = isDark ? settings.footer_bg_image_dark : settings.footer_bg_image_light;
-    return !!(bgColor || bgImage);
+    return !!(bgColor ?? bgImage);
   },
 }));

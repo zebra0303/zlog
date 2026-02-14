@@ -42,7 +42,7 @@ export default function PostDetailPage() {
           {post.category && <Link to={`/category/${post.category.slug}`}><Badge variant="secondary"><Folder className="mr-1 h-3 w-3" />{post.category.name}</Badge></Link>}
           {post.tags.map((tag) => <Badge key={tag.id} variant="outline">{tag.name}</Badge>)}
         </div>
-        <h1 className="mb-3 text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
+        <h1 className="mb-3 text-2xl md:text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
         <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]"><span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{formatDate(post.createdAt)}</span><span className="flex items-center gap-1"><Eye className="h-4 w-4" />{post.viewCount}</span></div>
         {isAuthenticated && <div className="mt-4 flex gap-2"><Button variant="outline" size="sm" asChild><Link to={`/write/${post.id}`}><Edit className="mr-1 h-4 w-4" />{t("post_edit")}</Link></Button><Button variant="destructive" size="sm" onClick={handleDelete}><Trash2 className="mr-1 h-4 w-4" />{t("post_delete")}</Button></div>}
       </div>

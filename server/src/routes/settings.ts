@@ -35,7 +35,7 @@ settingsRoute.get("/profile", async (c) => {
 });
 
 settingsRoute.put("/profile", authMiddleware, async (c) => {
-  const ownerId = c.get("ownerId") as string;
+  const ownerId = c.get("ownerId");
   const body = await c.req.json<{
     displayName?: string; bio?: string; aboutMe?: string; jobTitle?: string;
     company?: string; location?: string; blogTitle?: string; blogDescription?: string;
@@ -60,7 +60,7 @@ settingsRoute.put("/profile", authMiddleware, async (c) => {
 });
 
 settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
-  const ownerId = c.get("ownerId") as string;
+  const ownerId = c.get("ownerId");
   const formData = await c.req.formData();
   const file = formData.get("avatar") as File | null;
   if (!file) return c.json({ error: "이미지 파일을 선택해주세요." }, 400);
@@ -106,7 +106,7 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
 });
 
 settingsRoute.delete("/profile/avatar", authMiddleware, async (c) => {
-  const ownerId = c.get("ownerId") as string;
+  const ownerId = c.get("ownerId");
   db.update(schema.owner).set({
     avatarUrl: null, avatarOriginalName: null, avatarMimeType: null,
     avatarSizeBytes: null, updatedAt: new Date().toISOString(),
@@ -119,7 +119,7 @@ settingsRoute.get("/profile/social-links", async (c) => {
 });
 
 settingsRoute.put("/profile/social-links", authMiddleware, async (c) => {
-  const body = await c.req.json<{ links: Array<{ platform: string; url: string; label?: string; sortOrder?: number }> }>();
+  const body = await c.req.json<{ links: { platform: string; url: string; label?: string; sortOrder?: number }[] }>();
   db.delete(schema.socialLinks).run();
   for (let i = 0; i < body.links.length; i++) {
     const link = body.links[i]!;
@@ -133,7 +133,7 @@ settingsRoute.put("/profile/social-links", authMiddleware, async (c) => {
 
 // ============ 계정 (이메일/비밀번호) 변경 ============
 settingsRoute.put("/profile/account", authMiddleware, async (c) => {
-  const ownerId = c.get("ownerId") as string;
+  const ownerId = c.get("ownerId");
   const body = await c.req.json<{
     email?: string;
     currentPassword: string;

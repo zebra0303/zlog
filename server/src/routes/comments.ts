@@ -77,7 +77,7 @@ function buildCommentTree(
     isLikedByMe: boolean;
   })[],
   parentId: string | null = null,
-  depth: number = 0,
+  depth = 0,
 ): (ReturnType<typeof stripPassword> & {
   likeCount: number;
   isLikedByMe: boolean;
@@ -198,7 +198,7 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   }
 
   const post = db.select().from(schema.posts).where(eq(schema.posts.id, postId)).get();
-  if (!post || post.status !== "published") {
+  if (post?.status !== "published") {
     return c.json({ error: "Post not found." }, 404);
   }
 

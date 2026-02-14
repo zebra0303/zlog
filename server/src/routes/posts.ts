@@ -87,7 +87,7 @@ postsRoute.get("/", async (c) => {
   });
 
   // 카테고리별 조회 시 remote_posts도 포함
-  let remoteItems: Array<Omit<(typeof localItems)[number], "isRemote" | "remoteUri" | "remoteBlog"> & { isRemote: boolean; remoteUri: string | null; remoteBlog: { siteUrl: string; displayName: string | null; blogTitle: string | null; avatarUrl: string | null } | null }> = [];
+  let remoteItems: (Omit<(typeof localItems)[number], "isRemote" | "remoteUri" | "remoteBlog"> & { isRemote: boolean; remoteUri: string | null; remoteBlog: { siteUrl: string; displayName: string | null; blogTitle: string | null; avatarUrl: string | null } | null })[] = [];
   if (categoryId && status === "published") {
     const remotePostsResult = db
       .select()

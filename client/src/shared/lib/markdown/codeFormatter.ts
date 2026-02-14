@@ -41,33 +41,33 @@ export async function formatCode(code: string, lang: string): Promise<string> {
 
     // parser에 따라 필요한 플러그인만 로드
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const plugins: any[] = [estreePlugin.default ?? estreePlugin];
+    const plugins: any[] = [estreePlugin.default ?? estreePlugin]; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 
     if (parser === "babel" || parser === "json") {
       const babel = await import("prettier/plugins/babel");
-      plugins.push(babel.default ?? babel);
+      plugins.push(babel.default ?? babel); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     } else if (parser === "typescript") {
       const [babel, ts] = await Promise.all([
         import("prettier/plugins/babel"),
         import("prettier/plugins/typescript"),
       ]);
-      plugins.push(babel.default ?? babel);
-      plugins.push(ts.default ?? ts);
+      plugins.push(babel.default ?? babel); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+      plugins.push(ts.default ?? ts); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     } else if (parser === "css" || parser === "scss" || parser === "less") {
       const css = await import("prettier/plugins/postcss");
-      plugins.push(css.default ?? css);
+      plugins.push(css.default ?? css); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     } else if (parser === "html") {
       const html = await import("prettier/plugins/html");
-      plugins.push(html.default ?? html);
+      plugins.push(html.default ?? html); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     } else if (parser === "markdown") {
       const md = await import("prettier/plugins/markdown");
-      plugins.push(md.default ?? md);
+      plugins.push(md.default ?? md); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     } else if (parser === "yaml") {
       const yaml = await import("prettier/plugins/yaml");
-      plugins.push(yaml.default ?? yaml);
+      plugins.push(yaml.default ?? yaml); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     } else if (parser === "graphql") {
       const gql = await import("prettier/plugins/graphql");
-      plugins.push(gql.default ?? gql);
+      plugins.push(gql.default ?? gql); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     }
 
     const formatted = await prettier.format(code, {

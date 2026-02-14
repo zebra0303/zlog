@@ -37,7 +37,7 @@ auth.post("/login", async (c) => {
 });
 
 auth.get("/me", authMiddleware, async (c) => {
-  const ownerRecord = c.get("owner") as typeof schema.owner.$inferSelect;
+  const ownerRecord = c.get("owner");
   const { passwordHash: _, ...ownerData } = ownerRecord;
   return c.json(ownerData);
 });

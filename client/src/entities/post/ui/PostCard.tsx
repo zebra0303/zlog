@@ -18,7 +18,7 @@ export function PostCard({ post }: PostCardProps) {
   const { t } = useI18n();
 
   const sourceUrl = post.isRemote
-    ? (post.remoteUri || post.remoteBlog?.siteUrl || null)
+    ? (post.remoteUri ?? post.remoteBlog?.siteUrl ?? null)
     : null;
 
   return (
@@ -49,7 +49,7 @@ export function PostCard({ post }: PostCardProps) {
             href={sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); }}
             className="inline-flex items-center gap-1 text-xs text-[var(--color-primary)] hover:underline"
           >
             <ExternalLink className="h-3 w-3" />

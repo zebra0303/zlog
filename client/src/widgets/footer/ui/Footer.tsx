@@ -11,7 +11,7 @@ export function Footer() {
   const customStyle = getFooterStyle(isDark);
   const hasCustom = Boolean((customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""));
   const hasCustomHeight = !!customStyle.minHeight;
-  const compactMinHeight = "clamp(52px, 8vw, 64px)";
+  const compactMinHeight = "clamp(36px, 6vw, 44px)";
 
   const [expanded, setExpanded] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -35,7 +35,7 @@ export function Footer() {
 
   const isExpanded = !hasCustomHeight || expanded;
   const isCompact = hasCustomHeight && !isExpanded;
-  const glass = `${glassBase} ${isCompact ? "py-1" : "py-2"}`;
+  const glass = `${glassBase} ${isCompact ? "py-0.5" : "py-2"}`;
 
   const footerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
     ? {
@@ -57,10 +57,10 @@ export function Footer() {
         />
       )}
       <footer
-        className={`${hasCustomHeight ? "sticky bottom-0 z-40" : ""} footer-animated ${isCompact ? "footer-compact" : ""} border-t border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]"}`}
+        className={`${hasCustomHeight ? "sticky bottom-0 z-40" : ""} footer-animated ${isCompact ? "footer-compact flex items-center" : ""} border-t border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]"}`}
         style={footerStyle}
       >
-        <div className={`footer-inner mx-auto flex max-w-6xl items-center justify-between px-4 ${isCompact ? "py-2" : "py-6"}`}>
+        <div className={`footer-inner mx-auto flex w-full max-w-6xl items-center justify-between px-4 ${isCompact ? "py-2" : "py-6"}`}>
           <div className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
             <ZlogLogo size={24} />
             <span className="text-sm text-[var(--color-text-secondary)]">
@@ -78,19 +78,19 @@ export function Footer() {
                       padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .footer-animated.footer-compact .footer-inner {
-          padding-top: 0.35rem !important;
-          padding-bottom: 0.25rem !important;
+          padding-top: 0.1rem !important;
+          padding-bottom: 0.1rem !important;
         }
         @media (min-width: 768px) {
           .footer-animated.footer-compact .footer-inner {
-            padding-top: 0.45rem !important;
-            padding-bottom: 0.3rem !important;
+            padding-top: 0.15rem !important;
+            padding-bottom: 0.15rem !important;
           }
         }
         @media (min-width: 1024px) {
           .footer-animated.footer-compact .footer-inner {
-            padding-top: 0.5rem !important;
-            padding-bottom: 0.35rem !important;
+            padding-top: 0.2rem !important;
+            padding-bottom: 0.2rem !important;
           }
         }
       `}</style>

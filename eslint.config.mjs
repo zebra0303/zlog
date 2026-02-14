@@ -6,7 +6,7 @@ import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/*.js", "**/*.mjs"],
+    ignores: ["**/dist/**", "**/node_modules/**", "**/*.js", "**/*.mjs", "client/vite.config.ts", "server/drizzle.config.ts"],
   },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,

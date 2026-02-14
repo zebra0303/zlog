@@ -251,7 +251,7 @@ federationRoute.post("/local-unsubscribe", async (c) => {
 federationRoute.get("/remote-posts/:id", async (c) => {
   const id = c.req.param("id");
   const rp = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.id, id)).get();
-  if (!rp || rp.remoteStatus !== "published") return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+  if (rp?.remoteStatus !== "published") return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
 
   const remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, rp.remoteBlogId)).get();
 
@@ -323,11 +323,11 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
     const postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts`;
     const res = await fetch(postsUrl, { signal: AbortSignal.timeout(15000) });
     if (!res.ok) return c.json({ error: `원격 서버 응답 오류: ${res.status}` }, 502);
-    const posts = (await res.json()) as Array<{
+    const posts = (await res.json()) as {
       id: string; title: string; slug: string; content: string;
       excerpt?: string; coverImage?: string; uri?: string;
       createdAt: string; updatedAt: string;
-    }>;
+    }[];
 
     const now = new Date().toISOString();
     let synced = 0;
