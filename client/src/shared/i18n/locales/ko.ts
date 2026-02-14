@@ -60,6 +60,7 @@ export const ko: Record<TranslationKeys, string> = {
   post_delete_failed: "삭제에 실패했습니다.",
   post_view_original: "원본 글 보기",
   remote_post_deleted_alert: "원본 글이 작성자에 의해 삭제되었습니다. 동기화된 글도 함께 삭제됩니다.",
+  remote_post_visit_blog: "블로그 방문",
 
   // Post Editor
   editor_title_placeholder: "제목을 입력하세요",

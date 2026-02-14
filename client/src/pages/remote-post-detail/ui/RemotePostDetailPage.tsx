@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
-import { Calendar, Globe, ArrowLeft, ExternalLink } from "lucide-react";
+import { Calendar, Globe, ArrowLeft, ExternalLink, User } from "lucide-react";
 import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -93,31 +93,70 @@ export default function RemotePostDetailPage() {
         <img src={post.coverImage} alt={post.title} className="mb-6 h-64 w-full rounded-xl object-cover" />
       )}
       <div className="mb-8">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">
-            <Globe className="mr-1 h-3 w-3" />
-            {post.remoteBlog?.displayName ?? t("post_external_blog")}
-          </Badge>
+        {/* 원본 블로그 프로필 카드 + 제목 영역 */}
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">
+                <Globe className="mr-1 h-3 w-3" />
+                {post.remoteBlog?.displayName ?? t("post_external_blog")}
+              </Badge>
+            </div>
+            <h1 className="mb-3 text-2xl md:text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
+            <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
+              {post.authorName && <span>{post.authorName}</span>}
+              <span className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                {formatDate(post.remoteCreatedAt)}
+              </span>
+            </div>
+            {post.remoteUri && (
+              <a
+                href={post.remoteUri}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-sm text-[var(--color-primary)] hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                {t("post_view_original")}
+              </a>
+            )}
+          </div>
+
+          {/* 원본 블로그 프로필 */}
+          {post.remoteBlog && (
+            <a
+              href={post.remoteBlog.siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex shrink-0 items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-colors hover:bg-[var(--color-background)] sm:max-w-[220px]"
+            >
+              {post.remoteBlog.avatarUrl ? (
+                <img
+                  src={post.remoteBlog.avatarUrl}
+                  alt={post.remoteBlog.displayName ?? ""}
+                  className="h-12 w-12 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
+                  <User className="h-6 w-6 text-[var(--color-primary)]" />
+                </div>
+              )}
+              <div className="min-w-0">
+                {post.remoteBlog.blogTitle && (
+                  <p className="truncate text-sm font-semibold text-[var(--color-text)]">{post.remoteBlog.blogTitle}</p>
+                )}
+                <p className="truncate text-xs text-[var(--color-text-secondary)]">
+                  {post.remoteBlog.displayName ?? post.remoteBlog.siteUrl}
+                </p>
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-primary)]">
+                  <ExternalLink className="h-2.5 w-2.5" />
+                  {t("remote_post_visit_blog")}
+                </p>
+              </div>
+            </a>
+          )}
         </div>
-        <h1 className="mb-3 text-2xl md:text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
-        <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
-          {post.authorName && <span>{post.authorName}</span>}
-          <span className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            {formatDate(post.remoteCreatedAt)}
-          </span>
-        </div>
-        {post.remoteUri && (
-          <a
-            href={post.remoteUri}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 inline-flex items-center gap-1 text-sm text-[var(--color-primary)] hover:underline"
-          >
-            <ExternalLink className="h-3 w-3" />
-            {t("post_view_original")}
-          </a>
-        )}
       </div>
       <Card>
         <CardContent className="pt-6">

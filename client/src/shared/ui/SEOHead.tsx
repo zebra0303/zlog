@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 
 interface SEOHeadProps {
   title?: string; description?: string; image?: string; type?: string;
@@ -6,7 +7,8 @@ interface SEOHeadProps {
 }
 
 export function SEOHead({ title, description, image, type = "website", url, publishedTime, author, tags }: SEOHeadProps) {
-  const fullTitle = title ? `${title} | zlog` : "zlog";
+  const blogTitle = useSiteSettingsStore((s) => s.settings.blog_title) || "zlog";
+  const fullTitle = title ? `${blogTitle} - ${title}` : blogTitle;
   return (
     <Helmet>
       <title>{fullTitle}</title>
