@@ -207,6 +207,13 @@ pre code.hljs {
   border: 1px solid #e5e7eb;
   background: #fafbfc;
   overflow-x: auto;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.mermaid-block:hover {
+  border-color: #6C5CE7;
+  box-shadow: 0 0 0 1px rgba(108, 92, 231, 0.2);
 }
 
 .dark .mermaid-block {
@@ -244,4 +251,78 @@ pre code.hljs {
   background: #450a0a;
   border-color: #7f1d1d;
   color: #fca5a5;
+}
+
+/* Mermaid 전체화면 모달 */
+.mermaid-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  animation: mermaid-fade-in 0.15s ease-out;
+}
+
+@keyframes mermaid-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mermaid-modal-content {
+  width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 2rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  cursor: default;
+}
+
+.dark .mermaid-modal-content {
+  background: #1a1a24;
+  border-color: #30363d;
+}
+
+.mermaid-modal-content svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-modal-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a2e;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.mermaid-modal-close:hover {
+  background: #ffffff;
+}
+
+.dark .mermaid-modal-close {
+  background: rgba(26, 26, 36, 0.9);
+  color: #f0f0f5;
+}
+
+.dark .mermaid-modal-close:hover {
+  background: #1a1a24;
 }

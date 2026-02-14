@@ -126,6 +126,73 @@ export function AppLayout() {
     return () => document.removeEventListener("click", handler);
   }, []);
 
+  // Mermaid 다이어그램 클릭 → 전체화면 모달
+  useEffect(() => {
+    function closeModal() {
+      document.getElementById("mermaid-modal")?.remove();
+    }
+
+    const handleClick = (e: MouseEvent) => {
+      const block = (e.target as HTMLElement).closest<HTMLElement>(".mermaid-block[data-rendered]");
+      if (!block) return;
+
+      // 이미 모달이 열려 있으면 무시
+      if (document.getElementById("mermaid-modal")) return;
+
+      const svg = block.querySelector("svg");
+      if (!svg) return;
+
+      const overlay = document.createElement("div");
+      overlay.id = "mermaid-modal";
+      overlay.className = "mermaid-modal-overlay";
+      overlay.addEventListener("click", (ev) => {
+        if (ev.target === overlay) closeModal();
+      });
+
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "mermaid-modal-close";
+      closeBtn.innerHTML = "&times;";
+      closeBtn.setAttribute("aria-label", "Close");
+      closeBtn.addEventListener("click", closeModal);
+
+      const content = document.createElement("div");
+      content.className = "mermaid-modal-content";
+
+      // SVG를 복제하고 고정 크기 속성을 제거하여 모달 너비에 맞춰 확대
+      const clonedSvg = svg.cloneNode(true) as SVGSVGElement;
+      const origW = clonedSvg.getAttribute("width");
+      const origH = clonedSvg.getAttribute("height");
+      // viewBox가 없으면 원본 width/height로 설정
+      if (!clonedSvg.getAttribute("viewBox") && origW && origH) {
+        const w = parseFloat(origW);
+        const h = parseFloat(origH);
+        if (w > 0 && h > 0) {
+          clonedSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+        }
+      }
+      clonedSvg.removeAttribute("width");
+      clonedSvg.removeAttribute("height");
+      clonedSvg.style.width = "100%";
+      clonedSvg.style.height = "auto";
+      content.appendChild(clonedSvg);
+
+      overlay.appendChild(closeBtn);
+      overlay.appendChild(content);
+      document.body.appendChild(overlay);
+    };
+
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+    };
+
+    document.addEventListener("click", handleClick);
+    document.addEventListener("keydown", handleKeydown);
+    return () => {
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("keydown", handleKeydown);
+    };
+  }, []);
+
   const isEditorPage = pathname.startsWith("/write");
 
   return (
