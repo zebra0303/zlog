@@ -9,7 +9,7 @@ export function Footer() {
   const { isDark } = useThemeStore();
   const { getFooterStyle } = useSiteSettingsStore();
   const customStyle = getFooterStyle(isDark);
-  const hasCustom = !!(customStyle.backgroundColor || customStyle.backgroundImage);
+  const hasCustom = Boolean((customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""));
   const hasCustomHeight = !!customStyle.minHeight;
 
   const [expanded, setExpanded] = useState(false);
@@ -21,14 +21,15 @@ export function Footer() {
     const el = sentinelRef.current;
     if (!el) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry) setExpanded(entry.isIntersecting);
-      },
-      { threshold: 0 },
-    );
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      setExpanded(entry.isIntersecting);
+    }, { threshold: 0 });
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [hasCustomHeight]);
 
   const isExpanded = !hasCustomHeight || expanded;

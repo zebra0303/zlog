@@ -49,7 +49,9 @@ export function AppLayout() {
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
 
   // Mermaid 다이어그램 렌더링 — MutationObserver로 DOM 변화 감지
-  const handleMermaid = useCallback(() => { void renderMermaidBlocks(); }, []);
+  const handleMermaid = useCallback(() => {
+    void renderMermaidBlocks();
+  }, []);
 
   useEffect(() => {
     // 초기 렌더링
@@ -60,7 +62,7 @@ export function AppLayout() {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (node instanceof HTMLElement) {
-            if (node.classList?.contains("mermaid-block") || node.querySelector?.(".mermaid-block")) {
+            if (node.classList.contains("mermaid-block") || node.querySelector(".mermaid-block")) {
               handleMermaid();
               return;
             }
@@ -70,7 +72,11 @@ export function AppLayout() {
     });
     observerRef.current.observe(document.body, { childList: true, subtree: true });
 
-    return () => { observerRef.current?.disconnect(); };
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
   }, [handleMermaid]);
 
   // 테마 변경 시 mermaid 다이어그램 재렌더링
@@ -83,12 +89,14 @@ export function AppLayout() {
       void renderMermaidBlocks();
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   // 코드블록 복사 버튼 — 전역 이벤트 위임
   useEffect(() => {
-    const handler = async (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".code-block-copy");
       if (!btn) return;
       const wrapper = btn.closest(".code-block-wrapper");
@@ -96,34 +104,25 @@ export function AppLayout() {
       const codeEl = wrapper.querySelector("pre code");
       if (!codeEl) return;
 
-      try {
-        await navigator.clipboard.writeText(codeEl.textContent ?? "");
+      const copied = () => {
         btn.dataset.copied = "true";
         btn.innerHTML = `${CHECK_SVG}<span>Copied!</span>`;
         setTimeout(() => {
           btn.dataset.copied = "";
           btn.innerHTML = COPY_SVG;
         }, 2000);
-      } catch {
-        // fallback
-        const ta = document.createElement("textarea");
-        ta.value = codeEl.textContent ?? "";
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        btn.dataset.copied = "true";
-        btn.innerHTML = `${CHECK_SVG}<span>Copied!</span>`;
-        setTimeout(() => {
+      };
+
+      navigator.clipboard.writeText(codeEl.textContent)
+        .then(copied)
+        .catch(() => {
           btn.dataset.copied = "";
-          btn.innerHTML = COPY_SVG;
-        }, 2000);
-      }
+        });
     };
     document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
+    return () => {
+      document.removeEventListener("click", handler);
+    };
   }, []);
 
   // Mermaid 다이어그램 클릭 → 전체화면 모달

@@ -16,7 +16,7 @@ interface I18nState {
 export const useI18n = create<I18nState>((set, get) => ({
   locale: "en",
   t: (key, params) => {
-    let text = translations[get().locale][key] ?? translations.en[key] ?? key;
+    let text = translations[get().locale][key];
     if (params) {
       for (const [k, v] of Object.entries(params)) {
         text = text.replace(`{${k}}`, v);
@@ -29,8 +29,8 @@ export const useI18n = create<I18nState>((set, get) => ({
     set({ locale });
   },
   initLocale: () => {
-    const saved = localStorage.getItem("zlog_locale") as Locale | null;
-    if (saved && translations[saved]) {
+    const saved = localStorage.getItem("zlog_locale");
+    if (saved === "en" || saved === "ko") {
       set({ locale: saved });
     }
   },
