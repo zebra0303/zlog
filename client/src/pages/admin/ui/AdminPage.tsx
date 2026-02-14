@@ -831,6 +831,8 @@ function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeA
     type: "success" | "error";
   } | null>(null);
   const { t, locale } = useI18n();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const localCatSelectRef = useRef<HTMLSelectElement>(null);
 
   // 구독 추가 폼 상태
   const [showAddForm, setShowAddForm] = useState(false);
@@ -898,6 +900,13 @@ function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeA
       setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
     }).finally(() => {
       setIsFetchingCats(false);
+      // 구독관리 섹션으로 스크롤 + 로컬 카테고리 포커스
+      setTimeout(() => {
+        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => {
+          localCatSelectRef.current?.focus();
+        }, 500);
+      }, 100);
     });
   }, [subscribeAction, t]);
 
@@ -1026,7 +1035,7 @@ function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeA
   };
 
   return (
-    <Card>
+    <Card ref={sectionRef}>
       <CardContent className="pt-6">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
@@ -1107,6 +1116,7 @@ function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeA
                       {t("admin_mysub_add_local_cat")}
                     </label>
                     <select
+                      ref={localCatSelectRef}
                       value={selectedLocalCat}
                       onChange={(e) => {
                         setSelectedLocalCat(e.target.value);
