@@ -61,5 +61,23 @@ export async function parseMarkdown(markdown: string): Promise<string> {
   }
 
   const result = await processor.process(processed);
-  return String(result);
+  let html = String(result);
+
+  // 코드블록에 언어 라벨 + 복사 버튼 헤더 추가
+  html = html.replace(
+    /<pre><code class="hljs language-(\w+)">/g,
+    (_match, lang: string) => {
+      const displayLang = lang.toLowerCase();
+      return `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-block-lang">${displayLang}</span><button type="button" class="code-block-copy" aria-label="Copy code"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div><pre><code class="hljs language-${lang}">`;
+    },
+  );
+
+  // 래핑된 코드블록의 닫는 태그 처리
+  // code-block-wrapper로 감싼 <pre>의 </code></pre> 뒤에 </div> 추가
+  html = html.replace(
+    /(<div class="code-block-wrapper">[\s\S]*?<\/code><\/pre>)/g,
+    "$1</div>",
+  );
+
+  return html;
 }

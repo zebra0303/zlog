@@ -36,7 +36,99 @@ body {
   outline-offset: 2px;
 }
 
-/* 코드블록 공통 스타일 */
+/* 코드블록 래퍼 */
+.code-block-wrapper {
+  position: relative;
+  margin: 1em 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #f6f8fa;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .code-block-wrapper {
+  background: #0d1117;
+  border-color: #30363d;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* 코드블록 헤더 (언어 라벨 + 복사 버튼) */
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.75rem;
+  background: #eaeef2;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.dark .code-block-header {
+  background: #161b22;
+  border-bottom-color: #30363d;
+}
+
+.code-block-lang {
+  color: #57606a;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+
+.dark .code-block-lang {
+  color: #8b949e;
+}
+
+.code-block-copy {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: #57606a;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background-color 0.15s;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.code-block-copy:hover {
+  color: #24292f;
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.dark .code-block-copy {
+  color: #8b949e;
+}
+
+.dark .code-block-copy:hover {
+  color: #c9d1d9;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.code-block-copy[data-copied="true"] {
+  color: #1a7f37;
+}
+
+.dark .code-block-copy[data-copied="true"] {
+  color: #3fb950;
+}
+
+/* 래퍼 안의 pre는 margin/border/radius 제거 (래퍼가 담당) */
+.code-block-wrapper pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* 래퍼 없는 일반 코드블록 (언어 미지정) */
 .prose pre {
   background: #f6f8fa;
   border: 1px solid #e5e7eb;
