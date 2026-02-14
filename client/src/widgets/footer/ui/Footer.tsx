@@ -3,7 +3,7 @@ import { ZlogLogo } from "@/shared/ui";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 
-const glass = "backdrop-blur-md bg-[var(--color-surface)]/70 rounded-xl px-4 py-2";
+const glassBase = "backdrop-blur-md bg-[var(--color-surface)]/70 rounded-xl px-4";
 
 export function Footer() {
   const { isDark } = useThemeStore();
@@ -11,6 +11,7 @@ export function Footer() {
   const customStyle = getFooterStyle(isDark);
   const hasCustom = Boolean((customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""));
   const hasCustomHeight = !!customStyle.minHeight;
+  const compactMinHeight = "72px";
 
   const [expanded, setExpanded] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -33,11 +34,13 @@ export function Footer() {
   }, [hasCustomHeight]);
 
   const isExpanded = !hasCustomHeight || expanded;
+  const isCompact = hasCustomHeight && !isExpanded;
+  const glass = `${glassBase} ${isCompact ? "py-1.5" : "py-2"}`;
 
   const footerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
     ? {
         ...customStyle,
-        minHeight: isExpanded ? customStyle.minHeight : undefined,
+        minHeight: hasCustomHeight ? (isExpanded ? customStyle.minHeight : compactMinHeight) : undefined,
         transition: "min-height 0.3s ease",
         overflow: "hidden",
       }
@@ -49,7 +52,7 @@ export function Footer() {
       {hasCustomHeight && (
         <div
           ref={sentinelRef}
-          style={{ height: customStyle.minHeight }}
+          style={{ height: isExpanded ? customStyle.minHeight : compactMinHeight }}
           aria-hidden="true"
         />
       )}
@@ -57,7 +60,7 @@ export function Footer() {
         className={`${hasCustomHeight ? "sticky bottom-0 z-40" : ""} border-t border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]"}`}
         style={footerStyle}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-6">
+        <div className={`mx-auto flex max-w-6xl items-center justify-between px-4 ${isCompact ? "py-3" : "py-6"}`}>
           <div className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
             <ZlogLogo size={24} />
             <span className="text-sm text-[var(--color-text-secondary)]">

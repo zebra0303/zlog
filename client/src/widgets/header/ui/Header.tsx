@@ -82,7 +82,7 @@ export function Header() {
         className={`sticky top-0 z-50 border-b border-border header-animated ${hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
         style={headerStyle}
       >
-        <div className={`mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
+        <div className={`header-inner mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
           <Link to="/" className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
             <ZlogLogo size={36} />
             <span className="text-xl font-bold text-text">zlog</span>
@@ -138,9 +138,17 @@ export function Header() {
           transition: min-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                       max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        .header-animated .header-inner {
+          transition: padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                      padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         .header-animated[data-compact="true"] {
           min-height: 0 !important;
-          max-height: 4rem !important;
+          max-height: 4.5rem !important;
+        }
+        .header-animated[data-compact="true"] .header-inner {
+          padding-top: 0.5rem !important;
+          padding-bottom: 0.75rem !important;
         }
       `}</style>
     </>
