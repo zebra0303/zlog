@@ -9,3 +9,4 @@ uploads/
 .DS_Store
 *.log
 .vite/
+*.tsbuildinfo
