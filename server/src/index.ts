@@ -24,7 +24,7 @@ import federationRoute from "./routes/federation.js";
 import oauthRoute from "./routes/oauth.js";
 import { db } from "./db/index.js";
 import * as schema from "./db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 const app = new Hono();
 
@@ -91,6 +91,111 @@ app.get("/sitemap.xml", async (c) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join("\n")}
 </urlset>`);
+});
+
+// ============ RSS 피드 ============
+
+function escapeXml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+function toRfc822(dateStr: string): string {
+  return new Date(dateStr).toUTCString();
+}
+
+function buildRssXml(
+  siteUrl: string,
+  channelTitle: string,
+  channelDesc: string,
+  channelLink: string,
+  items: { title: string; slug: string; excerpt: string | null; content: string; createdAt: string; categoryName?: string }[],
+): string {
+  const rssItems = items.map((item) => {
+    const link = `${siteUrl}/posts/${item.slug}`;
+    const desc = item.excerpt || item.content.replace(/[#*`>\[\]!()_~-]/g, "").slice(0, 300);
+    return `    <item>
+      <title>${escapeXml(item.title)}</title>
+      <link>${link}</link>
+      <guid isPermaLink="true">${link}</guid>
+      <description>${escapeXml(desc)}</description>
+      <pubDate>${toRfc822(item.createdAt)}</pubDate>${item.categoryName ? `\n      <category>${escapeXml(item.categoryName)}</category>` : ""}
+    </item>`;
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>${escapeXml(channelTitle)}</title>
+    <link>${channelLink}</link>
+    <description>${escapeXml(channelDesc)}</description>
+    <language>en</language>
+    <lastBuildDate>${toRfc822(new Date().toISOString())}</lastBuildDate>
+    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
+${rssItems.join("\n")}
+  </channel>
+</rss>`;
+}
+
+// 전체 블로그 RSS 피드
+app.get("/rss.xml", (c) => {
+  const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+  const ownerInfo = db.select().from(schema.owner).get();
+  const blogTitle = ownerInfo?.blogTitle ?? "Blog";
+  const blogDesc = ownerInfo?.blogDescription ?? "";
+
+  const posts = db
+    .select({
+      title: schema.posts.title,
+      slug: schema.posts.slug,
+      excerpt: schema.posts.excerpt,
+      content: schema.posts.content,
+      createdAt: schema.posts.createdAt,
+      categoryName: schema.categories.name,
+    })
+    .from(schema.posts)
+    .leftJoin(schema.categories, eq(schema.posts.categoryId, schema.categories.id))
+    .where(eq(schema.posts.status, "published"))
+    .orderBy(desc(schema.posts.createdAt))
+    .limit(20)
+    .all();
+
+  const xml = buildRssXml(siteUrl, blogTitle, blogDesc, siteUrl, posts.map((p) => ({ ...p, categoryName: p.categoryName ?? undefined })));
+  c.header("Content-Type", "application/rss+xml; charset=utf-8");
+  return c.body(xml);
+});
+
+// 카테고리별 RSS 피드
+app.get("/category/:slug/rss.xml", (c) => {
+  const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+  const slug = c.req.param("slug");
+  const ownerInfo = db.select().from(schema.owner).get();
+  const blogTitle = ownerInfo?.blogTitle ?? "Blog";
+
+  const category = db.select().from(schema.categories).where(eq(schema.categories.slug, slug)).get();
+  if (!category) {
+    c.header("Content-Type", "application/rss+xml; charset=utf-8");
+    return c.body(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Not Found</title></channel></rss>`);
+  }
+
+  const posts = db
+    .select({
+      title: schema.posts.title,
+      slug: schema.posts.slug,
+      excerpt: schema.posts.excerpt,
+      content: schema.posts.content,
+      createdAt: schema.posts.createdAt,
+    })
+    .from(schema.posts)
+    .where(and(eq(schema.posts.status, "published"), eq(schema.posts.categoryId, category.id)))
+    .orderBy(desc(schema.posts.createdAt))
+    .limit(20)
+    .all();
+
+  const channelTitle = `${blogTitle} - ${category.name}`;
+  const channelLink = `${siteUrl}/category/${category.slug}`;
+  const xml = buildRssXml(siteUrl, channelTitle, category.description ?? "", channelLink, posts.map((p) => ({ ...p, categoryName: category.name })));
+  c.header("Content-Type", "application/rss+xml; charset=utf-8");
+  return c.body(xml);
 });
 
 app.get("*", serveStatic({ root: CLIENT_DIST, path: "index.html" }));

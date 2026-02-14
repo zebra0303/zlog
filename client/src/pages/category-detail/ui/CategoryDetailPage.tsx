@@ -234,17 +234,28 @@ export default function CategoryDetailPage() {
                     <Badge variant="outline">{category.followerCount} {t("cat_followers_count")}</Badge>
                   </div>
                 </div>
-                {!isAuthenticated && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowSubscribe(true)}
-                    className="shrink-0"
+                <div className="flex shrink-0 items-center gap-2">
+                  <a
+                    href={`/category/${category.slug}/rss.xml`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    title="RSS Feed"
                   >
-                    <Rss className="mr-1 h-4 w-4" />
-                    {t("cat_subscribe")}
-                  </Button>
-                )}
+                    <Rss className="h-4 w-4" />
+                    RSS
+                  </a>
+                  {!isAuthenticated && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSubscribe(true)}
+                    >
+                      <Rss className="mr-1 h-4 w-4" />
+                      {t("cat_subscribe")}
+                    </Button>
+                  )}
+                </div>
               </div>
               {descHtml && (
                 <div
