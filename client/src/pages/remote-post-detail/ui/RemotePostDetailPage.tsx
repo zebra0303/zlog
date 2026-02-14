@@ -46,8 +46,8 @@ export default function RemotePostDetailPage() {
         setHtmlContent(await parseMarkdown(data.content));
         setIsLoading(false);
       })
-      .catch((err: Error) => {
-        setError(err.message);
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to load remote post");
         setIsLoading(false);
       });
   }, [id]);
@@ -74,7 +74,7 @@ export default function RemotePostDetailPage() {
     );
 
   return (
-    <article>
+    <article className="min-w-0 overflow-x-hidden">
       <SEOHead title={post.title} description={post.excerpt ?? undefined} />
       <Button variant="ghost" size="sm" className="mb-4" asChild>
         <Link to="/">

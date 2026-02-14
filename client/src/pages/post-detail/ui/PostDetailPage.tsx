@@ -21,7 +21,7 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     if (!slug) return; setIsLoading(true);
-    void api.get<PostWithCategory>(`/posts/${slug}`).then(async (data) => { setPost(data); setHtmlContent(await parseMarkdown(data.content)); setIsLoading(false); }).catch((err: Error) => { setError(err.message); setIsLoading(false); });
+    void api.get<PostWithCategory>(`/posts/${slug}`).then(async (data) => { setPost(data); setHtmlContent(await parseMarkdown(data.content)); setIsLoading(false); }).catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load post"); setIsLoading(false); });
   }, [slug]);
 
   const handleDelete = async () => {
@@ -33,7 +33,7 @@ export default function PostDetailPage() {
   if (error || !post) return <div className="py-20 text-center"><p className="text-lg text-[var(--color-text-secondary)]">{error ?? t("post_not_found")}</p><Button variant="outline" className="mt-4" asChild><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />{t("post_go_home")}</Link></Button></div>;
 
   return (
-    <article>
+    <article className="min-w-0 overflow-x-hidden">
       <SEOHead title={post.title} description={post.excerpt ?? undefined} type="article" publishedTime={post.createdAt} tags={post.tags.map((tg) => tg.name)} />
       <Button variant="ghost" size="sm" className="mb-4" asChild><Link to="/"><ArrowLeft className="mr-1 h-4 w-4" />{t("post_go_list")}</Link></Button>
       {post.coverImage && <img src={post.coverImage} alt={post.title} className="mb-6 h-64 w-full rounded-xl object-cover" />}
