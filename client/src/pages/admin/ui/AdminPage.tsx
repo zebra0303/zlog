@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, useSearchParams, Link } from "react-router";
 import {
   Settings,
   FileText,
@@ -814,7 +814,14 @@ interface RemoteCategoryOption {
   description?: string;
 }
 
-function SubscriptionManager() {
+interface SubscribeActionParams {
+  remoteUrl: string;
+  remoteCatId: string;
+  remoteCatName: string;
+  remoteCatSlug: string;
+}
+
+function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeActionParams | null }) {
   const [subs, setSubs] = useState<MySubscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [syncingId, setSyncingId] = useState<string | null>(null);
@@ -862,6 +869,38 @@ function SubscriptionManager() {
     }
   }, [showAddForm, localCats.length]);
 
+  // subscribeAction 으로 자동 열기
+  const actionProcessed = useRef(false);
+  useEffect(() => {
+    if (!subscribeAction || actionProcessed.current) return;
+    actionProcessed.current = true;
+    setShowAddForm(true);
+    let url = subscribeAction.remoteUrl;
+    if (!url.startsWith("http")) url = `https://${url}`;
+    url = url.replace(/\/+$/, "");
+    setAddUrl(url);
+    // 자동으로 카테고리 fetch
+    setIsFetchingCats(true);
+    setAddMessage(null);
+    setRemoteCats([]);
+    void api.get<RemoteCategoryOption[]>(
+      `/federation/remote-categories?url=${encodeURIComponent(url)}`,
+    ).then((cats) => {
+      if (cats.length > 0) {
+        setRemoteCats(cats);
+        // remoteCatId 와 일치하는 카테고리 선택
+        const match = cats.find((c) => c.id === subscribeAction.remoteCatId);
+        if (match) setSelectedRemoteCat(match.id);
+      } else {
+        setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
+      }
+    }).catch(() => {
+      setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
+    }).finally(() => {
+      setIsFetchingCats(false);
+    });
+  }, [subscribeAction, t]);
+
   const handleFetchRemoteCategories = async () => {
     let url = addUrl.trim();
     if (!url) return;
@@ -899,11 +938,31 @@ function SubscriptionManager() {
     const localCat = localCats.find((c) => c.slug === selectedLocalCat);
     if (!localCat) return;
 
+    const remoteSiteUrl = addUrl.trim().replace(/\/+$/, "");
+    const mySiteUrl = window.location.origin;
+    const myCallbackUrl = `${mySiteUrl}/api/federation/webhook`;
+
     setIsSubscribing(true);
     setAddMessage(null);
     try {
+      // 1) 원격 블로그에 구독자 등록 (원격 블로그가 웹훅을 보낼 수 있도록)
+      try {
+        await fetch(`${remoteSiteUrl}/api/federation/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categoryId: remoteCat.id,
+            subscriberUrl: mySiteUrl,
+            callbackUrl: myCallbackUrl,
+          }),
+        });
+      } catch {
+        /* 원격 블로그 등록 실패해도 로컬 구독은 진행 */
+      }
+
+      // 2) 로컬 구독 레코드 생성
       await api.post("/federation/local-subscribe", {
-        remoteSiteUrl: addUrl.trim().replace(/\/+$/, ""),
+        remoteSiteUrl,
         remoteCategoryId: remoteCat.id,
         remoteCategoryName: remoteCat.name,
         remoteCategorySlug: remoteCat.slug,
@@ -1291,13 +1350,26 @@ export default function AdminPage() {
   const { isAuthenticated } = useAuthStore();
   const { fetchSettings: refreshSiteSettings } = useSiteSettingsStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  // subscribe action 쿼리 파라미터 감지
+  const subscribeAction = searchParams.get("action") === "subscribe"
+    ? {
+        remoteUrl: searchParams.get("remoteUrl") ?? "",
+        remoteCatId: searchParams.get("remoteCatId") ?? "",
+        remoteCatName: searchParams.get("remoteCatName") ?? "",
+        remoteCatSlug: searchParams.get("remoteCatSlug") ?? "",
+      }
+    : null;
+
   useEffect(() => {
     if (!isAuthenticated) {
-      void navigate("/login");
+      // 로그인 후 현재 URL(쿼리 파라미터 포함)으로 리디렉트
+      const currentPath = window.location.pathname + window.location.search;
+      void navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
     void api.get<Record<string, string>>("/settings").then(setSettings);
@@ -1532,7 +1604,7 @@ export default function AdminPage() {
       </Card>
 
       {/* 내가 구독 중인 카테고리 */}
-      <SubscriptionManager />
+      <SubscriptionManager subscribeAction={subscribeAction} />
 
       {/* 구독자 관리 */}
       <SubscriberManager />

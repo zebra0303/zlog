@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { LogIn } from "lucide-react";
 import { Button, Input, Card, CardContent, CardHeader, SEOHead, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useI18n();
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
@@ -20,7 +21,8 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(email, password);
-      void navigate("/");
+      const redirect = searchParams.get("redirect");
+      void navigate(redirect ?? "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("request_failed"));
     } finally {
