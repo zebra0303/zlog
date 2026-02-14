@@ -10,6 +10,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ["mermaid"],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/mermaid/, /node_modules/],
+    },
+  },
   server: {
     port: 5173,
     proxy: {
