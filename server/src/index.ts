@@ -28,6 +28,16 @@ import { eq, desc, and } from "drizzle-orm";
 
 const app = new Hono();
 
+// Federation API는 다른 블로그(다른 origin)에서도 호출 가능해야 하므로 CORS 허용
+app.use(
+  "/api/federation/*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
 app.use(
   "*",
   cors({
