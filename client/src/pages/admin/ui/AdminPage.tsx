@@ -948,28 +948,11 @@ function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeA
     if (!localCat) return;
 
     const remoteSiteUrl = addUrl.trim().replace(/\/+$/, "");
-    const mySiteUrl = window.location.origin;
-    const myCallbackUrl = `${mySiteUrl}/api/federation/webhook`;
 
     setIsSubscribing(true);
     setAddMessage(null);
     try {
-      // 1) 원격 블로그에 구독자 등록 (원격 블로그가 웹훅을 보낼 수 있도록)
-      try {
-        await fetch(`${remoteSiteUrl}/api/federation/subscribe`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            categoryId: remoteCat.id,
-            subscriberUrl: mySiteUrl,
-            callbackUrl: myCallbackUrl,
-          }),
-        });
-      } catch {
-        /* 원격 블로그 등록 실패해도 로컬 구독은 진행 */
-      }
-
-      // 2) 로컬 구독 레코드 생성
+      // 서버에서 로컬 구독 + 원격 블로그 구독자 등록을 모두 처리
       await api.post("/federation/local-subscribe", {
         remoteSiteUrl,
         remoteCategoryId: remoteCat.id,

@@ -202,6 +202,25 @@ federationRoute.post("/local-subscribe", async (c) => {
 
   const subId = generateId();
   db.insert(schema.categorySubscriptions).values({ id: subId, localCategoryId: localCat.id, remoteCategoryId: remoteCat.id, createdAt: new Date().toISOString() }).run();
+
+  // 원격 블로그에 구독자 등록 (웹훅을 받을 수 있도록 — 실패해도 로컬 구독은 유지)
+  const ownerRecord = db.select().from(schema.owner).limit(1).get();
+  const mySiteUrl = ownerRecord?.siteUrl ?? process.env.SITE_URL ?? "http://localhost:3000";
+  try {
+    await fetch(`${body.remoteSiteUrl}/api/federation/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categoryId: body.remoteCategoryId,
+        subscriberUrl: mySiteUrl,
+        callbackUrl: `${mySiteUrl}/api/federation/webhook`,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch {
+    console.warn("⚠️ 원격 블로그 구독자 등록 실패 (로컬 구독은 유지됨)");
+  }
+
   return c.json({ message: "로컬 구독이 등록되었습니다.", subscriptionId: subId }, 201);
 });
 
