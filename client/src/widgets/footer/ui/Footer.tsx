@@ -11,7 +11,7 @@ export function Footer() {
   const customStyle = getFooterStyle(isDark);
   const hasCustom = Boolean((customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""));
   const hasCustomHeight = !!customStyle.minHeight;
-  const compactMinHeight = "72px";
+  const compactMinHeight = "clamp(56px, 9vw, 68px)";
 
   const [expanded, setExpanded] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -35,7 +35,7 @@ export function Footer() {
 
   const isExpanded = !hasCustomHeight || expanded;
   const isCompact = hasCustomHeight && !isExpanded;
-  const glass = `${glassBase} ${isCompact ? "py-1.5" : "py-2"}`;
+  const glass = `${glassBase} ${isCompact ? "py-1 sm:py-1.5" : "py-2"}`;
 
   const footerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
     ? {
@@ -60,7 +60,7 @@ export function Footer() {
         className={`${hasCustomHeight ? "sticky bottom-0 z-40" : ""} border-t border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]"}`}
         style={footerStyle}
       >
-        <div className={`mx-auto flex max-w-6xl items-center justify-between px-4 ${isCompact ? "py-3" : "py-6"}`}>
+        <div className={`mx-auto flex max-w-6xl items-center justify-between px-4 ${isCompact ? "py-2 sm:py-2.5 lg:py-3" : "py-6"}`}>
           <div className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
             <ZlogLogo size={24} />
             <span className="text-sm text-[var(--color-text-secondary)]">

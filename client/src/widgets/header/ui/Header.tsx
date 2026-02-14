@@ -144,11 +144,29 @@ export function Header() {
         }
         .header-animated[data-compact="true"] {
           min-height: 0 !important;
-          max-height: 4.5rem !important;
+          max-height: 4rem !important;
         }
         .header-animated[data-compact="true"] .header-inner {
-          padding-top: 0.5rem !important;
-          padding-bottom: 0.75rem !important;
+          padding-top: 0.3rem !important;
+          padding-bottom: 0.5rem !important;
+        }
+        @media (min-width: 768px) {
+          .header-animated[data-compact="true"] {
+            max-height: 4.15rem !important;
+          }
+          .header-animated[data-compact="true"] .header-inner {
+            padding-top: 0.4rem !important;
+            padding-bottom: 0.6rem !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .header-animated[data-compact="true"] {
+            max-height: 4.25rem !important;
+          }
+          .header-animated[data-compact="true"] .header-inner {
+            padding-top: 0.45rem !important;
+            padding-bottom: 0.65rem !important;
+          }
         }
       `}</style>
     </>
