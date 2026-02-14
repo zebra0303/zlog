@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, Link } from "react-router";
 import { Search, X, Rss } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
-import { Input, Pagination, SEOHead, Skeleton } from "@/shared/ui";
+import { Input, Button, Pagination, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
+import { useAuthStore } from "@/features/auth/model/store";
 import { useI18n } from "@/shared/i18n";
 import type { PostWithCategory, CategoryWithStats, PaginatedResponse } from "@zlog/shared";
 
@@ -18,7 +19,13 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(currentSearch);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
+
+  // Find selected category object for subscribe
+  const selectedCategory = currentCategory
+    ? categories.find((c) => c.slug === currentCategory) ?? null
+    : null;
 
   useEffect(() => {
     void api.get<CategoryWithStats[]>("/categories").then(setCategories);
@@ -104,6 +111,19 @@ export default function HomePage() {
           <Rss className="h-4 w-4" />
           RSS
         </a>
+        {selectedCategory && !isAuthenticated && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            asChild
+          >
+            <Link to={`/category/${selectedCategory.slug}`}>
+              <Rss className="mr-1 h-4 w-4" />
+              {t("cat_subscribe")}
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* 검색 */}
