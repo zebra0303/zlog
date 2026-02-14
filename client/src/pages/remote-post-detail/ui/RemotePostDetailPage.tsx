@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
-import { Calendar, Globe, ArrowLeft, ExternalLink, User } from "lucide-react";
-import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
+import { Calendar, Globe, ArrowLeft, ExternalLink } from "lucide-react";
+import { Badge, Button, Card, CardContent, DefaultAvatar, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -138,9 +138,7 @@ export default function RemotePostDetailPage() {
                   className="h-12 w-12 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
-                  <User className="h-6 w-6 text-[var(--color-primary)]" />
-                </div>
+                <DefaultAvatar size={48} />
               )}
               <div className="min-w-0">
                 {post.remoteBlog.blogTitle && (

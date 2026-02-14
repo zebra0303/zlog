@@ -49,10 +49,14 @@ function fixRemoteUrl(url: string | null, remoteSiteUrl: string): string | null 
 federationRoute.get("/info", async (c) => {
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
   if (!ownerRecord) return c.json({ error: "블로그 정보를 찾을 수 없습니다." }, 404);
+  const siteUrl = ownerRecord.siteUrl ?? "";
+  const avatarAbsoluteUrl = ownerRecord.avatarUrl && ownerRecord.avatarUrl.startsWith("/")
+    ? `${siteUrl}${ownerRecord.avatarUrl}`
+    : ownerRecord.avatarUrl;
   return c.json({
-    siteUrl: ownerRecord.siteUrl, displayName: ownerRecord.displayName,
+    siteUrl, displayName: ownerRecord.displayName,
     blogTitle: ownerRecord.blogTitle, blogDescription: ownerRecord.blogDescription,
-    avatarUrl: ownerRecord.avatarUrl, blogHandle: ownerRecord.blogHandle,
+    avatarUrl: avatarAbsoluteUrl, blogHandle: ownerRecord.blogHandle,
   });
 });
 
@@ -132,7 +136,7 @@ federationRoute.post("/webhook", async (c) => {
       const infoRes = await fetch(`${body.siteUrl}/api/federation/info`);
       const info = (await infoRes.json()) as { displayName?: string; blogTitle?: string; avatarUrl?: string };
       const id = generateId();
-      db.insert(schema.remoteBlogs).values({ id, siteUrl: body.siteUrl, displayName: info.displayName ?? null, blogTitle: info.blogTitle ?? null, avatarUrl: info.avatarUrl ?? null, createdAt: new Date().toISOString() }).run();
+      db.insert(schema.remoteBlogs).values({ id, siteUrl: body.siteUrl, displayName: info.displayName ?? null, blogTitle: info.blogTitle ?? null, avatarUrl: fixRemoteUrl(info.avatarUrl ?? null, body.siteUrl), createdAt: new Date().toISOString() }).run();
       remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, id)).get()!;
     } catch { return c.json({ error: "원격 블로그 정보를 가져올 수 없습니다." }, 502); }
   }
@@ -190,7 +194,7 @@ federationRoute.post("/local-subscribe", async (c) => {
     try {
       const infoRes = await fetch(`${body.remoteSiteUrl}/api/federation/info`);
       const info = (await infoRes.json()) as { displayName?: string; blogTitle?: string; avatarUrl?: string };
-      db.insert(schema.remoteBlogs).values({ id, siteUrl: body.remoteSiteUrl, displayName: info.displayName ?? null, blogTitle: info.blogTitle ?? null, avatarUrl: info.avatarUrl ?? null, createdAt: new Date().toISOString() }).run();
+      db.insert(schema.remoteBlogs).values({ id, siteUrl: body.remoteSiteUrl, displayName: info.displayName ?? null, blogTitle: info.blogTitle ?? null, avatarUrl: fixRemoteUrl(info.avatarUrl ?? null, body.remoteSiteUrl), createdAt: new Date().toISOString() }).run();
     } catch {
       db.insert(schema.remoteBlogs).values({ id, siteUrl: body.remoteSiteUrl, createdAt: new Date().toISOString() }).run();
     }
@@ -255,6 +259,13 @@ federationRoute.get("/remote-posts/:id", async (c) => {
 
   const remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, rp.remoteBlogId)).get();
 
+  const remoteBlogInfo = remoteBlog ? {
+    siteUrl: remoteBlog.siteUrl,
+    displayName: remoteBlog.displayName,
+    blogTitle: remoteBlog.blogTitle,
+    avatarUrl: fixRemoteUrl(remoteBlog.avatarUrl, remoteBlog.siteUrl),
+  } : null;
+
   // 원본 블로그에서 최신 상태 확인 (백그라운드 검증)
   if (remoteBlog && rp.remoteUri) {
     // remoteUri 형태: "https://blog.example.com/posts/{postId}"
@@ -275,7 +286,7 @@ federationRoute.get("/remote-posts/:id", async (c) => {
           return c.json({
             ...rp,
             remoteStatus: "deleted",
-            remoteBlog: remoteBlog ? { siteUrl: remoteBlog.siteUrl, displayName: remoteBlog.displayName, blogTitle: remoteBlog.blogTitle, avatarUrl: remoteBlog.avatarUrl } : null,
+            remoteBlog: remoteBlogInfo,
           });
         } else if (res.ok) {
           const original = await res.json() as {
@@ -301,7 +312,7 @@ federationRoute.get("/remote-posts/:id", async (c) => {
             const updated = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.id, id)).get();
             return c.json({
               ...updated,
-              remoteBlog: remoteBlog ? { siteUrl: remoteBlog.siteUrl, displayName: remoteBlog.displayName, blogTitle: remoteBlog.blogTitle, avatarUrl: remoteBlog.avatarUrl } : null,
+              remoteBlog: remoteBlogInfo,
             });
           }
         }
@@ -316,7 +327,7 @@ federationRoute.get("/remote-posts/:id", async (c) => {
 
   return c.json({
     ...rp,
-    remoteBlog: remoteBlog ? { siteUrl: remoteBlog.siteUrl, displayName: remoteBlog.displayName, blogTitle: remoteBlog.blogTitle, avatarUrl: remoteBlog.avatarUrl } : null,
+    remoteBlog: remoteBlogInfo,
   });
 });
 
