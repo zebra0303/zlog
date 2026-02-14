@@ -106,6 +106,7 @@ export const comments = sqliteTable(
     authorUrl: text("author_url"),
     authorAvatarUrl: text("author_avatar_url"),
     content: text("content").notNull(),
+    password: text("password"),
     parentId: text("parent_id"),
     isEdited: integer("is_edited", { mode: "boolean" }).default(false).notNull(),
     createdAt: text("created_at").notNull(),

@@ -86,11 +86,13 @@ export interface Tag {
 export interface Comment {
   id: string;
   postId: string;
+  commenterId: string | null;
   authorName: string;
   authorEmail: string;
   authorUrl: string | null;
   authorAvatarUrl: string | null;
   content: string;
+  hasPassword: boolean;
   parentId: string | null;
   isEdited: boolean;
   createdAt: string;

@@ -141,6 +141,16 @@ export const ko: Record<TranslationKeys, string> = {
   comment_write_failed: "댓글 작성에 실패했습니다.",
   comment_login_required: "댓글을 남기려면 GitHub 또는 Google로 로그인해주세요.",
   comment_disabled: "댓글이 비활성화되어 있습니다.",
+  comment_password_placeholder: "비밀번호",
+  comment_password_required: "익명 댓글에는 비밀번호가 필요합니다.",
+  comment_edit: "수정",
+  comment_edit_save: "저장",
+  comment_edited: "(수정됨)",
+  comment_edit_password_prompt: "댓글 작성 시 입력한 비밀번호를 입력하세요.",
+  comment_edit_wrong_password: "비밀번호가 일치하지 않습니다.",
+  comment_delete: "삭제",
+  comment_delete_confirm: "이 댓글이 완전히 삭제됩니다. 삭제하시겠습니까?",
+  comment_delete_password_prompt: "삭제하려면 비밀번호를 입력하세요.",
   comment_oauth_processing: "로그인 처리 중...",
 
   // Admin
@@ -182,6 +192,7 @@ export const ko: Record<TranslationKeys, string> = {
   admin_comment_mode: "댓글 모드",
   admin_comment_mode_sso: "SSO 로그인만 허용",
   admin_comment_mode_all: "모두 허용 (SSO + 익명)",
+  admin_comment_mode_anon: "익명만 허용",
   admin_comment_mode_disabled: "비활성화",
 
   // Admin - SEO

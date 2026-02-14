@@ -3,6 +3,8 @@ import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and, sql } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
+import { hashPassword, verifyPassword } from "../lib/password.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const commentsRoute = new Hono();
 
@@ -44,14 +46,39 @@ function sanitizeUrl(url: string): string | null {
   }
 }
 
+/** comment_mode 설정 조회 */
+function getCommentMode(): string {
+  const setting = db
+    .select()
+    .from(schema.siteSettings)
+    .where(eq(schema.siteSettings.key, "comment_mode"))
+    .get();
+  return setting?.value ?? "sso_only";
+}
+
+/** JWT 토큰에서 관리자 여부 확인 (optional) */
+async function isAdmin(c: { req: { header: (name: string) => string | undefined } }): Promise<boolean> {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return false;
+  const token = authHeader.slice(7);
+  const ownerId = await verifyToken(token);
+  return !!ownerId;
+}
+
+/** password 필드를 제외하고 hasPassword 플래그를 추가 */
+function stripPassword(comment: typeof schema.comments.$inferSelect) {
+  const { password, ...rest } = comment;
+  return { ...rest, hasPassword: !!password };
+}
+
 function buildCommentTree(
-  allComments: (typeof schema.comments.$inferSelect & {
+  allComments: (ReturnType<typeof stripPassword> & {
     likeCount: number;
     isLikedByMe: boolean;
   })[],
   parentId: string | null = null,
   depth: number = 0,
-): (typeof schema.comments.$inferSelect & {
+): (ReturnType<typeof stripPassword> & {
   likeCount: number;
   isLikedByMe: boolean;
   replies: ReturnType<typeof buildCommentTree>;
@@ -65,6 +92,7 @@ function buildCommentTree(
     }));
 }
 
+// ==================== GET 댓글 목록 ====================
 commentsRoute.get("/posts/:postId/comments", async (c) => {
   const postId = c.req.param("postId");
   const visitorId = c.req.query("visitorId") ?? "";
@@ -95,13 +123,14 @@ commentsRoute.get("/posts/:postId/comments", async (c) => {
           .get()
       : null;
 
-    return { ...comment, likeCount: likeCountResult?.count ?? 0, isLikedByMe: !!isLiked };
+    return { ...stripPassword(comment), likeCount: likeCountResult?.count ?? 0, isLikedByMe: !!isLiked };
   });
 
   const tree = buildCommentTree(commentsWithLikes);
   return c.json(tree);
 });
 
+// ==================== POST 댓글 작성 ====================
 commentsRoute.post("/posts/:postId/comments", async (c) => {
   const postId = c.req.param("postId");
   const body = await c.req.json<{
@@ -110,6 +139,7 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     authorUrl?: string;
     authorAvatarUrl?: string;
     commenterId?: string;
+    password?: string;
     content: string;
     parentId?: string;
   }>();
@@ -119,16 +149,9 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   const authorEmail = sanitizePlainText(body.authorEmail ?? "");
   const content = sanitizePlainText(body.content ?? "");
   const authorUrl = body.authorUrl ? sanitizeUrl(body.authorUrl) : null;
-  // OAuth 아바타 URL도 검증
   const authorAvatarUrl = body.authorAvatarUrl ? sanitizeUrl(body.authorAvatarUrl) : null;
 
-  // comment_mode 설정 조회
-  const commentModeSetting = db
-    .select()
-    .from(schema.siteSettings)
-    .where(eq(schema.siteSettings.key, "comment_mode"))
-    .get();
-  const commentMode = commentModeSetting?.value ?? "sso_only";
+  const commentMode = getCommentMode();
 
   if (commentMode === "disabled") {
     return c.json({ error: "Comments are disabled." }, 403);
@@ -137,11 +160,23 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   if (commentMode === "sso_only" && !body.commenterId) {
     return c.json({ error: "Social login is required to post a comment." }, 403);
   }
+
+  if (commentMode === "anonymous_only" && body.commenterId) {
+    // anonymous_only 모드에서는 SSO 댓글 비허용 (무시하고 익명 처리)
+    // body.commenterId를 무시
+  }
+
+  // 익명 댓글(commenterId 없음)에는 비밀번호 필수
+  const isAnonymous = !body.commenterId || commentMode === "anonymous_only";
+  if (isAnonymous && !body.password) {
+    return c.json({ error: "Password is required for anonymous comments." }, 400);
+  }
+
   if (!authorName || !content) {
     return c.json({ error: "Name and content are required." }, 400);
   }
   if (content.length > 2000) {
-    return c.json({ error: "댓글은 최대 2,000자까지 입력 가능합니다." }, 400);
+    return c.json({ error: "Comment must be 2,000 characters or less." }, 400);
   }
 
   if (body.parentId) {
@@ -158,28 +193,30 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
       depth++;
     }
     if (depth >= 3) {
-      return c.json({ error: "대댓글 깊이는 최대 3단계까지 가능합니다." }, 400);
+      return c.json({ error: "Maximum reply depth (3) reached." }, 400);
     }
   }
 
   const post = db.select().from(schema.posts).where(eq(schema.posts.id, postId)).get();
   if (!post || post.status !== "published") {
-    return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+    return c.json({ error: "Post not found." }, 404);
   }
 
   const now = new Date().toISOString();
   const id = generateId();
+  const passwordHash = isAnonymous && body.password ? hashPassword(body.password) : null;
 
   db.insert(schema.comments)
     .values({
       id,
       postId,
-      commenterId: body.commenterId ?? null,
+      commenterId: isAnonymous ? null : (body.commenterId ?? null),
       authorName,
       authorEmail,
       authorUrl,
       authorAvatarUrl,
       content,
+      password: passwordHash,
       parentId: body.parentId ?? null,
       createdAt: now,
       updatedAt: now,
@@ -187,15 +224,116 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     .run();
 
   const newComment = db.select().from(schema.comments).where(eq(schema.comments.id, id)).get();
-  return c.json(newComment, 201);
+  return c.json(newComment ? stripPassword(newComment) : null, 201);
 });
 
+// ==================== PUT 댓글 수정 ====================
+commentsRoute.put("/comments/:id", async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json<{
+    content: string;
+    commenterId?: string;
+    password?: string;
+  }>();
+
+  const comment = db.select().from(schema.comments).where(eq(schema.comments.id, id)).get();
+  if (!comment || comment.deletedAt) {
+    return c.json({ error: "Comment not found." }, 404);
+  }
+
+  const content = sanitizePlainText(body.content ?? "");
+  if (!content) {
+    return c.json({ error: "Content is required." }, 400);
+  }
+  if (content.length > 2000) {
+    return c.json({ error: "Comment must be 2,000 characters or less." }, 400);
+  }
+
+  // 권한 확인: SSO 댓글 → commenterId 일치, 익명 댓글 → password 일치
+  if (comment.commenterId) {
+    // SSO 댓글
+    if (!body.commenterId || body.commenterId !== comment.commenterId) {
+      return c.json({ error: "You can only edit your own comment." }, 403);
+    }
+  } else {
+    // 익명 댓글
+    if (!body.password || !comment.password) {
+      return c.json({ error: "Password is required to edit this comment." }, 403);
+    }
+    if (!verifyPassword(body.password, comment.password)) {
+      return c.json({ error: "Incorrect password." }, 403);
+    }
+  }
+
+  const now = new Date().toISOString();
+  db.update(schema.comments)
+    .set({ content, isEdited: true, updatedAt: now })
+    .where(eq(schema.comments.id, id))
+    .run();
+
+  const updated = db.select().from(schema.comments).where(eq(schema.comments.id, id)).get();
+  return c.json(updated ? stripPassword(updated) : null);
+});
+
+// ==================== DELETE 댓글 삭제 ====================
+commentsRoute.delete("/comments/:id", async (c) => {
+  const id = c.req.param("id");
+  const comment = db.select().from(schema.comments).where(eq(schema.comments.id, id)).get();
+  if (!comment) {
+    return c.json({ error: "Comment not found." }, 404);
+  }
+
+  // 관리자 체크 (JWT 토큰)
+  const admin = await isAdmin(c);
+  if (admin) {
+    // 관리자는 무조건 삭제 가능
+    const now = new Date().toISOString();
+    db.update(schema.comments)
+      .set({ content: "Deleted comment.", deletedAt: now, updatedAt: now })
+      .where(eq(schema.comments.id, id))
+      .run();
+    return c.json({ message: "Comment deleted." });
+  }
+
+  // 본인 확인
+  let body: { commenterId?: string; password?: string } = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    // body 없이 요청한 경우
+  }
+
+  if (comment.commenterId) {
+    // SSO 댓글: commenterId 확인
+    if (!body.commenterId || body.commenterId !== comment.commenterId) {
+      return c.json({ error: "You can only delete your own comment." }, 403);
+    }
+  } else {
+    // 익명 댓글: 비밀번호 확인
+    if (!body.password || !comment.password) {
+      return c.json({ error: "Password is required to delete this comment." }, 403);
+    }
+    if (!verifyPassword(body.password, comment.password)) {
+      return c.json({ error: "Incorrect password." }, 403);
+    }
+  }
+
+  const now = new Date().toISOString();
+  db.update(schema.comments)
+    .set({ content: "Deleted comment.", deletedAt: now, updatedAt: now })
+    .where(eq(schema.comments.id, id))
+    .run();
+
+  return c.json({ message: "Comment deleted." });
+});
+
+// ==================== POST 좋아요 ====================
 commentsRoute.post("/comments/:id/like", async (c) => {
   const commentId = c.req.param("id");
   const body = await c.req.json<{ visitorId: string }>();
 
   if (!body.visitorId) {
-    return c.json({ error: "visitorId가 필요합니다." }, 400);
+    return c.json({ error: "visitorId is required." }, 400);
   }
 
   const existing = db
@@ -223,22 +361,6 @@ commentsRoute.post("/comments/:id/like", async (c) => {
       .run();
     return c.json({ liked: true });
   }
-});
-
-commentsRoute.delete("/comments/:id", async (c) => {
-  const id = c.req.param("id");
-  const comment = db.select().from(schema.comments).where(eq(schema.comments.id, id)).get();
-  if (!comment) {
-    return c.json({ error: "댓글을 찾을 수 없습니다." }, 404);
-  }
-
-  const now = new Date().toISOString();
-  db.update(schema.comments)
-    .set({ content: "삭제된 댓글입니다.", deletedAt: now, updatedAt: now })
-    .where(eq(schema.comments.id, id))
-    .run();
-
-  return c.json({ message: "댓글이 삭제되었습니다." });
 });
 
 export default commentsRoute;

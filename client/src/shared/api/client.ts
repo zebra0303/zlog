@@ -55,8 +55,12 @@ class ApiClient {
     return res.json() as Promise<T>;
   }
 
-  async delete<T>(path: string): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, { method: "DELETE", headers: this.getHeaders() });
+  async delete<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "DELETE",
+      headers: this.getHeaders(body ? "application/json" : undefined),
+      body: body ? JSON.stringify(body) : undefined,
+    });
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: "요청에 실패했습니다." }));
       throw new Error((error as { error?: string }).error ?? `HTTP ${res.status}`);

@@ -1,9 +1,13 @@
-import { Outlet } from "react-router";
+import { useEffect } from "react";
+import { Outlet, useLocation } from "react-router";
 import { Header } from "@/widgets/header/ui/Header";
 import { Footer } from "@/widgets/footer/ui/Footer";
 import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
 
 export function AppLayout() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />

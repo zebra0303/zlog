@@ -85,11 +85,13 @@ export async function bootstrap() {
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
       post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      commenter_id TEXT REFERENCES commenters(id) ON DELETE SET NULL,
       author_name TEXT NOT NULL,
       author_email TEXT NOT NULL,
       author_url TEXT,
       author_avatar_url TEXT,
       content TEXT NOT NULL,
+      password TEXT,
       parent_id TEXT,
       is_edited INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
@@ -188,6 +190,13 @@ export async function bootstrap() {
   // comments 테이블에 commenter_id 컬럼 추가 (마이그레이션)
   try {
     sqlite.exec("ALTER TABLE comments ADD COLUMN commenter_id TEXT REFERENCES commenters(id) ON DELETE SET NULL");
+  } catch {
+    // 이미 존재하면 무시
+  }
+
+  // comments 테이블에 password 컬럼 추가 (마이그레이션)
+  try {
+    sqlite.exec("ALTER TABLE comments ADD COLUMN password TEXT");
   } catch {
     // 이미 존재하면 무시
   }

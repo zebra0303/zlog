@@ -139,6 +139,16 @@ export const en = {
   comment_write_failed: "Failed to post comment.",
   comment_login_required: "Sign in with GitHub or Google to leave a comment.",
   comment_disabled: "Comments are disabled.",
+  comment_password_placeholder: "Password",
+  comment_password_required: "Password is required for anonymous comments.",
+  comment_edit: "Edit",
+  comment_edit_save: "Save",
+  comment_edited: "(edited)",
+  comment_edit_password_prompt: "Enter the password you used when posting.",
+  comment_edit_wrong_password: "Incorrect password.",
+  comment_delete: "Delete",
+  comment_delete_confirm: "This comment will be permanently deleted. Are you sure?",
+  comment_delete_password_prompt: "Enter the password to delete this comment.",
   comment_oauth_processing: "Processing login...",
 
   // Admin
@@ -180,6 +190,7 @@ export const en = {
   admin_comment_mode: "Comment Mode",
   admin_comment_mode_sso: "SSO Login Only",
   admin_comment_mode_all: "Allow All (SSO + Anonymous)",
+  admin_comment_mode_anon: "Anonymous Only",
   admin_comment_mode_disabled: "Disabled",
 
   // Admin - SEO
