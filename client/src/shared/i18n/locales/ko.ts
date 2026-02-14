@@ -100,6 +100,8 @@ export const ko: Record<TranslationKeys, string> = {
   cat_subscribe_enter_url: "블로그 URL을 입력해주세요.",
   cat_subscribe_processing: "처리 중...",
   cat_subscribe_button: "구독하기",
+  cat_subscribe_local_cat: "내 블로그 카테고리에 매핑",
+  cat_subscribe_local_cat_desc: "구독한 글이 동기화될 내 블로그의 카테고리를 선택하세요.",
   cat_subscribe_select_category: "구독할 카테고리 선택",
   cat_subscribe_select_placeholder: "카테고리를 선택하세요",
 
@@ -242,6 +244,9 @@ export const ko: Record<TranslationKeys, string> = {
   admin_mysub_sync_failed: "동기화에 실패했습니다.",
   admin_mysub_unsubscribe_confirm: '"{name}" ({url}) 구독을 해제하시겠습니까?',
   admin_mysub_inactive: "비활성",
+  admin_mysub_activate: "활성화",
+  admin_mysub_deactivate: "비활성화",
+  admin_mysub_delete_confirm: '"{name}" ({url}) 구독을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
   admin_mysub_add: "구독 추가",
   admin_mysub_add_url_placeholder: "원격 블로그 URL (예: https://other-blog.com)",
   admin_mysub_add_fetch: "카테고리 불러오기",

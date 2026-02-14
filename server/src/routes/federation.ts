@@ -368,13 +368,45 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
   }
 });
 
-// ============ 관리자용: 구독 삭제 (비활성화) ============
+// ============ 관리자용: 구독 활성/비활성 토글 ============
+federationRoute.put("/subscriptions/:id/toggle", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const existing = db.select().from(schema.categorySubscriptions).where(eq(schema.categorySubscriptions.id, id)).get();
+  if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  const newActive = !existing.isActive;
+  db.update(schema.categorySubscriptions).set({ isActive: newActive }).where(eq(schema.categorySubscriptions.id, id)).run();
+  if (!newActive) {
+    // 비활성화 시 remotePosts에서 localCategoryId를 null로 설정하여 목록에서 제거
+    db.update(schema.remotePosts)
+      .set({ localCategoryId: null })
+      .where(
+        and(
+          eq(schema.remotePosts.remoteCategoryId, existing.remoteCategoryId),
+          eq(schema.remotePosts.localCategoryId, existing.localCategoryId),
+        ),
+      )
+      .run();
+  } else {
+    // 활성화 시 remotePosts에 localCategoryId 복원
+    db.update(schema.remotePosts)
+      .set({ localCategoryId: existing.localCategoryId })
+      .where(
+        and(
+          eq(schema.remotePosts.remoteCategoryId, existing.remoteCategoryId),
+          eq(schema.remotePosts.remoteStatus, "published"),
+        ),
+      )
+      .run();
+  }
+  return c.json({ message: newActive ? "구독이 활성화되었습니다." : "구독이 비활성화되었습니다.", isActive: newActive });
+});
+
+// ============ 관리자용: 구독 삭제 ============
 federationRoute.delete("/subscriptions/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const existing = db.select().from(schema.categorySubscriptions).where(eq(schema.categorySubscriptions.id, id)).get();
   if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
-  db.update(schema.categorySubscriptions).set({ isActive: false }).where(eq(schema.categorySubscriptions.id, id)).run();
-  // 해당 구독의 remotePosts에서 localCategoryId를 null로 설정하여 목록에서 제거
+  // remotePosts에서 localCategoryId를 null로 설정
   db.update(schema.remotePosts)
     .set({ localCategoryId: null })
     .where(
@@ -384,7 +416,9 @@ federationRoute.delete("/subscriptions/:id", authMiddleware, async (c) => {
       ),
     )
     .run();
-  return c.json({ message: "구독이 해제되었습니다." });
+  // 구독 레코드 완전 삭제
+  db.delete(schema.categorySubscriptions).where(eq(schema.categorySubscriptions.id, id)).run();
+  return c.json({ message: "구독이 삭제되었습니다." });
 });
 
 // ============ 관리자용: 구독자 목록 조회 ============

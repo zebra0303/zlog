@@ -14,9 +14,27 @@ function SubscribeDialog({ category, onClose }: { category: CategoryWithStats; o
   const [blogUrl, setBlogUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [localCats, setLocalCats] = useState<{ slug: string; name: string }[]>([]);
+  const [selectedLocalCat, setSelectedLocalCat] = useState("");
   const { t } = useI18n();
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
   const callbackUrl = normalizedBlogUrl ? `${normalizedBlogUrl}/api/federation/webhook` : "";
+
+  // Fetch remote blog's categories when URL is entered
+  useEffect(() => {
+    if (!normalizedBlogUrl) { setLocalCats([]); setSelectedLocalCat(""); return; }
+    const timeout = setTimeout(() => {
+      void fetch(`${normalizedBlogUrl}/api/federation/categories`)
+        .then((r) => r.json())
+        .then((cats: { slug: string; name: string }[]) => {
+          setLocalCats(cats);
+          if (cats.length > 0 && !selectedLocalCat) setSelectedLocalCat(cats[0]?.slug ?? "");
+        })
+        .catch(() => { setLocalCats([]); });
+    }, 500);
+    return () => { clearTimeout(timeout); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [normalizedBlogUrl]);
 
   const handleSubscribe = async () => {
     if (!normalizedBlogUrl) { setResult({ type: "error", text: t("cat_subscribe_enter_url") }); return; }
@@ -24,7 +42,7 @@ function SubscribeDialog({ category, onClose }: { category: CategoryWithStats; o
     try {
       const remoteSiteUrl = window.location.origin;
       await api.post("/federation/subscribe", { categoryId: category.id, subscriberUrl: normalizedBlogUrl, callbackUrl });
-      try { await fetch(`${normalizedBlogUrl}/api/federation/local-subscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ remoteSiteUrl, remoteCategoryId: category.id, remoteCategoryName: category.name, remoteCategorySlug: category.slug, localCategorySlug: category.slug }) }); } catch { /* ignore */ }
+      try { await fetch(`${normalizedBlogUrl}/api/federation/local-subscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ remoteSiteUrl, remoteCategoryId: category.id, remoteCategoryName: category.name, remoteCategorySlug: category.slug, localCategorySlug: selectedLocalCat || category.slug }) }); } catch { /* ignore */ }
       setResult({ type: "success", text: t("cat_subscribe_success") });
     } catch (err) { setResult({ type: "error", text: err instanceof Error ? err.message : t("cat_subscribe_failed") }); }
     finally { setIsSubmitting(false); }
@@ -36,7 +54,7 @@ function SubscribeDialog({ category, onClose }: { category: CategoryWithStats; o
     try {
       const remoteSiteUrl = window.location.origin;
       await api.post("/federation/unsubscribe", { categoryId: category.id, subscriberUrl: normalizedBlogUrl });
-      try { await fetch(`${normalizedBlogUrl}/api/federation/local-unsubscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ remoteSiteUrl, remoteCategoryId: category.id, localCategorySlug: category.slug }) }); } catch { /* ignore */ }
+      try { await fetch(`${normalizedBlogUrl}/api/federation/local-unsubscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ remoteSiteUrl, remoteCategoryId: category.id, localCategorySlug: selectedLocalCat || category.slug }) }); } catch { /* ignore */ }
       setResult({ type: "success", text: t("cat_unsubscribe_success") });
     } catch (err) { setResult({ type: "error", text: err instanceof Error ? err.message : t("cat_unsubscribe_failed") }); }
     finally { setIsSubmitting(false); }
@@ -66,6 +84,7 @@ function SubscribeDialog({ category, onClose }: { category: CategoryWithStats; o
               <Input placeholder="https://myblog.example.com" value={blogUrl} onChange={(e) => { setBlogUrl(e.target.value); }} />
             </div>
             {callbackUrl && (<div><label className="mb-1 block text-xs text-text-secondary">{t("cat_subscribe_callback")}</label><div className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-xs text-text-secondary"><ExternalLink className="h-3 w-3 shrink-0" /><span className="truncate">{callbackUrl}</span></div></div>)}
+            {localCats.length > 0 && (<div><label className="mb-1 block text-sm font-medium text-text">{t("cat_subscribe_local_cat")}</label><select value={selectedLocalCat} onChange={(e) => { setSelectedLocalCat(e.target.value); }} className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text">{localCats.map((c) => (<option key={c.slug} value={c.slug}>{c.name}</option>))}</select><p className="mt-1 text-xs text-text-secondary">{t("cat_subscribe_local_cat_desc")}</p></div>)}
             {result && (<div className={`rounded-lg p-3 text-sm ${result.type === "success" ? "bg-green-50 text-green-600 dark:bg-green-900/20" : "bg-red-50 text-red-600 dark:bg-red-900/20"}`}>{result.text}</div>)}
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={handleUnsubscribe} disabled={isSubmitting || !normalizedBlogUrl}>{t("cat_unsubscribe")}</Button>

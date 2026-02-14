@@ -20,12 +20,30 @@ function SubscribeDialog({
   const [blogUrl, setBlogUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [localCats, setLocalCats] = useState<{ slug: string; name: string }[]>([]);
+  const [selectedLocalCat, setSelectedLocalCat] = useState("");
   const { t } = useI18n();
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
 
   const callbackUrl = normalizedBlogUrl
     ? `${normalizedBlogUrl}/api/federation/webhook`
     : "";
+
+  // Fetch remote blog's categories when URL is entered
+  useEffect(() => {
+    if (!normalizedBlogUrl) { setLocalCats([]); setSelectedLocalCat(""); return; }
+    const timeout = setTimeout(() => {
+      void fetch(`${normalizedBlogUrl}/api/federation/categories`)
+        .then((r) => r.json())
+        .then((cats: { slug: string; name: string }[]) => {
+          setLocalCats(cats);
+          if (cats.length > 0 && !selectedLocalCat) setSelectedLocalCat(cats[0]?.slug ?? "");
+        })
+        .catch(() => { setLocalCats([]); });
+    }, 500);
+    return () => { clearTimeout(timeout); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [normalizedBlogUrl]);
 
   const handleSubscribe = async () => {
     if (!normalizedBlogUrl) {
@@ -50,7 +68,7 @@ function SubscribeDialog({
             remoteCategoryId: category.id,
             remoteCategoryName: category.name,
             remoteCategorySlug: category.slug,
-            localCategorySlug: category.slug,
+            localCategorySlug: selectedLocalCat || category.slug,
           }),
         });
       } catch {
@@ -87,7 +105,7 @@ function SubscribeDialog({
           body: JSON.stringify({
             remoteSiteUrl,
             remoteCategoryId: category.id,
-            localCategorySlug: category.slug,
+            localCategorySlug: selectedLocalCat || category.slug,
           }),
         });
       } catch {
@@ -156,6 +174,21 @@ function SubscribeDialog({
                   <ExternalLink className="h-3 w-3 shrink-0" />
                   <span className="truncate">{callbackUrl}</span>
                 </div>
+              </div>
+            )}
+            {localCats.length > 0 && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-text">{t("cat_subscribe_local_cat")}</label>
+                <select
+                  value={selectedLocalCat}
+                  onChange={(e) => { setSelectedLocalCat(e.target.value); }}
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text"
+                >
+                  {localCats.map((c) => (
+                    <option key={c.slug} value={c.slug}>{c.name}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-text-secondary">{t("cat_subscribe_local_cat_desc")}</p>
               </div>
             )}
 

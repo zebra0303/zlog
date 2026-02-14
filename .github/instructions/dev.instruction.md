@@ -1,7 +1,9 @@
-# ZLOG — Distributed Self-Hosted Blog System
+# ZLOG — Every Blog You Care About, One Dashboard
 
 > **Your blog, your data, your network.**
 > ZLOG is a lightweight, self-hosted personal blog system with built-in **cross-blog subscription** and **RSS feed** support — enabling a decentralized network of independent blogs.
+
+[한국어 문서 (Korean)](./README.ko.md)
 
 ![Self-hosted](https://img.shields.io/badge/Self--hosted-black?style=flat-square)
 ![Federation](https://img.shields.io/badge/Federation-6C5CE7?style=flat-square)
@@ -216,6 +218,7 @@ erDiagram
 - **Custom embeds**: YouTube, CodePen, CodeSandbox
 - **Code blocks** with syntax highlighting (highlight.js) and auto-formatting (Prettier)
 - **Language label & copy button** on code blocks
+- **Mermaid diagram** rendering with click-to-zoom
 - **Draft / Publish** workflow with post management in admin
 
 ### Comments
@@ -377,6 +380,33 @@ npm run start
 
 ---
 
+## Project Structure
+
+```
+zlog/
+├── client/           # Frontend (FSD Architecture)
+│   └── src/
+│       ├── app/      # Entry point, router, providers
+│       ├── pages/    # Page components
+│       ├── widgets/  # Header, footer, sidebar
+│       ├── features/ # Auth, comments, theme
+│       ├── entities/ # PostCard, CategoryBadge
+│       └── shared/   # UI components, API client, i18n, utilities
+├── server/           # Backend (Hono)
+│   └── src/
+│       ├── db/       # Schema, migrations
+│       ├── routes/   # API routes
+│       ├── middleware/# Auth, error handlers
+│       ├── services/ # Business logic
+│       └── lib/      # Utilities
+├── shared/           # Shared types
+├── Dockerfile
+├── docker-compose.yml
+└── Caddyfile
+```
+
+---
+
 ## Federation Protocol Summary
 
 For developers who want to integrate with ZLOG's federation:
@@ -432,5 +462,5 @@ For developers who want to integrate with ZLOG's federation:
 ---
 
 <p align="center">
-  <strong>ZLOG</strong> — Because your words deserve a home you own.
+  <strong>ZLOG</strong> — Every story you care about, right on your blog.
 </p>

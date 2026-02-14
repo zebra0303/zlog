@@ -98,6 +98,8 @@ export const en = {
   cat_subscribe_enter_url: "Please enter your blog URL.",
   cat_subscribe_processing: "Processing...",
   cat_subscribe_button: "Subscribe",
+  cat_subscribe_local_cat: "Map to My Category",
+  cat_subscribe_local_cat_desc: "Select which category on your blog to sync posts into.",
   cat_subscribe_select_category: "Select category to subscribe",
   cat_subscribe_select_placeholder: "Select a category",
 
@@ -240,6 +242,9 @@ export const en = {
   admin_mysub_sync_failed: "Sync failed.",
   admin_mysub_unsubscribe_confirm: 'Unsubscribe from "{name}" ({url})?',
   admin_mysub_inactive: "Inactive",
+  admin_mysub_activate: "Activate",
+  admin_mysub_deactivate: "Deactivate",
+  admin_mysub_delete_confirm: 'Delete subscription "{name}" ({url})? This will permanently remove the subscription.',
   admin_mysub_add: "Add Subscription",
   admin_mysub_add_url_placeholder: "Remote blog URL (e.g. https://other-blog.com)",
   admin_mysub_add_fetch: "Fetch Categories",

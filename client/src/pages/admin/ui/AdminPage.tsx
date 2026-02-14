@@ -22,6 +22,7 @@ import {
   Search,
   RefreshCw,
   Link2,
+  Power,
 } from "lucide-react";
 import {
   Button,
@@ -944,10 +945,19 @@ function SubscriptionManager() {
     }
   };
 
-  const handleUnsubscribe = async (sub: MySubscription) => {
+  const handleToggleActive = async (sub: MySubscription) => {
+    try {
+      await api.put(`/federation/subscriptions/${sub.id}/toggle`);
+      fetchSubs();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleDelete = async (sub: MySubscription) => {
     const name = sub.remoteCategoryName;
     const url = sub.remoteBlogSiteUrl;
-    if (!confirm(t("admin_mysub_unsubscribe_confirm", { name, url }))) return;
+    if (!confirm(t("admin_mysub_delete_confirm", { name, url }))) return;
     try {
       await api.delete(`/federation/subscriptions/${sub.id}`);
       fetchSubs();
@@ -1144,7 +1154,16 @@ function SubscriptionManager() {
                         {syncingId === sub.id ? t("admin_mysub_syncing") : t("admin_mysub_sync")}
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => handleUnsubscribe(sub)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleToggleActive(sub)}
+                      aria-label={sub.isActive ? t("admin_mysub_deactivate") : t("admin_mysub_activate")}
+                      title={sub.isActive ? t("admin_mysub_deactivate") : t("admin_mysub_activate")}
+                    >
+                      <Power className={`h-4 w-4 ${sub.isActive ? "text-green-500" : "text-[var(--color-text-secondary)]"}`} />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(sub)} aria-label={t("delete")}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
