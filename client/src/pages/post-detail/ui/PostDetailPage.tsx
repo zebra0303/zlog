@@ -46,7 +46,7 @@ export default function PostDetailPage() {
         <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]"><span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{formatDate(post.createdAt)}</span><span className="flex items-center gap-1"><Eye className="h-4 w-4" />{post.viewCount}</span></div>
         {isAuthenticated && <div className="mt-4 flex gap-2"><Button variant="outline" size="sm" asChild><Link to={`/write/${post.id}`}><Edit className="mr-1 h-4 w-4" />{t("post_edit")}</Link></Button><Button variant="destructive" size="sm" onClick={handleDelete}><Trash2 className="mr-1 h-4 w-4" />{t("post_delete")}</Button></div>}
       </div>
-      <Card><CardContent className="pt-6"><div className="prose prose-lg max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: htmlContent }} /></CardContent></Card>
+      <Card><CardContent className="pt-6"><div className="prose max-w-none dark:prose-invert md:prose-lg" dangerouslySetInnerHTML={{ __html: htmlContent }} /></CardContent></Card>
       <div className="mt-8"><CommentSection postId={post.id} /></div>
     </article>
   );

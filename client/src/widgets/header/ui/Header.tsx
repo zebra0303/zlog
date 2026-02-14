@@ -108,7 +108,7 @@ export function Header() {
             }} aria-label={t("nav_menu")}>{isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</Button>
           </div>
           {isMobileMenuOpen && (
-            <div className="absolute right-2 top-[calc(100%+1px)] z-70 w-44 rounded-xl border border-border bg-surface/95 backdrop-blur-md shadow-lg md:hidden">
+            <div className="absolute right-2 top-full z-70 mt-0.5 w-44 rounded-xl border border-border bg-surface/95 backdrop-blur-md shadow-lg md:hidden">
               <nav className="flex flex-col py-1.5">
                 <Link to="/" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
                   setIsMobileMenuOpen(false);

@@ -115,7 +115,7 @@ export default function RemotePostDetailPage() {
       <Card>
         <CardContent className="pt-6">
           <div
-            className="prose prose-lg max-w-none dark:prose-invert"
+            className="prose max-w-none dark:prose-invert md:prose-lg"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
         </CardContent>
