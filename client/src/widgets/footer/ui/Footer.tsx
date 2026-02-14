@@ -79,18 +79,18 @@ export function Footer() {
         }
         .footer-animated.footer-compact .footer-inner {
           padding-top: 0.35rem !important;
-          padding-bottom: 0.35rem !important;
+          padding-bottom: 0.25rem !important;
         }
         @media (min-width: 768px) {
           .footer-animated.footer-compact .footer-inner {
             padding-top: 0.45rem !important;
-            padding-bottom: 0.45rem !important;
+            padding-bottom: 0.3rem !important;
           }
         }
         @media (min-width: 1024px) {
           .footer-animated.footer-compact .footer-inner {
             padding-top: 0.5rem !important;
-            padding-bottom: 0.5rem !important;
+            padding-bottom: 0.35rem !important;
           }
         }
       `}</style>

@@ -70,8 +70,8 @@ export function Header() {
   const headerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
     ? {
         ...customStyle,
-        maxHeight: customStyle.minHeight ?? undefined,
-        overflow: "hidden",
+        maxHeight: isMobileMenuOpen ? undefined : customStyle.minHeight ?? undefined,
+        overflow: isMobileMenuOpen ? "visible" : "hidden",
       }
     : undefined;
 
@@ -79,7 +79,7 @@ export function Header() {
     <>
       <header
         ref={headerRef}
-        className={`sticky top-0 z-50 border-b border-border header-animated ${hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
+        className={`sticky top-0 z-60 relative border-b border-border header-animated ${hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
         style={headerStyle}
       >
         <div className={`header-inner mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
@@ -109,7 +109,7 @@ export function Header() {
           </div>
         </div>
         {isMobileMenuOpen && (
-          <div className="border-t border-border bg-surface p-4 md:hidden">
+          <div className="absolute inset-x-0 top-full z-70 border-t border-border bg-surface p-4 shadow-lg md:hidden">
             <nav className="flex flex-col gap-2">
               <Link to="/" className="rounded-lg px-4 py-3 text-text hover:bg-background" onClick={() => {
                 setIsMobileMenuOpen(false);
