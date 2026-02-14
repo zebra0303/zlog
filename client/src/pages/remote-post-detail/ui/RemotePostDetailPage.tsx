@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
-import { Calendar, Globe, ArrowLeft, ExternalLink } from "lucide-react";
-import { Badge, Button, Card, CardContent, DefaultAvatar, SEOHead, Skeleton } from "@/shared/ui";
+import { Calendar, ArrowLeft, ExternalLink } from "lucide-react";
+import { Button, Card, CardContent, DefaultAvatar, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -95,13 +95,7 @@ export default function RemotePostDetailPage() {
       <div className="mb-8">
         {/* 원본 블로그 프로필 카드 + 제목 영역 */}
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">
-                <Globe className="mr-1 h-3 w-3" />
-                {post.remoteBlog?.displayName ?? t("post_external_blog")}
-              </Badge>
-            </div>
+          <div className="order-2 min-w-0 flex-1 sm:order-1">
             <h1 className="mb-3 text-2xl md:text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
             <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
               {post.authorName && <span>{post.authorName}</span>}
@@ -129,7 +123,7 @@ export default function RemotePostDetailPage() {
               href={post.remoteBlog.siteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex shrink-0 items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-colors hover:bg-[var(--color-background)] sm:max-w-[220px]"
+              className="order-1 flex shrink-0 items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-colors hover:bg-[var(--color-background)] sm:order-2 sm:max-w-[220px]"
             >
               {post.remoteBlog.avatarUrl ? (
                 <img
