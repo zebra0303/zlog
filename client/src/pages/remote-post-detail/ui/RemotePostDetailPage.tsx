@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router";
+import { useParams, Link, useNavigate, useLocation } from "react-router";
 import { Calendar, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button, Card, CardContent, DefaultAvatar, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
@@ -32,6 +32,8 @@ export default function RemotePostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
+  const backTo = (location.state as { from?: string } | null)?.from ?? "/";
   const [post, setPost] = useState<RemotePost | null>(null);
   const [htmlContent, setHtmlContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -72,7 +74,7 @@ export default function RemotePostDetailPage() {
       <div className="py-20 text-center">
         <p className="text-lg text-[var(--color-text-secondary)]">{error ?? t("post_not_found")}</p>
         <Button variant="outline" className="mt-4" asChild>
-          <Link to="/">
+          <Link to={backTo}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("post_go_home")}
           </Link>
@@ -84,7 +86,7 @@ export default function RemotePostDetailPage() {
     <article className="min-w-0 overflow-x-hidden">
       <SEOHead title={post.title} description={post.excerpt ?? undefined} />
       <Button variant="ghost" size="sm" className="mb-4" asChild>
-        <Link to="/">
+        <Link to={backTo}>
           <ArrowLeft className="mr-1 h-4 w-4" />
           {t("post_go_list")}
         </Link>

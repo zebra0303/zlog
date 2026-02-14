@@ -86,22 +86,28 @@ postsRoute.get("/", async (c) => {
     return { ...post, category, tags: tagRows, isRemote: false as const, remoteUri: null, remoteBlog: null };
   });
 
-  // 카테고리별 조회 시 remote_posts도 포함
+  // published 상태 조회 시 remote_posts도 포함 (검색 제외)
   let remoteItems: (Omit<(typeof localItems)[number], "isRemote" | "remoteUri" | "remoteBlog"> & { isRemote: boolean; remoteUri: string | null; remoteBlog: { siteUrl: string; displayName: string | null; blogTitle: string | null; avatarUrl: string | null } | null })[] = [];
-  if (categoryId && status === "published") {
+  if (status === "published" && !search) {
+    const remoteConditions = [eq(schema.remotePosts.remoteStatus, "published")];
+    if (categoryId) {
+      remoteConditions.push(eq(schema.remotePosts.localCategoryId, categoryId));
+    }
     const remotePostsResult = db
       .select()
       .from(schema.remotePosts)
-      .where(and(eq(schema.remotePosts.localCategoryId, categoryId), eq(schema.remotePosts.remoteStatus, "published")))
+      .where(and(...remoteConditions))
       .orderBy(desc(schema.remotePosts.remoteCreatedAt))
       .all();
 
     remoteItems = remotePostsResult.map((rp) => {
-      const cat = db.select({ id: schema.categories.id, name: schema.categories.name, slug: schema.categories.slug }).from(schema.categories).where(eq(schema.categories.id, categoryId)).get() ?? null;
+      const cat = rp.localCategoryId
+        ? db.select({ id: schema.categories.id, name: schema.categories.name, slug: schema.categories.slug }).from(schema.categories).where(eq(schema.categories.id, rp.localCategoryId)).get() ?? null
+        : null;
       const rb = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, rp.remoteBlogId)).get();
       return {
         id: rp.id,
-        categoryId,
+        categoryId: rp.localCategoryId,
         title: rp.title,
         slug: rp.slug,
         content: rp.content,

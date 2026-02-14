@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Calendar, Eye, Folder, Globe, ExternalLink } from "lucide-react";
 import { Card, CardContent, Badge, LazyImage } from "@/shared/ui";
 import { timeAgo } from "@/shared/lib/formatDate";
@@ -15,6 +15,7 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   const linkTo = post.isRemote ? `/remote-posts/${post.id}` : `/posts/${post.slug}`;
+  const location = useLocation();
   const { t } = useI18n();
 
   const sourceUrl = post.isRemote
@@ -23,7 +24,7 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
-      <Link to={linkTo}>
+      <Link to={linkTo} state={{ from: location.pathname + location.search }}>
         {post.coverImage && <LazyImage src={post.coverImage} alt={post.title} className="h-48 w-full" />}
         <CardContent className={post.coverImage ? "pt-4" : "pt-6"}>
           <div className="mb-2 flex flex-wrap items-center gap-2">

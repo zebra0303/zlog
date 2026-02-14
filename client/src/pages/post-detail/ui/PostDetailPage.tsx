@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useLocation } from "react-router";
 import { Calendar, Eye, Folder, ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
@@ -12,6 +12,8 @@ import type { PostWithCategory } from "@zlog/shared";
 
 export default function PostDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
+  const backTo = (location.state as { from?: string } | null)?.from ?? "/";
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
   const [post, setPost] = useState<PostWithCategory | null>(null);
@@ -30,12 +32,12 @@ export default function PostDetailPage() {
   };
 
   if (isLoading) return <div className="flex flex-col gap-4"><Skeleton className="h-10 w-3/4" /><Skeleton className="h-64 w-full" /></div>;
-  if (error || !post) return <div className="py-20 text-center"><p className="text-lg text-[var(--color-text-secondary)]">{error ?? t("post_not_found")}</p><Button variant="outline" className="mt-4" asChild><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />{t("post_go_home")}</Link></Button></div>;
+  if (error || !post) return <div className="py-20 text-center"><p className="text-lg text-[var(--color-text-secondary)]">{error ?? t("post_not_found")}</p><Button variant="outline" className="mt-4" asChild><Link to={backTo}><ArrowLeft className="mr-2 h-4 w-4" />{t("post_go_home")}</Link></Button></div>;
 
   return (
     <article className="min-w-0 overflow-x-hidden">
       <SEOHead title={post.title} description={post.excerpt ?? undefined} type="article" publishedTime={post.createdAt} tags={post.tags.map((tg) => tg.name)} />
-      <Button variant="ghost" size="sm" className="mb-4" asChild><Link to="/"><ArrowLeft className="mr-1 h-4 w-4" />{t("post_go_list")}</Link></Button>
+      <Button variant="ghost" size="sm" className="mb-4" asChild><Link to={backTo}><ArrowLeft className="mr-1 h-4 w-4" />{t("post_go_list")}</Link></Button>
       {post.coverImage && <img src={post.coverImage} alt={post.title} className="mb-6 h-64 w-full rounded-xl object-cover" />}
       <div className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2">
