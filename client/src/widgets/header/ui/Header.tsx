@@ -20,7 +20,7 @@ export function Header() {
   const headerRef = useRef<HTMLElement>(null);
 
   const customStyle = getHeaderStyle(isDark);
-  const hasCustom = Boolean(customStyle.backgroundColor ?? customStyle.backgroundImage);
+  const hasCustom = Boolean((customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""));
   const hasCustomHeight = !!customStyle.minHeight;
 
   // 커스텀 높이 값 (px) 파싱
@@ -67,7 +67,7 @@ export function Header() {
     };
   }, [hasCustomHeight, fullHeightPx]);
 
-  const headerStyle: React.CSSProperties | undefined = hasCustom
+  const headerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
     ? {
         ...customStyle,
         maxHeight: customStyle.minHeight ?? undefined,

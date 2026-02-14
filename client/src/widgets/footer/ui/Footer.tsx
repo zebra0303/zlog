@@ -34,7 +34,7 @@ export function Footer() {
 
   const isExpanded = !hasCustomHeight || expanded;
 
-  const footerStyle: React.CSSProperties | undefined = hasCustom
+  const footerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
     ? {
         ...customStyle,
         minHeight: isExpanded ? customStyle.minHeight : undefined,
