@@ -24,7 +24,6 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
 }
 
 body {
@@ -32,11 +31,6 @@ body {
   background-color: var(--color-background);
   color: var(--color-text);
   transition: background-color 0.2s, color 0.2s;
-  overflow-x: hidden;
-}
-
-#root {
-  overflow-x: hidden;
 }
 
 .prose {
