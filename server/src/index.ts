@@ -54,7 +54,60 @@ app.use("/uploads/*", serveStatic({ root: "./" }));
 app.use("/assets/*", serveStatic({ root: CLIENT_DIST }));
 app.use("/img/*", serveStatic({ root: CLIENT_DIST }));
 app.use("/favicons/*", serveStatic({ root: CLIENT_DIST }));
-app.get("/site.webmanifest", serveStatic({ root: CLIENT_DIST, path: "site.webmanifest" }));
+
+// 동적 PWA 매니페스트 — 블로그 제목과 프로필 아바타 사용
+app.get("/site.webmanifest", (c) => {
+  const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+  const ownerRecord = db.select().from(schema.owner).get();
+  const blogTitle = ownerRecord?.blogTitle ?? "zlog";
+  const blogDesc = ownerRecord?.blogDescription ?? "관심 있는 모든 글, 내 블로그 하나로";
+
+  // 아이콘: 프로필 아바타가 있으면 사용, 없으면 기본 favicon
+  const icons: { src: string; sizes: string; type: string; purpose: string }[] = [];
+  if (ownerRecord?.avatarUrl) {
+    const uuid = ownerRecord.avatarUrl.split("/").pop()?.replace(".webp", "") ?? "";
+    icons.push(
+      {
+        src: `${siteUrl}/uploads/avatar/192/${uuid}.webp`,
+        sizes: "192x192",
+        type: "image/webp",
+        purpose: "any maskable",
+      },
+      {
+        src: `${siteUrl}/uploads/avatar/256/${uuid}.webp`,
+        sizes: "256x256",
+        type: "image/webp",
+        purpose: "any maskable",
+      },
+    );
+  } else {
+    icons.push({
+      src: "/favicons/favicon.svg",
+      sizes: "any",
+      type: "image/svg+xml",
+      purpose: "any maskable",
+    });
+  }
+
+  const manifest = {
+    name: blogTitle,
+    short_name: blogTitle.length > 12 ? blogTitle.slice(0, 12) : blogTitle,
+    id: "/",
+    description: blogDesc,
+    start_url: "/",
+    scope: "/",
+    display: "standalone" as const,
+    display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
+    background_color: "#FAF9FF",
+    theme_color: "#6C5CE7",
+    icons,
+  };
+
+  c.header("Content-Type", "application/manifest+json");
+  c.header("Cache-Control", "public, max-age=3600");
+  return c.body(JSON.stringify(manifest));
+});
+
 app.get("/sw.js", serveStatic({ root: CLIENT_DIST, path: "sw.js" }));
 
 app.route("/api/auth", auth);

@@ -114,6 +114,7 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
   const uploadsBase = path.join(process.cwd(), "uploads", "avatar");
   mkdirSync(path.join(uploadsBase, "original"), { recursive: true });
   mkdirSync(path.join(uploadsBase, "256"), { recursive: true });
+  mkdirSync(path.join(uploadsBase, "192"), { recursive: true });
   mkdirSync(path.join(uploadsBase, "64"), { recursive: true });
 
   const uuid = generateId();
@@ -126,6 +127,10 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
     .webp({ quality: 85 })
     .toFile(path.join(uploadsBase, "256", `${uuid}.webp`));
   await sharp(buffer)
+    .resize(192, 192, { fit: "cover" })
+    .webp({ quality: 85 })
+    .toFile(path.join(uploadsBase, "192", `${uuid}.webp`));
+  await sharp(buffer)
     .resize(64, 64, { fit: "cover" })
     .webp({ quality: 85 })
     .toFile(path.join(uploadsBase, "64", `${uuid}.webp`));
@@ -134,7 +139,7 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
   if (current?.avatarUrl) {
     const oldUuid = current.avatarUrl.split("/").pop()?.replace(".webp", "");
     if (oldUuid) {
-      for (const dir of ["original", "256", "64"]) {
+      for (const dir of ["original", "256", "192", "64"]) {
         try {
           for (const f of readdirSync(path.join(uploadsBase, dir))) {
             if (f.startsWith(oldUuid)) unlinkSync(path.join(uploadsBase, dir, f));

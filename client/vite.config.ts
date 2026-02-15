@@ -36,6 +36,10 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
         },
+        "/site.webmanifest": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
         "/category": {
           target: apiTarget,
           changeOrigin: true,
