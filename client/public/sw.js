@@ -1,24 +1,20 @@
-const CACHE_NAME = "zlog-v1";
-const PRECACHE_URLS = ["/", "/site.webmanifest", "/favicons/favicon.svg"];
+const CACHE_NAME = "zlog-v2";
+const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
 
 // Install: 핵심 자산 프리캐시
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
   self.skipWaiting();
 });
 
 // Activate: 오래된 캐시 정리
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+      ),
   );
   self.clients.claim();
 });
@@ -53,6 +49,6 @@ self.addEventListener("fetch", (event) => {
           }
           return new Response("Offline", { status: 503 });
         });
-      })
+      }),
   );
 });
