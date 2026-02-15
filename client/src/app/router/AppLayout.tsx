@@ -46,7 +46,9 @@ async function renderMermaidBlocks() {
 export function AppLayout() {
   const { pathname } = useLocation();
   const observerRef = useRef<MutationObserver | null>(null);
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   // Mermaid 다이어그램 렌더링 — MutationObserver로 DOM 변화 감지
   const handleMermaid = useCallback(() => {
@@ -113,7 +115,8 @@ export function AppLayout() {
         }, 2000);
       };
 
-      navigator.clipboard.writeText(codeEl.textContent)
+      navigator.clipboard
+        .writeText(codeEl.textContent)
         .then(copied)
         .catch(() => {
           btn.dataset.copied = "";
@@ -193,13 +196,21 @@ export function AppLayout() {
   }, []);
 
   const isEditorPage = pathname.startsWith("/write");
+  const isPostDetail = pathname.startsWith("/posts/");
+  const hideSidebar = isEditorPage || isPostDetail;
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
-        <main className="min-w-0 flex-1"><Outlet /></main>
-        {!isEditorPage && <div className="hidden w-72 shrink-0 lg:block"><Sidebar /></div>}
+        <main className="min-w-0 flex-1">
+          <Outlet />
+        </main>
+        {!hideSidebar && (
+          <div className="hidden w-72 shrink-0 lg:block">
+            <Sidebar />
+          </div>
+        )}
       </div>
       <Footer />
     </div>
