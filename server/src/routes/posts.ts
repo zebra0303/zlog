@@ -106,10 +106,13 @@ postsRoute.get("/", (c) => {
       avatarUrl: string | null;
     } | null;
   })[] = [];
-  if (status === "published" && !search) {
+  if (status === "published") {
     const remoteConditions = [eq(schema.remotePosts.remoteStatus, "published")];
     if (categoryId) {
       remoteConditions.push(eq(schema.remotePosts.localCategoryId, categoryId));
+    }
+    if (search) {
+      remoteConditions.push(like(schema.remotePosts.title, `%${search}%`));
     }
     const remotePostsResult = db
       .select()

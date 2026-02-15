@@ -73,6 +73,27 @@ settingsRoute.put("/profile", authMiddleware, async (c) => {
   if (body.blogDescription !== undefined) updateData.blogDescription = body.blogDescription;
 
   db.update(schema.owner).set(updateData).where(eq(schema.owner.id, ownerId)).run();
+
+  // blogTitle이 변경되면 siteSettings의 blog_title도 동기화
+  if (body.blogTitle !== undefined) {
+    const now2 = new Date().toISOString();
+    const existing = db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, "blog_title"))
+      .get();
+    if (existing) {
+      db.update(schema.siteSettings)
+        .set({ value: body.blogTitle, updatedAt: now2 })
+        .where(eq(schema.siteSettings.key, "blog_title"))
+        .run();
+    } else {
+      db.insert(schema.siteSettings)
+        .values({ id: generateId(), key: "blog_title", value: body.blogTitle, updatedAt: now2 })
+        .run();
+    }
+  }
+
   const updated = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
   if (!updated) return c.json({ error: "업데이트 실패" }, 500);
   const { passwordHash: _, ...ownerData } = updated;
@@ -259,6 +280,13 @@ settingsRoute.get("/settings", (c) => {
   const settings = db.select().from(schema.siteSettings).all();
   const result: Record<string, string> = {};
   for (const s of settings) result[s.key] = s.value;
+
+  // blog_title이 siteSettings에 없으면 owner.blogTitle에서 가져옴
+  if (!result.blog_title) {
+    const ownerRecord = db.select().from(schema.owner).limit(1).get();
+    if (ownerRecord?.blogTitle) result.blog_title = ownerRecord.blogTitle;
+  }
+
   return c.json(result);
 });
 

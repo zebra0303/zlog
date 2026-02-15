@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
-import { Search, X, Rss, Info, ExternalLink } from "lucide-react";
+import { Search, X, Rss, Info, ExternalLink, ChevronDown } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
 import { Input, Button, Pagination, SEOHead, Skeleton } from "@/shared/ui";
@@ -193,7 +193,60 @@ export default function HomePage() {
   return (
     <div>
       <SEOHead title={selectedCategory?.name} />
-      <div className="mb-4 flex items-start gap-2">
+      {/* 모바일: select box */}
+      <div className="mb-4 flex items-center gap-2 md:hidden">
+        <div className="relative flex-1">
+          <select
+            aria-label={t("home_all")}
+            value={currentCategory || ""}
+            onChange={(e) => {
+              const slug = e.target.value;
+              const params = new URLSearchParams(searchParams);
+              if (slug) {
+                params.set("category", slug);
+              } else {
+                params.delete("category");
+              }
+              params.set("page", "1");
+              setSearchParams(params);
+            }}
+            className="border-border bg-surface text-text focus:border-primary w-full cursor-pointer appearance-none rounded-md border py-1 pr-9 pl-3 text-xs font-medium transition-colors focus:outline-none"
+          >
+            <option value="">{t("home_all")}</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.slug}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="text-text-secondary pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+        </div>
+        <a
+          href={currentCategory ? `/category/${currentCategory}/rss.xml` : "/rss.xml"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+          title="RSS Feed"
+        >
+          <Rss className="h-3.5 w-3.5" />
+          RSS
+        </a>
+        {selectedCategory && !isAuthenticated && (
+          <button
+            type="button"
+            className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+            onClick={() => {
+              setShowSubscribe(true);
+            }}
+          >
+            <Rss className="h-3.5 w-3.5" />
+            {t("cat_subscribe")}
+          </button>
+        )}
+      </div>
+
+      {/* 데스크톱: 기존 배지 */}
+      <div className="mb-4 hidden items-start gap-2 md:flex">
         <div className="flex flex-1 flex-wrap gap-2">
           <CategoryBadge slug="all" name={t("home_all")} isActive={!currentCategory} />
           {categories.map((cat) => (

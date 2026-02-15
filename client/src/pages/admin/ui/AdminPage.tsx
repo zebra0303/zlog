@@ -821,7 +821,11 @@ interface SubscribeActionParams {
   remoteCatSlug: string;
 }
 
-function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeActionParams | null }) {
+function SubscriptionManager({
+  subscribeAction,
+}: {
+  subscribeAction?: SubscribeActionParams | null;
+}) {
   const [subs, setSubs] = useState<MySubscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [syncingId, setSyncingId] = useState<string | null>(null);
@@ -885,29 +889,31 @@ function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeA
     setIsFetchingCats(true);
     setAddMessage(null);
     setRemoteCats([]);
-    void api.get<RemoteCategoryOption[]>(
-      `/federation/remote-categories?url=${encodeURIComponent(url)}`,
-    ).then((cats) => {
-      if (cats.length > 0) {
-        setRemoteCats(cats);
-        // remoteCatId 와 일치하는 카테고리 선택
-        const match = cats.find((c) => c.id === subscribeAction.remoteCatId);
-        if (match) setSelectedRemoteCat(match.id);
-      } else {
+    void api
+      .get<RemoteCategoryOption[]>(`/federation/remote-categories?url=${encodeURIComponent(url)}`)
+      .then((cats) => {
+        if (cats.length > 0) {
+          setRemoteCats(cats);
+          // remoteCatId 와 일치하는 카테고리 선택
+          const match = cats.find((c) => c.id === subscribeAction.remoteCatId);
+          if (match) setSelectedRemoteCat(match.id);
+        } else {
+          setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
+        }
+      })
+      .catch(() => {
         setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
-      }
-    }).catch(() => {
-      setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
-    }).finally(() => {
-      setIsFetchingCats(false);
-      // 구독관리 섹션으로 스크롤 + 로컬 카테고리 포커스
-      setTimeout(() => {
-        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      })
+      .finally(() => {
+        setIsFetchingCats(false);
+        // 구독관리 섹션으로 스크롤 + 로컬 카테고리 포커스
         setTimeout(() => {
-          localCatSelectRef.current?.focus();
-        }, 500);
-      }, 100);
-    });
+          sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => {
+            localCatSelectRef.current?.focus();
+          }, 500);
+        }, 100);
+      });
   }, [subscribeAction, t]);
 
   const handleFetchRemoteCategories = async () => {
@@ -1210,12 +1216,21 @@ function SubscriptionManager({ subscribeAction }: { subscribeAction?: SubscribeA
                       variant="ghost"
                       size="icon"
                       onClick={() => handleToggleActive(sub)}
-                      aria-label={sub.isActive ? t("admin_mysub_deactivate") : t("admin_mysub_activate")}
+                      aria-label={
+                        sub.isActive ? t("admin_mysub_deactivate") : t("admin_mysub_activate")
+                      }
                       title={sub.isActive ? t("admin_mysub_deactivate") : t("admin_mysub_activate")}
                     >
-                      <Power className={`h-4 w-4 ${sub.isActive ? "text-green-500" : "text-[var(--color-text-secondary)]"}`} />
+                      <Power
+                        className={`h-4 w-4 ${sub.isActive ? "text-green-500" : "text-[var(--color-text-secondary)]"}`}
+                      />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(sub)} aria-label={t("delete")}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(sub)}
+                      aria-label={t("delete")}
+                    >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
@@ -1349,14 +1364,15 @@ export default function AdminPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   // subscribe action 쿼리 파라미터 감지
-  const subscribeAction = searchParams.get("action") === "subscribe"
-    ? {
-        remoteUrl: searchParams.get("remoteUrl") ?? "",
-        remoteCatId: searchParams.get("remoteCatId") ?? "",
-        remoteCatName: searchParams.get("remoteCatName") ?? "",
-        remoteCatSlug: searchParams.get("remoteCatSlug") ?? "",
-      }
-    : null;
+  const subscribeAction =
+    searchParams.get("action") === "subscribe"
+      ? {
+          remoteUrl: searchParams.get("remoteUrl") ?? "",
+          remoteCatId: searchParams.get("remoteCatId") ?? "",
+          remoteCatName: searchParams.get("remoteCatName") ?? "",
+          remoteCatSlug: searchParams.get("remoteCatSlug") ?? "",
+        }
+      : null;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -1519,17 +1535,6 @@ export default function AdminPage() {
             {t("admin_seo_title")}
           </h2>
           <div className="flex flex-col gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                {t("admin_seo_blog_title")}
-              </label>
-              <Input
-                value={title}
-                onChange={(e) => {
-                  update("blog_title", e.target.value);
-                }}
-              />
-            </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
                 {t("admin_seo_meta_desc")}

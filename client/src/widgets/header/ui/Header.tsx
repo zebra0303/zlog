@@ -6,21 +6,38 @@ import { useAuthStore } from "@/features/auth/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
+import { api } from "@/shared/api/client";
+import type { ProfileWithStats } from "@zlog/shared";
 
 const glass = "backdrop-blur-md bg-surface/70 rounded-xl px-3 py-1";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<ProfileWithStats | null>(null);
   const { isAuthenticated, logout } = useAuthStore();
   const { isDark, toggle } = useThemeStore();
-  const { getHeaderStyle } = useSiteSettingsStore();
+  const { getHeaderStyle, settings } = useSiteSettingsStore();
   const { t } = useI18n();
   const navigate = useNavigate();
-  const handleLogout = () => { logout(); void navigate("/"); };
+  const handleLogout = () => {
+    logout();
+    void navigate("/");
+  };
   const headerRef = useRef<HTMLElement>(null);
 
+  useEffect(() => {
+    void api
+      .get<ProfileWithStats>("/profile")
+      .then(setProfile)
+      .catch(() => null);
+  }, []);
+
+  const blogTitle = profile?.blogTitle ?? settings.blog_title ?? "zlog";
+
   const customStyle = getHeaderStyle(isDark);
-  const hasCustom = Boolean((customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""));
+  const hasCustom = Boolean(
+    (customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""),
+  );
   const hasCustomHeight = !!customStyle.minHeight;
 
   // 커스텀 높이 값 (px) 파싱
@@ -67,68 +84,173 @@ export function Header() {
     };
   }, [hasCustomHeight, fullHeightPx]);
 
-  const headerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
-    ? {
-        ...customStyle,
-        maxHeight: isMobileMenuOpen ? undefined : customStyle.minHeight ?? undefined,
-        overflow: isMobileMenuOpen ? "visible" : "hidden",
-      }
-    : undefined;
+  const headerStyle: React.CSSProperties | undefined =
+    hasCustom || hasCustomHeight
+      ? {
+          ...customStyle,
+          maxHeight: isMobileMenuOpen ? undefined : (customStyle.minHeight ?? undefined),
+          overflow: isMobileMenuOpen ? "visible" : "hidden",
+        }
+      : undefined;
 
   return (
     <>
       <header
         ref={headerRef}
-        className={`sticky top-0 z-60 relative border-b border-border header-animated ${hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
+        className={`border-border header-animated relative sticky top-0 z-60 border-b ${hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
         style={headerStyle}
       >
-        <div className={`header-inner relative mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}>
+        <div
+          className={`header-inner relative mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}
+        >
           <Link to="/" className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
-            <ZlogLogo size={36} />
-            <span className="text-xl font-bold text-text">zlog</span>
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt={blogTitle}
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <ZlogLogo size={32} />
+            )}
+            <span className="text-text text-lg font-bold">{blogTitle}</span>
           </Link>
           <nav className={`hidden items-center gap-2 md:flex ${hasCustom ? glass : ""}`}>
-            <Button variant="ghost" size="sm" asChild><Link to="/">{t("nav_home")}</Link></Button>
-            <Button variant="ghost" size="sm" asChild><Link to="/profile">{t("nav_profile")}</Link></Button>
-            {isAuthenticated && (<>
-              <Button variant="ghost" size="sm" asChild><Link to="/write"><PenSquare className="mr-1 h-4 w-4" />{t("nav_write")}</Link></Button>
-              <Button variant="ghost" size="sm" asChild><Link to="/admin"><Settings className="mr-1 h-4 w-4" />{t("nav_admin")}</Link></Button>
-            </>)}
-            <Button variant="ghost" size="icon" onClick={() => {
-              toggle();
-            }} aria-label={t("nav_theme_toggle")}>{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
-            {isAuthenticated ? <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" />{t("nav_logout")}</Button> : <Button variant="outline" size="sm" asChild><Link to="/login">{t("nav_login")}</Link></Button>}
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/">{t("nav_home")}</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/profile">{t("nav_profile")}</Link>
+            </Button>
+            {isAuthenticated && (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/write">
+                    <PenSquare className="mr-1 h-4 w-4" />
+                    {t("nav_write")}
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/admin">
+                    <Settings className="mr-1 h-4 w-4" />
+                    {t("nav_admin")}
+                  </Link>
+                </Button>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                toggle();
+              }}
+              aria-label={t("nav_theme_toggle")}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            {isAuthenticated ? (
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="mr-1 h-4 w-4" />
+                {t("nav_logout")}
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/login">{t("nav_login")}</Link>
+              </Button>
+            )}
           </nav>
           <div className={`flex items-center gap-2 md:hidden ${hasCustom ? glass : ""}`}>
-            <Button variant="ghost" size="icon" onClick={() => {
-              toggle();
-            }} aria-label={t("nav_theme_toggle")}>{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
-            <Button variant="ghost" size="icon" onClick={() => {
-              setIsMobileMenuOpen(!isMobileMenuOpen);
-            }} aria-label={t("nav_menu")}>{isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                toggle();
+              }}
+              aria-label={t("nav_theme_toggle")}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setIsMobileMenuOpen(!isMobileMenuOpen);
+              }}
+              aria-label={t("nav_menu")}
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
           </div>
           {isMobileMenuOpen && (
-            <div className="absolute right-2 top-full z-70 mt-0.5 w-44 rounded-xl border border-border bg-surface/95 backdrop-blur-md shadow-lg md:hidden">
+            <div className="border-border bg-surface/95 absolute top-full right-2 z-70 mt-0.5 w-44 rounded-xl border shadow-lg backdrop-blur-md md:hidden">
               <nav className="flex flex-col py-1.5">
-                <Link to="/" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
-                  setIsMobileMenuOpen(false);
-                }}><Home className="h-4 w-4 text-text-secondary" />{t("nav_home")}</Link>
-                <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
-                  setIsMobileMenuOpen(false);
-                }}><User className="h-4 w-4 text-text-secondary" />{t("nav_profile")}</Link>
-                {isAuthenticated && (<>
-                  <Link to="/write" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
+                <Link
+                  to="/"
+                  className="text-text hover:bg-background/80 flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                  onClick={() => {
                     setIsMobileMenuOpen(false);
-                  }}><PenSquare className="h-4 w-4 text-text-secondary" />{t("nav_write")}</Link>
-                  <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text hover:bg-background/80" onClick={() => {
+                  }}
+                >
+                  <Home className="text-text-secondary h-4 w-4" />
+                  {t("nav_home")}
+                </Link>
+                <Link
+                  to="/profile"
+                  className="text-text hover:bg-background/80 flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                  onClick={() => {
                     setIsMobileMenuOpen(false);
-                  }}><Settings className="h-4 w-4 text-text-secondary" />{t("nav_admin")}</Link>
-                  <div className="mx-3 my-1 border-t border-border/50" />
-                  <button className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-background/80" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}><LogOut className="h-4 w-4" />{t("nav_logout")}</button>
-                </>)}
-                {!isAuthenticated && <Link to="/login" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-background/80" onClick={() => {
-                  setIsMobileMenuOpen(false);
-                }}><LogIn className="h-4 w-4" />{t("nav_login")}</Link>}
+                  }}
+                >
+                  <User className="text-text-secondary h-4 w-4" />
+                  {t("nav_profile")}
+                </Link>
+                {isAuthenticated && (
+                  <>
+                    <Link
+                      to="/write"
+                      className="text-text hover:bg-background/80 flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <PenSquare className="text-text-secondary h-4 w-4" />
+                      {t("nav_write")}
+                    </Link>
+                    <Link
+                      to="/admin"
+                      className="text-text hover:bg-background/80 flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <Settings className="text-text-secondary h-4 w-4" />
+                      {t("nav_admin")}
+                    </Link>
+                    <div className="border-border/50 mx-3 my-1 border-t" />
+                    <button
+                      className="hover:bg-background/80 flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-red-500"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {t("nav_logout")}
+                    </button>
+                  </>
+                )}
+                {!isAuthenticated && (
+                  <Link
+                    to="/login"
+                    className="text-primary hover:bg-background/80 flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogIn className="h-4 w-4" />
+                    {t("nav_login")}
+                  </Link>
+                )}
               </nav>
             </div>
           )}
