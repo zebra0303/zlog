@@ -62,6 +62,14 @@ app.get("/site.webmanifest", (c) => {
   const blogTitle = ownerRecord?.blogTitle ?? "zlog";
   const blogDesc = ownerRecord?.blogDescription ?? "관심 있는 모든 글, 내 블로그 하나로";
 
+  // 헤더 어두운 모드 배경색 → theme_color
+  const themeColorRow = db
+    .select()
+    .from(schema.siteSettings)
+    .where(eq(schema.siteSettings.key, "header_bg_color_dark"))
+    .get();
+  const themeColor = themeColorRow?.value ?? "#6C5CE7";
+
   // 아이콘: 프로필 아바타가 있으면 사용, 없으면 기본 favicon
   const icons: { src: string; sizes: string; type: string; purpose: string }[] = [];
   if (ownerRecord?.avatarUrl) {
@@ -99,7 +107,7 @@ app.get("/site.webmanifest", (c) => {
     display: "standalone" as const,
     display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
     background_color: "#FAF9FF",
-    theme_color: "#6C5CE7",
+    theme_color: themeColor,
     icons,
   };
 
