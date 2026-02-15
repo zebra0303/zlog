@@ -1,7 +1,7 @@
 # ZLOG — 관심 있는 모든 글, 내 블로그 하나로
 
 > **내 블로그, 내 데이터, 내 네트워크.**
-> ZLOG는 **블로그 간 구독**과 **RSS 피드**를 기본 지원하는 가벼운 셀프 호스팅 개인 블로그 시스템입니다. 독립적인 블로그들이 서로 연결되는 분산 네트워크를 만듭니다.
+> ZLOG는 블로그끼리 서로 **구독**하고 새 글을 **실시간으로 주고받는** 셀프 호스팅 블로그 시스템입니다. 플랫폼 없이도 독립적인 블로그들이 하나의 네트워크처럼 연결됩니다.
 
 [English](./README.md)
 
@@ -17,29 +17,29 @@
 
 ## 왜 ZLOG인가?
 
-| | 중앙형 플랫폼 | 정적 사이트 생성기 | **ZLOG** |
-|---|---|---|---|
-| **데이터 소유권** | 플랫폼이 데이터 소유 | 파일은 내 것 | **모든 것이 내 것** |
-| **블로그 간 구독** | 플랫폼 종속 | 미지원 | **Federation 내장** |
-| **RSS** | 때때로 지원 | 플러그인 필요 | **네이티브 지원** |
-| **댓글** | 서드파티 필요 | 서드파티 필요 | **내장 (SSO + 익명)** |
-| **설치 난이도** | 없음 | 빌드 파이프라인 필요 | **`docker compose up`** |
-| **라즈베리 파이 지원** | 해당 없음 | 가능 | **네이티브 지원** |
+|                        | 중앙형 플랫폼        | 정적 사이트 생성기   | **ZLOG**                |
+| ---------------------- | -------------------- | -------------------- | ----------------------- |
+| **데이터 소유권**      | 플랫폼이 데이터 소유 | 파일은 내 것         | **모든 것이 내 것**     |
+| **블로그 간 구독**     | 플랫폼 종속          | 미지원               | **Federation 내장**     |
+| **RSS**                | 때때로 지원          | 플러그인 필요        | **네이티브 지원**       |
+| **댓글**               | 서드파티 필요        | 서드파티 필요        | **내장 (SSO + 익명)**   |
+| **설치 난이도**        | 없음                 | 빌드 파이프라인 필요 | **`docker compose up`** |
+| **라즈베리 파이 지원** | 해당 없음            | 가능                 | **네이티브 지원**       |
 
 ### 문제
 
-개인 블로그는 섬과 같습니다. 좋은 글을 쓰지만, 다른 블로그를 발견하고 구독하려면 RSS 리더나 소셜 미디어 같은 외부 도구가 필요합니다. 중앙형 플랫폼은 발견 문제를 해결하지만, 데이터 소유권을 빼앗아갑니다.
+개인 블로그는 외딴 섬입니다. 아무리 좋은 글을 써도 다른 블로그의 글을 읽으려면 RSS 리더나 소셜 미디어에 의존해야 합니다. 네이버·티스토리 같은 중앙형 플랫폼은 구독을 쉽게 해주지만, 내 데이터와 디자인의 자유를 가져갑니다.
 
 ### 해결책
 
-ZLOG는 이 격차를 해소합니다. 모든 ZLOG 인스턴스는 **완전히 독립적인 블로그**로서:
+ZLOG는 **블로그 자체에 구독 기능을 내장**합니다. 관리자 대시보드에서 다른 ZLOG 블로그를 구독하면:
 
-1. 다른 ZLOG 블로그의 카테고리를 **구독**할 수 있습니다
-2. 웹훅을 통해 새 글을 **자동으로 수신**합니다
-3. ZLOG가 아닌 독자를 위해 **RSS 피드를 제공**합니다
-4. 원격 게시글을 로컬 콘텐츠와 함께 **표시**합니다
+1. 상대 블로그에 새 글이 올라오면 **내 블로그로 자동 전달**됩니다
+2. 내 글과 구독한 글이 **하나의 피드에서 함께** 보입니다
+3. 모든 데이터는 **내 서버에 저장** — 플랫폼 종속 없음
+4. RSS 피드도 기본 제공 — ZLOG가 아닌 독자도 구독 가능
 
-이를 통해 각 노드가 자율적이면서도 서로 연결된 **연합 블로그 네트워크**가 만들어집니다.
+블로그마다 독립적이면서도 서로 연결되는 **분산 블로그 네트워크**, 그것이 ZLOG입니다.
 
 ---
 
@@ -123,10 +123,10 @@ sequenceDiagram
 
 모든 ZLOG 블로그는 RSS 2.0 피드를 자동으로 생성합니다:
 
-| 피드 | URL | 설명 |
-|------|-----|------|
-| **전체 블로그** | `/rss.xml` | 모든 카테고리의 최신 20개 게시글 |
-| **카테고리별** | `/category/{slug}/rss.xml` | 특정 카테고리의 최신 20개 게시글 |
+| 피드            | URL                        | 설명                             |
+| --------------- | -------------------------- | -------------------------------- |
+| **전체 블로그** | `/rss.xml`                 | 모든 카테고리의 최신 20개 게시글 |
+| **카테고리별**  | `/category/{slug}/rss.xml` | 특정 카테고리의 최신 20개 게시글 |
 
 - **자동 감지**: HTML head에 `<link rel="alternate">` 태그로 RSS 리더가 자동 감지
 - **표준 형식**: Feedly, Inoreader, NetNewsWire 등 모든 RSS 2.0 리더와 호환
@@ -369,20 +369,20 @@ npm run start
 
 ## 환경 변수
 
-| 변수 | 설명 | 기본값 |
-|------|------|--------|
-| `ADMIN_EMAIL` | 관리자 로그인 이메일 | `admin@example.com` |
-| `ADMIN_PASSWORD` | 관리자 로그인 비밀번호 | `admin1234` |
-| `SITE_URL` | 블로그 공개 URL | `http://localhost:3000` |
-| `BLOG_TITLE` | 블로그 제목 | `My Blog` |
-| `BLOG_HANDLE` | 고유 블로그 핸들 | `admin` |
-| `DISPLAY_NAME` | 작성자 표시 이름 | `Blog Owner` |
-| `JWT_SECRET` | JWT 서명 비밀키 | `change-me-...` |
-| `PORT` | 서버 포트 | `3000` |
-| `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID | — |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Secret | — |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | — |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | — |
+| 변수                   | 설명                       | 기본값                  |
+| ---------------------- | -------------------------- | ----------------------- |
+| `ADMIN_EMAIL`          | 관리자 로그인 이메일       | `admin@example.com`     |
+| `ADMIN_PASSWORD`       | 관리자 로그인 비밀번호     | `admin1234`             |
+| `SITE_URL`             | 블로그 공개 URL            | `http://localhost:3000` |
+| `BLOG_TITLE`           | 블로그 제목                | `My Blog`               |
+| `BLOG_HANDLE`          | 고유 블로그 핸들           | `admin`                 |
+| `DISPLAY_NAME`         | 작성자 표시 이름           | `Blog Owner`            |
+| `JWT_SECRET`           | JWT 서명 비밀키            | `change-me-...`         |
+| `PORT`                 | 서버 포트                  | `3000`                  |
+| `GITHUB_CLIENT_ID`     | GitHub OAuth App Client ID | —                       |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Secret    | —                       |
+| `GOOGLE_CLIENT_ID`     | Google OAuth Client ID     | —                       |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | —                       |
 
 ---
 
@@ -419,15 +419,15 @@ ZLOG의 Federation과 통합하려는 개발자를 위한 안내:
 
 ### 공개 엔드포인트 (인증 불필요)
 
-| 메서드 | 엔드포인트 | 설명 |
-|--------|----------|------|
-| `GET` | `/api/federation/info` | 블로그 메타데이터 |
-| `GET` | `/api/federation/categories` | 공개 카테고리 |
-| `GET` | `/api/federation/categories/:id/posts` | 카테고리의 게시글 |
-| `GET` | `/api/federation/posts/:id` | 단일 게시글 상세 (실시간 검증) |
-| `POST` | `/api/federation/subscribe` | 카테고리 구독 |
-| `POST` | `/api/federation/unsubscribe` | 구독 해제 |
-| `POST` | `/api/federation/webhook` | 콘텐츠 업데이트 수신 |
+| 메서드 | 엔드포인트                             | 설명                           |
+| ------ | -------------------------------------- | ------------------------------ |
+| `GET`  | `/api/federation/info`                 | 블로그 메타데이터              |
+| `GET`  | `/api/federation/categories`           | 공개 카테고리                  |
+| `GET`  | `/api/federation/categories/:id/posts` | 카테고리의 게시글              |
+| `GET`  | `/api/federation/posts/:id`            | 단일 게시글 상세 (실시간 검증) |
+| `POST` | `/api/federation/subscribe`            | 카테고리 구독                  |
+| `POST` | `/api/federation/unsubscribe`          | 구독 해제                      |
+| `POST` | `/api/federation/webhook`              | 콘텐츠 업데이트 수신           |
 
 ### 웹훅 페이로드
 
@@ -452,12 +452,12 @@ ZLOG의 Federation과 통합하려는 개발자를 위한 안내:
 
 ### 웹훅 이벤트
 
-| 이벤트 | 트리거 |
-|--------|--------|
-| `post.published` | 새 글 발행 또는 초안 → 발행 |
-| `post.updated` | 발행된 글 내용 수정 |
-| `post.deleted` | 게시글 삭제 또는 발행 → 초안 |
-| `post.unpublished` | 게시글 상태가 발행에서 변경 |
+| 이벤트             | 트리거                       |
+| ------------------ | ---------------------------- |
+| `post.published`   | 새 글 발행 또는 초안 → 발행  |
+| `post.updated`     | 발행된 글 내용 수정          |
+| `post.deleted`     | 게시글 삭제 또는 발행 → 초안 |
+| `post.unpublished` | 게시글 상태가 발행에서 변경  |
 
 ---
 

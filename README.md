@@ -1,7 +1,7 @@
 # ZLOG — Every Blog You Care About, One Dashboard
 
 > **Your blog, your data, your network.**
-> ZLOG is a lightweight, self-hosted personal blog system with built-in **cross-blog subscription** and **RSS feed** support — enabling a decentralized network of independent blogs.
+> ZLOG is a self-hosted blog system where blogs **subscribe** to each other and **deliver new posts in real time**. Independent blogs connect as one network — no platform needed.
 
 [한국어 문서 (Korean)](./README.ko.md)
 
@@ -17,29 +17,29 @@
 
 ## Why ZLOG?
 
-| | Centralized Platforms | Static Site Generators | **ZLOG** |
-|---|---|---|---|
-| **Data Ownership** | Platform owns your data | You own files | **You own everything** |
-| **Cross-blog Subscription** | Platform-dependent | Not built-in | **Built-in Federation** |
-| **RSS** | Sometimes | Plugin needed | **Native support** |
-| **Comments** | Third-party required | Third-party required | **Built-in (SSO + Anonymous)** |
-| **Setup Complexity** | None | Build pipeline needed | **`docker compose up`** |
-| **Runs on Raspberry Pi** | N/A | Possible | **Yes, natively** |
+|                             | Centralized Platforms   | Static Site Generators | **ZLOG**                       |
+| --------------------------- | ----------------------- | ---------------------- | ------------------------------ |
+| **Data Ownership**          | Platform owns your data | You own files          | **You own everything**         |
+| **Cross-blog Subscription** | Platform-dependent      | Not built-in           | **Built-in Federation**        |
+| **RSS**                     | Sometimes               | Plugin needed          | **Native support**             |
+| **Comments**                | Third-party required    | Third-party required   | **Built-in (SSO + Anonymous)** |
+| **Setup Complexity**        | None                    | Build pipeline needed  | **`docker compose up`**        |
+| **Runs on Raspberry Pi**    | N/A                     | Possible               | **Yes, natively**              |
 
 ### The Problem
 
-Personal blogs are islands. You write great content, but discovering and following other individual blogs requires external tools like RSS readers or social media. Centralized platforms solve discovery but take away your data ownership.
+Personal blogs are isolated islands. No matter how great your content is, reading posts from other blogs means relying on RSS readers or social media. Centralized platforms like Medium or WordPress.com make subscriptions easy, but they take away your data and design freedom.
 
 ### The Solution
 
-ZLOG bridges this gap. Every ZLOG instance is a **fully independent blog** that can:
+ZLOG **builds subscription right into the blog itself**. Subscribe to another ZLOG blog from your admin dashboard, and:
 
-1. **Subscribe** to categories on other ZLOG blogs
-2. **Receive** new posts automatically via webhooks
-3. **Expose** an RSS feed for non-ZLOG readers
-4. **Display** remote posts alongside local content
+1. When they publish a new post, it's **automatically delivered to your blog**
+2. Your posts and subscribed posts appear **together in one feed**
+3. All data is **stored on your server** — no platform lock-in
+4. RSS feeds included by default — even non-ZLOG readers can subscribe
 
-This creates a **federated blog network** where each node is autonomous but interconnected.
+Independent yet interconnected — a **decentralized blog network**. That's ZLOG.
 
 ---
 
@@ -123,9 +123,9 @@ sequenceDiagram
 
 Every ZLOG blog automatically generates RSS 2.0 feeds:
 
-| Feed | URL | Description |
-|------|-----|-------------|
-| **Full Blog** | `/rss.xml` | Latest 20 posts across all categories |
+| Feed             | URL                        | Description                            |
+| ---------------- | -------------------------- | -------------------------------------- |
+| **Full Blog**    | `/rss.xml`                 | Latest 20 posts across all categories  |
 | **Per Category** | `/category/{slug}/rss.xml` | Latest 20 posts in a specific category |
 
 - **Auto-discovery**: `<link rel="alternate">` tag in HTML head for automatic detection by RSS readers
@@ -369,20 +369,20 @@ npm run start
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ADMIN_EMAIL` | Admin login email | `admin@example.com` |
-| `ADMIN_PASSWORD` | Admin login password | `admin1234` |
-| `SITE_URL` | Public URL of your blog | `http://localhost:3000` |
-| `BLOG_TITLE` | Blog title | `My Blog` |
-| `BLOG_HANDLE` | Unique blog handle | `admin` |
-| `DISPLAY_NAME` | Author display name | `Blog Owner` |
-| `JWT_SECRET` | Secret for JWT signing | `change-me-...` |
-| `PORT` | Server port | `3000` |
-| `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID | — |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Secret | — |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | — |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | — |
+| Variable               | Description                | Default                 |
+| ---------------------- | -------------------------- | ----------------------- |
+| `ADMIN_EMAIL`          | Admin login email          | `admin@example.com`     |
+| `ADMIN_PASSWORD`       | Admin login password       | `admin1234`             |
+| `SITE_URL`             | Public URL of your blog    | `http://localhost:3000` |
+| `BLOG_TITLE`           | Blog title                 | `My Blog`               |
+| `BLOG_HANDLE`          | Unique blog handle         | `admin`                 |
+| `DISPLAY_NAME`         | Author display name        | `Blog Owner`            |
+| `JWT_SECRET`           | Secret for JWT signing     | `change-me-...`         |
+| `PORT`                 | Server port                | `3000`                  |
+| `GITHUB_CLIENT_ID`     | GitHub OAuth App Client ID | —                       |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Secret    | —                       |
+| `GOOGLE_CLIENT_ID`     | Google OAuth Client ID     | —                       |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | —                       |
 
 ---
 
@@ -419,15 +419,15 @@ For developers who want to integrate with ZLOG's federation:
 
 ### Public Endpoints (No Auth Required)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/federation/info` | Blog metadata |
-| `GET` | `/api/federation/categories` | Public categories |
-| `GET` | `/api/federation/categories/:id/posts` | Posts in a category |
-| `GET` | `/api/federation/posts/:id` | Single post detail (live verification) |
-| `POST` | `/api/federation/subscribe` | Subscribe to a category |
-| `POST` | `/api/federation/unsubscribe` | Unsubscribe |
-| `POST` | `/api/federation/webhook` | Receive content updates |
+| Method | Endpoint                               | Description                            |
+| ------ | -------------------------------------- | -------------------------------------- |
+| `GET`  | `/api/federation/info`                 | Blog metadata                          |
+| `GET`  | `/api/federation/categories`           | Public categories                      |
+| `GET`  | `/api/federation/categories/:id/posts` | Posts in a category                    |
+| `GET`  | `/api/federation/posts/:id`            | Single post detail (live verification) |
+| `POST` | `/api/federation/subscribe`            | Subscribe to a category                |
+| `POST` | `/api/federation/unsubscribe`          | Unsubscribe                            |
+| `POST` | `/api/federation/webhook`              | Receive content updates                |
 
 ### Webhook Payload
 
@@ -452,12 +452,12 @@ For developers who want to integrate with ZLOG's federation:
 
 ### Webhook Events
 
-| Event | Trigger |
-|-------|---------|
-| `post.published` | New post published or draft → published |
-| `post.updated` | Published post content updated |
-| `post.deleted` | Post deleted or published → draft |
-| `post.unpublished` | Post status changed from published |
+| Event              | Trigger                                 |
+| ------------------ | --------------------------------------- |
+| `post.published`   | New post published or draft → published |
+| `post.updated`     | Published post content updated          |
+| `post.deleted`     | Post deleted or published → draft       |
+| `post.unpublished` | Post status changed from published      |
 
 ---
 
