@@ -9,7 +9,9 @@ export function Footer() {
   const { isDark } = useThemeStore();
   const { getFooterStyle } = useSiteSettingsStore();
   const customStyle = getFooterStyle(isDark);
-  const hasCustom = Boolean((customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""));
+  const hasCustom = Boolean(
+    (customStyle.backgroundColor ?? "") || (customStyle.backgroundImage ?? ""),
+  );
   const hasCustomHeight = !!customStyle.minHeight;
   const compactMinHeight = "clamp(36px, 6vw, 44px)";
 
@@ -22,11 +24,14 @@ export function Footer() {
     const el = sentinelRef.current;
     if (!el) return;
 
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      setExpanded(entry.isIntersecting);
-    }, { threshold: 0 });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        setExpanded(entry.isIntersecting);
+      },
+      { threshold: 0 },
+    );
     observer.observe(el);
     return () => {
       observer.disconnect();
@@ -37,14 +42,19 @@ export function Footer() {
   const isCompact = hasCustomHeight && !isExpanded;
   const glass = `${glassBase} ${isCompact ? "py-0.5" : "py-2"}`;
 
-  const footerStyle: React.CSSProperties | undefined = (hasCustom || hasCustomHeight)
-    ? {
-        ...customStyle,
-        minHeight: hasCustomHeight ? (isExpanded ? customStyle.minHeight : compactMinHeight) : undefined,
-        transition: "min-height 0.3s ease",
-        overflow: "hidden",
-      }
-    : undefined;
+  const footerStyle: React.CSSProperties | undefined =
+    hasCustom || hasCustomHeight
+      ? {
+          ...customStyle,
+          minHeight: hasCustomHeight
+            ? isExpanded
+              ? customStyle.minHeight
+              : compactMinHeight
+            : undefined,
+          transition: "min-height 0.3s ease",
+          overflow: "hidden",
+        }
+      : undefined;
 
   return (
     <>
@@ -60,15 +70,22 @@ export function Footer() {
         className={`${hasCustomHeight ? "sticky bottom-0 z-40" : ""} footer-animated ${isCompact ? "footer-compact flex items-center" : ""} border-t border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]"}`}
         style={footerStyle}
       >
-        <div className={`footer-inner mx-auto flex w-full max-w-6xl items-center justify-between px-4 ${isCompact ? "py-2" : "py-6"}`}>
+        <div
+          className={`footer-inner mx-auto flex w-full max-w-6xl items-center justify-between px-4 ${isCompact ? "py-2" : "py-6"}`}
+        >
           <div className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
             <ZlogLogo size={24} />
             <span className="text-sm text-[var(--color-text-secondary)]">
-              Powered by <a href="https://github.com/zebra0303/zlog" target="_blank" rel="noopener noreferrer" className="no-underline hover:text-[var(--color-primary)]">zlog</a>
+              Powered by{" "}
+              <a
+                href="https://github.com/zebra0303/zlog"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="no-underline hover:text-[var(--color-primary)]"
+              >
+                zlog
+              </a>
             </span>
-          </div>
-          <div className={hasCustom ? glass : ""}>
-            <p className="text-sm text-[var(--color-text-secondary)]">&copy; {new Date().getFullYear()} zlog</p>
           </div>
         </div>
       </footer>
