@@ -196,7 +196,7 @@ export function AppLayout() {
   }, []);
 
   const isEditorPage = pathname.startsWith("/write");
-  const isPostDetail = pathname.startsWith("/posts/");
+  const isPostDetail = pathname.startsWith("/posts/") || pathname.startsWith("/remote-posts/");
   const hideSidebar = isEditorPage || isPostDetail;
 
   return (
