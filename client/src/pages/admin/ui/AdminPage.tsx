@@ -1354,14 +1354,42 @@ function SubscriberManager() {
 }
 
 // ============ 메인 AdminPage ============
+type AdminTab = "general" | "federation";
+
 export default function AdminPage() {
   const { isAuthenticated } = useAuthStore();
   const { fetchSettings: refreshSiteSettings } = useSiteSettingsStore();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  // 탭 상태 — subscribe 액션이 있으면 Federation 탭으로
+  const tabParam = searchParams.get("tab");
+  const hasSubscribeAction = searchParams.get("action") === "subscribe";
+  const [activeTab, setActiveTab] = useState<AdminTab>(
+    tabParam === "federation" || hasSubscribeAction ? "federation" : "general",
+  );
+
+  const handleTabChange = (tab: AdminTab) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams);
+    if (tab === "general") {
+      params.delete("tab");
+    } else {
+      params.set("tab", tab);
+    }
+    // subscribe 액션 파라미터는 탭 변경 시 유지하지 않음
+    if (tab !== "federation") {
+      params.delete("action");
+      params.delete("remoteUrl");
+      params.delete("remoteCatId");
+      params.delete("remoteCatName");
+      params.delete("remoteCatSlug");
+    }
+    setSearchParams(params, { replace: true });
+  };
 
   // subscribe action 쿼리 파라미터 감지
   const subscribeAction =
@@ -1410,6 +1438,11 @@ export default function AdminPage() {
     setLocale(lang as "en" | "ko");
   };
 
+  const tabs: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
+    { key: "general", label: t("admin_tab_general"), icon: <Settings className="h-4 w-4" /> },
+    { key: "federation", label: t("admin_tab_federation"), icon: <Globe className="h-4 w-4" /> },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <SEOHead title={t("admin_title")} />
@@ -1429,183 +1462,215 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* 언어 설정 */}
-      <Card>
-        <CardContent className="pt-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
-            <Languages className="h-5 w-5" />
-            {t("admin_lang_title")}
-          </h2>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              {t("admin_lang_label")}
-            </label>
-            <select
-              value={settings.default_language ?? locale}
-              onChange={(e) => {
-                handleLanguageChange(e.target.value);
-              }}
-              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-            >
-              <option value="en">English</option>
-              <option value="ko">한국어</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* 탭 네비게이션 */}
+      <div className="flex gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => {
+              handleTabChange(tab.key);
+            }}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === tab.key
+                ? "bg-[var(--color-primary)] text-white shadow-sm"
+                : "text-[var(--color-text-secondary)] hover:bg-[var(--color-background)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* 글 관리 */}
-      <PostManager />
-
-      {/* 카테고리 관리 */}
-      <CategoryManager />
-
-      {/* 표시 설정 */}
-      <Card>
-        <CardContent className="pt-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
-            <FileText className="h-5 w-5" />
-            {t("admin_display_title")}
-          </h2>
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                {t("admin_display_per_page")}
-              </label>
-              <select
-                value={settings.posts_per_page ?? "10"}
-                onChange={(e) => {
-                  update("posts_per_page", e.target.value);
-                }}
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-              >
-                {[3, 5, 10, 15, 20, 30].map((n) => (
-                  <option key={n} value={String(n)}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center justify-between">
+      {/* 일반 설정 탭 */}
+      {activeTab === "general" && (
+        <>
+          {/* 언어 설정 */}
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+                <Languages className="h-5 w-5" />
+                {t("admin_lang_title")}
+              </h2>
               <div>
-                <label className="text-sm font-medium text-[var(--color-text)]">
-                  {t("admin_display_lazy_load")}
+                <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                  {t("admin_lang_label")}
                 </label>
+                <select
+                  value={settings.default_language ?? locale}
+                  onChange={(e) => {
+                    handleLanguageChange(e.target.value);
+                  }}
+                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                >
+                  <option value="en">English</option>
+                  <option value="ko">한국어</option>
+                </select>
               </div>
-              <button
-                onClick={() => {
-                  update(
-                    "lazy_load_images",
-                    settings.lazy_load_images === "true" ? "false" : "true",
-                  );
-                }}
-                className={`relative h-6 w-11 rounded-full transition-colors ${settings.lazy_load_images === "true" ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
-              >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${settings.lazy_load_images === "true" ? "left-[22px]" : "left-0.5"}`}
-                />
-              </button>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                {t("admin_comment_mode")}
-              </label>
-              <select
-                value={settings.comment_mode ?? "sso_only"}
-                onChange={(e) => {
-                  update("comment_mode", e.target.value);
-                }}
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-              >
-                <option value="sso_only">{t("admin_comment_mode_sso")}</option>
-                <option value="all">{t("admin_comment_mode_all")}</option>
-                <option value="anonymous_only">{t("admin_comment_mode_anon")}</option>
-                <option value="disabled">{t("admin_comment_mode_disabled")}</option>
-              </select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* SEO 설정 */}
-      <Card>
-        <CardContent className="pt-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
-            <Globe className="h-5 w-5" />
-            {t("admin_seo_title")}
-          </h2>
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                {t("admin_seo_meta_desc")}
-              </label>
-              <Textarea
-                value={desc}
-                onChange={(e) => {
-                  update("seo_description", e.target.value);
-                }}
-                maxLength={160}
-                rows={3}
-              />
-              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{desc.length}/160</p>
-            </div>
-            <div className="rounded-lg border border-[var(--color-border)] p-4">
-              <p className="mb-1 text-xs text-[var(--color-text-secondary)]">
-                {t("admin_seo_preview")}
-              </p>
-              <p className="text-lg text-blue-700">{title || t("admin_seo_preview_title")}</p>
-              <p className="text-sm text-green-700">{window.location.origin}</p>
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                {desc || t("admin_seo_preview_desc")}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          {/* 글 관리 */}
+          <PostManager />
 
-      {/* 헤더/푸터 테마 커스터마이징 */}
-      <ThemeCustomizer settings={settings} update={update} />
+          {/* 카테고리 관리 */}
+          <CategoryManager />
 
-      {/* Federation 설정 */}
-      <Card>
-        <CardContent className="pt-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
-            <Globe className="h-5 w-5" />
-            {t("admin_fed_title")}
-          </h2>
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                {t("admin_fed_site_url")}
-              </label>
-              <Input value={window.location.origin} disabled className="opacity-60" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                {t("admin_fed_sync_interval")}
-              </label>
-              <select
-                value={settings.webhook_sync_interval ?? "15"}
-                onChange={(e) => {
-                  update("webhook_sync_interval", e.target.value);
-                }}
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-              >
-                <option value="5">{t("admin_fed_5min")}</option>
-                <option value="15">{t("admin_fed_15min")}</option>
-                <option value="30">{t("admin_fed_30min")}</option>
-                <option value="60">{t("admin_fed_1hour")}</option>
-              </select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          {/* 표시 설정 */}
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+                <FileText className="h-5 w-5" />
+                {t("admin_display_title")}
+              </h2>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_display_per_page")}
+                  </label>
+                  <select
+                    value={settings.posts_per_page ?? "10"}
+                    onChange={(e) => {
+                      update("posts_per_page", e.target.value);
+                    }}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                  >
+                    {[3, 5, 10, 15, 20, 30].map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-[var(--color-text)]">
+                      {t("admin_display_lazy_load")}
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => {
+                      update(
+                        "lazy_load_images",
+                        settings.lazy_load_images === "true" ? "false" : "true",
+                      );
+                    }}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${settings.lazy_load_images === "true" ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${settings.lazy_load_images === "true" ? "left-[22px]" : "left-0.5"}`}
+                    />
+                  </button>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_comment_mode")}
+                  </label>
+                  <select
+                    value={settings.comment_mode ?? "sso_only"}
+                    onChange={(e) => {
+                      update("comment_mode", e.target.value);
+                    }}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                  >
+                    <option value="sso_only">{t("admin_comment_mode_sso")}</option>
+                    <option value="all">{t("admin_comment_mode_all")}</option>
+                    <option value="anonymous_only">{t("admin_comment_mode_anon")}</option>
+                    <option value="disabled">{t("admin_comment_mode_disabled")}</option>
+                  </select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* 내가 구독 중인 카테고리 */}
-      <SubscriptionManager subscribeAction={subscribeAction} />
+          {/* SEO 설정 */}
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+                <Globe className="h-5 w-5" />
+                {t("admin_seo_title")}
+              </h2>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_seo_meta_desc")}
+                  </label>
+                  <Textarea
+                    value={desc}
+                    onChange={(e) => {
+                      update("seo_description", e.target.value);
+                    }}
+                    maxLength={160}
+                    rows={3}
+                  />
+                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                    {desc.length}/160
+                  </p>
+                </div>
+                <div className="rounded-lg border border-[var(--color-border)] p-4">
+                  <p className="mb-1 text-xs text-[var(--color-text-secondary)]">
+                    {t("admin_seo_preview")}
+                  </p>
+                  <p className="text-lg text-blue-700">{title || t("admin_seo_preview_title")}</p>
+                  <p className="text-sm text-green-700">{window.location.origin}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    {desc || t("admin_seo_preview_desc")}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* 구독자 관리 */}
-      <SubscriberManager />
+          {/* 헤더/푸터 테마 커스터마이징 */}
+          <ThemeCustomizer settings={settings} update={update} />
+        </>
+      )}
+
+      {/* Federation 탭 */}
+      {activeTab === "federation" && (
+        <>
+          {/* Federation 설정 */}
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+                <Globe className="h-5 w-5" />
+                {t("admin_fed_title")}
+              </h2>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_fed_site_url")}
+                  </label>
+                  <Input value={window.location.origin} disabled className="opacity-60" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_fed_sync_interval")}
+                  </label>
+                  <select
+                    value={settings.webhook_sync_interval ?? "15"}
+                    onChange={(e) => {
+                      update("webhook_sync_interval", e.target.value);
+                    }}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                  >
+                    <option value="5">{t("admin_fed_5min")}</option>
+                    <option value="15">{t("admin_fed_15min")}</option>
+                    <option value="30">{t("admin_fed_30min")}</option>
+                    <option value="60">{t("admin_fed_1hour")}</option>
+                  </select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 내가 구독 중인 카테고리 */}
+          <SubscriptionManager subscribeAction={subscribeAction} />
+
+          {/* 구독자 관리 */}
+          <SubscriberManager />
+        </>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc, and, or, sql, like } from "drizzle-orm";
+import { eq, desc, and, or, sql, like, isNotNull } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
@@ -107,7 +107,10 @@ postsRoute.get("/", (c) => {
     } | null;
   })[] = [];
   if (status === "published") {
-    const remoteConditions = [eq(schema.remotePosts.remoteStatus, "published")];
+    const remoteConditions = [
+      eq(schema.remotePosts.remoteStatus, "published"),
+      isNotNull(schema.remotePosts.localCategoryId),
+    ];
     if (categoryId) {
       remoteConditions.push(eq(schema.remotePosts.localCategoryId, categoryId));
     }

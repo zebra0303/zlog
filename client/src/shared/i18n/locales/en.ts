@@ -57,7 +57,8 @@ export const en = {
   post_confirm_delete: "Are you sure you want to delete this post?",
   post_delete_failed: "Failed to delete the post.",
   post_view_original: "View original post",
-  remote_post_deleted_alert: "The original post has been deleted by the author. This synced post will also be removed.",
+  remote_post_deleted_alert:
+    "The original post has been deleted by the author. This synced post will also be removed.",
   remote_post_visit_blog: "Visit blog",
 
   // Post Editor
@@ -89,8 +90,10 @@ export const en = {
   cat_subscribe_what: "What is zlog Federation subscription?",
   cat_subscribe_desc1: "If you run another zlog blog, you can subscribe to this category.",
   cat_subscribe_desc2: "New posts will be automatically synced to your blog when published.",
-  cat_subscribe_desc3: "Enter your blog URL below, and a callback URL will be auto-generated to receive webhooks for new posts.",
-  cat_subscribe_desc3_v2: "Enter your blog URL below. You will be redirected to your blog's admin page to complete the subscription securely.",
+  cat_subscribe_desc3:
+    "Enter your blog URL below, and a callback URL will be auto-generated to receive webhooks for new posts.",
+  cat_subscribe_desc3_v2:
+    "Enter your blog URL below. You will be redirected to your blog's admin page to complete the subscription securely.",
   cat_subscribe_blog_url: "My Blog URL",
   cat_subscribe_callback: "Callback URL (auto-generated)",
   cat_subscribe_redirect_desc: "You will be redirected to {url}/admin to confirm.",
@@ -140,7 +143,8 @@ export const en = {
   comment_submitting: "Posting...",
   comment_reply: "Reply",
   comment_deleted: "Deleted",
-  comment_login_prompt: "Sign in with social to leave a comment. Your profile picture and name will be shown automatically.",
+  comment_login_prompt:
+    "Sign in with social to leave a comment. Your profile picture and name will be shown automatically.",
   comment_login_github: "Login with GitHub",
   comment_login_google: "Login with Google",
   comment_logout: "Logout",
@@ -162,6 +166,8 @@ export const en = {
 
   // Admin
   admin_title: "Admin Settings",
+  admin_tab_general: "General",
+  admin_tab_federation: "Federation",
   admin_save: "Save Settings",
   admin_saving: "Saving...",
   admin_saved: "Settings saved.",
@@ -188,7 +194,8 @@ export const en = {
   admin_cat_create_failed: "Failed to create.",
   admin_cat_update_failed: "Failed to update.",
   admin_cat_delete_failed: "Failed to delete.",
-  admin_cat_delete_confirm: 'Delete category "{name}"?\nPosts in this category will become uncategorized.',
+  admin_cat_delete_confirm:
+    'Delete category "{name}"?\nPosts in this category will become uncategorized.',
   admin_cat_empty: "No categories. Click Add to create one.",
   admin_cat_posts_count: "posts",
 
@@ -212,7 +219,8 @@ export const en = {
 
   // Admin - Theme
   admin_theme_title: "Header/Footer Theme Customization",
-  admin_theme_desc: "Set different backgrounds for light and dark modes. Leave empty for default theme colors.",
+  admin_theme_desc:
+    "Set different backgrounds for light and dark modes. Leave empty for default theme colors.",
   admin_theme_header: "Header",
   admin_theme_footer: "Footer",
   admin_theme_height: "Height",
@@ -249,7 +257,8 @@ export const en = {
   admin_mysub_inactive: "Inactive",
   admin_mysub_activate: "Activate",
   admin_mysub_deactivate: "Deactivate",
-  admin_mysub_delete_confirm: 'Delete subscription "{name}" ({url})? This will permanently remove the subscription.',
+  admin_mysub_delete_confirm:
+    'Delete subscription "{name}" ({url})? This will permanently remove the subscription.',
   admin_mysub_add: "Add Subscription",
   admin_mysub_add_url_placeholder: "Remote blog URL (e.g. https://other-blog.com)",
   admin_mysub_add_fetch: "Fetch Categories",

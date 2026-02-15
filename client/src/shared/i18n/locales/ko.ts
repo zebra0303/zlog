@@ -59,14 +59,16 @@ export const ko: Record<TranslationKeys, string> = {
   post_confirm_delete: "정말 삭제하시겠습니까?",
   post_delete_failed: "삭제에 실패했습니다.",
   post_view_original: "원본 글 보기",
-  remote_post_deleted_alert: "원본 글이 작성자에 의해 삭제되었습니다. 동기화된 글도 함께 삭제됩니다.",
+  remote_post_deleted_alert:
+    "원본 글이 작성자에 의해 삭제되었습니다. 동기화된 글도 함께 삭제됩니다.",
   remote_post_visit_blog: "블로그 방문",
 
   // Post Editor
   editor_title_placeholder: "제목을 입력하세요",
   editor_tag_placeholder: "태그 (쉼표로 구분)",
   editor_cover_image_placeholder: "커버 이미지 URL",
-  editor_content_placeholder: "마크다운으로 내용을 입력하세요... (이미지를 붙여넣거나 드래그하면 자동 업로드됩니다)",
+  editor_content_placeholder:
+    "마크다운으로 내용을 입력하세요... (이미지를 붙여넣거나 드래그하면 자동 업로드됩니다)",
   editor_category_select: "카테고리 선택",
   editor_publish: "발행",
   editor_draft: "임시저장",
@@ -90,9 +92,12 @@ export const ko: Record<TranslationKeys, string> = {
   cat_subscribe_category: "카테고리 구독",
   cat_subscribe_what: "zlog Federation 구독이란?",
   cat_subscribe_desc1: "다른 zlog 블로그를 운영하고 계신다면, 이 카테고리를 구독할 수 있습니다.",
-  cat_subscribe_desc2: "구독하면 이 카테고리에 새 글이 발행될 때마다 자동으로 여러분의 블로그에 동기화됩니다.",
-  cat_subscribe_desc3: "아래에 여러분의 블로그 URL을 입력하면, 콜백 URL이 자동 생성되어 웹훅으로 새 글 알림을 받게 됩니다.",
-  cat_subscribe_desc3_v2: "아래에 내 블로그 URL을 입력하면, 내 블로그 관리자 페이지로 이동하여 안전하게 구독을 완료할 수 있습니다.",
+  cat_subscribe_desc2:
+    "구독하면 이 카테고리에 새 글이 발행될 때마다 자동으로 여러분의 블로그에 동기화됩니다.",
+  cat_subscribe_desc3:
+    "아래에 여러분의 블로그 URL을 입력하면, 콜백 URL이 자동 생성되어 웹훅으로 새 글 알림을 받게 됩니다.",
+  cat_subscribe_desc3_v2:
+    "아래에 내 블로그 URL을 입력하면, 내 블로그 관리자 페이지로 이동하여 안전하게 구독을 완료할 수 있습니다.",
   cat_subscribe_blog_url: "내 블로그 URL",
   cat_subscribe_callback: "콜백 URL (자동 생성)",
   cat_subscribe_redirect_desc: "{url}/admin 으로 이동하여 구독을 확인합니다.",
@@ -142,7 +147,8 @@ export const ko: Record<TranslationKeys, string> = {
   comment_submitting: "작성 중...",
   comment_reply: "답글",
   comment_deleted: "삭제됨",
-  comment_login_prompt: "소셜 로그인으로 댓글을 남겨보세요. 프로필 이미지와 이름이 자동으로 표시됩니다.",
+  comment_login_prompt:
+    "소셜 로그인으로 댓글을 남겨보세요. 프로필 이미지와 이름이 자동으로 표시됩니다.",
   comment_login_github: "GitHub으로 로그인",
   comment_login_google: "Google로 로그인",
   comment_logout: "로그아웃",
@@ -164,6 +170,8 @@ export const ko: Record<TranslationKeys, string> = {
 
   // Admin
   admin_title: "관리자 설정",
+  admin_tab_general: "일반",
+  admin_tab_federation: "Federation",
   admin_save: "설정 저장",
   admin_saving: "저장 중...",
   admin_saved: "설정이 저장되었습니다.",
@@ -190,7 +198,8 @@ export const ko: Record<TranslationKeys, string> = {
   admin_cat_create_failed: "생성에 실패했습니다.",
   admin_cat_update_failed: "수정에 실패했습니다.",
   admin_cat_delete_failed: "삭제에 실패했습니다.",
-  admin_cat_delete_confirm: '"{name}" 카테고리를 삭제하시겠습니까?\n이 카테고리에 속한 게시글은 카테고리 없음 상태가 됩니다.',
+  admin_cat_delete_confirm:
+    '"{name}" 카테고리를 삭제하시겠습니까?\n이 카테고리에 속한 게시글은 카테고리 없음 상태가 됩니다.',
   admin_cat_empty: "카테고리가 없습니다. 위의 추가 버튼으로 생성하세요.",
   admin_cat_posts_count: "개",
 
@@ -214,7 +223,8 @@ export const ko: Record<TranslationKeys, string> = {
 
   // Admin - Theme
   admin_theme_title: "헤더/푸터 테마 커스터마이징",
-  admin_theme_desc: "밝은 모드와 어두운 모드에서 각각 다른 배경색이나 배경 이미지를 설정할 수 있습니다. 비워두면 기본 테마 색상이 사용됩니다.",
+  admin_theme_desc:
+    "밝은 모드와 어두운 모드에서 각각 다른 배경색이나 배경 이미지를 설정할 수 있습니다. 비워두면 기본 테마 색상이 사용됩니다.",
   admin_theme_header: "헤더 (Header)",
   admin_theme_footer: "푸터 (Footer)",
   admin_theme_height: "높이",
@@ -251,7 +261,8 @@ export const ko: Record<TranslationKeys, string> = {
   admin_mysub_inactive: "비활성",
   admin_mysub_activate: "활성화",
   admin_mysub_deactivate: "비활성화",
-  admin_mysub_delete_confirm: '"{name}" ({url}) 구독을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+  admin_mysub_delete_confirm:
+    '"{name}" ({url}) 구독을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
   admin_mysub_add: "구독 추가",
   admin_mysub_add_url_placeholder: "원격 블로그 URL (예: https://other-blog.com)",
   admin_mysub_add_fetch: "카테고리 불러오기",

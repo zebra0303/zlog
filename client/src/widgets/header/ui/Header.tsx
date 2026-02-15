@@ -101,21 +101,23 @@ export function Header() {
         style={headerStyle}
       >
         <div
-          className={`header-inner relative mx-auto flex max-w-6xl items-start justify-between gap-4 px-4 ${hasCustomHeight ? "py-4" : "h-16 pt-3"}`}
+          className={`header-inner relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 ${hasCustomHeight ? "py-4" : "min-h-16 py-3"}`}
         >
-          <Link to="/" className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
+          <Link to="/" className={`flex min-w-0 items-center gap-2 ${hasCustom ? glass : ""}`}>
             {profile?.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
                 alt={blogTitle}
-                className="h-8 w-8 rounded-full object-cover"
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <ZlogLogo size={32} />
+              <span className="shrink-0">
+                <ZlogLogo size={32} />
+              </span>
             )}
-            <span className="text-text text-lg font-bold">{blogTitle}</span>
+            <span className="header-title text-text text-lg font-bold">{blogTitle}</span>
           </Link>
-          <nav className={`hidden items-center gap-2 md:flex ${hasCustom ? glass : ""}`}>
+          <nav className={`hidden shrink-0 items-center gap-2 md:flex ${hasCustom ? glass : ""}`}>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/">{t("nav_home")}</Link>
             </Button>
@@ -141,6 +143,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8"
               onClick={() => {
                 toggle();
               }}
@@ -159,10 +162,11 @@ export function Header() {
               </Button>
             )}
           </nav>
-          <div className={`flex items-center gap-2 md:hidden ${hasCustom ? glass : ""}`}>
+          <div className={`flex shrink-0 items-center gap-1 md:hidden ${hasCustom ? glass : ""}`}>
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8"
               onClick={() => {
                 toggle();
               }}
@@ -173,6 +177,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8"
               onClick={() => {
                 setIsMobileMenuOpen(!isMobileMenuOpen);
               }}
@@ -265,6 +270,12 @@ export function Header() {
           transition: padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                       padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        .header-title {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
         .header-animated[data-compact="true"] {
           min-height: 0 !important;
           max-height: 4rem !important;
@@ -272,6 +283,13 @@ export function Header() {
         .header-animated[data-compact="true"] .header-inner {
           padding-top: 0.35rem !important;
           padding-bottom: 0.35rem !important;
+        }
+        .header-animated[data-compact="true"] .header-title {
+          -webkit-line-clamp: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: block;
         }
         @media (min-width: 768px) {
           .header-animated[data-compact="true"] {
