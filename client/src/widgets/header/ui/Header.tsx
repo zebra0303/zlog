@@ -101,7 +101,7 @@ export function Header() {
         style={headerStyle}
       >
         <div
-          className={`header-inner relative mx-auto flex max-w-6xl items-center justify-between px-4 ${hasCustomHeight ? "py-4" : "h-16"}`}
+          className={`header-inner relative mx-auto flex max-w-6xl items-start justify-between gap-4 px-4 ${hasCustomHeight ? "py-4" : "h-16 pt-3"}`}
         >
           <Link to="/" className={`flex items-center gap-2 ${hasCustom ? glass : ""}`}>
             {profile?.avatarUrl ? (
