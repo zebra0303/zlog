@@ -32,6 +32,19 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
         },
+        "/rss.xml": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        "/category": {
+          target: apiTarget,
+          changeOrigin: true,
+          // /category/:slug/rss.xml만 프록시
+          bypass(req) {
+            if (req.url?.endsWith("/rss.xml")) return undefined;
+            return req.url;
+          },
+        },
       },
     },
   };
