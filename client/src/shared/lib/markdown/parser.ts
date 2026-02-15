@@ -85,6 +85,9 @@ export async function parseMarkdown(markdown: string): Promise<string> {
   // code-block-wrapper로 감싼 <pre>의 </code></pre> 뒤에 </div> 추가
   html = html.replace(/(<div class="code-block-wrapper">[\s\S]*?<\/code><\/pre>)/g, "$1</div>");
 
+  // 모든 링크를 새 탭에서 열리도록 target="_blank" 추가
+  html = html.replace(/<a\s+(href="[^"]*")/g, '<a target="_blank" rel="noopener noreferrer" $1');
+
   // mermaid placeholder를 렌더링용 div로 교체
   // unified 파이프라인 통과 후 <p>MERMAID_BLOCK_0_PLACEHOLDER</p> 형태로 남음
   for (let i = 0; i < mermaidBlocks.length; i++) {
