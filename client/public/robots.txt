@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /
+
+Allow: /$
+Allow: /profile
+Allow: /category/
+Allow: /posts/
+
+Sitemap: https://zlog.pe.kr/sitemap.xml
