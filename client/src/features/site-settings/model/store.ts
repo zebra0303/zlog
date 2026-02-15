@@ -40,7 +40,7 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     if (bgImage) {
       style.backgroundImage = `url(${bgImage})`;
       style.backgroundSize = "cover";
-      style.backgroundPosition = "center";
+      style.backgroundPosition = "left center";
     }
     if (height && height !== "auto") style.minHeight = height;
     return style;
@@ -56,7 +56,7 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     if (bgImage) {
       style.backgroundImage = `url(${bgImage})`;
       style.backgroundSize = "cover";
-      style.backgroundPosition = "center";
+      style.backgroundPosition = "left center";
     }
     if (height && height !== "auto") style.minHeight = height;
     return style;
