@@ -31,6 +31,7 @@ export function SEOHead({
   const blogTitle = settings.blog_title ?? "zlog";
   const seoDescription = settings.seo_description;
   const seoOgImage = settings.seo_og_image;
+  const themeColor = settings.header_bg_color_dark ?? "#1A1A24";
   const finalDescription = description ?? seoDescription;
   const finalImage = image ?? seoOgImage;
   const fullTitle = title ? `${blogTitle} - ${title}` : blogTitle;
@@ -88,6 +89,7 @@ export function SEOHead({
   return (
     <Helmet>
       <title>{fullTitle}</title>
+      <meta name="theme-color" content={themeColor} />
       {finalDescription && <meta name="description" content={finalDescription} />}
       <meta property="og:title" content={fullTitle} />
       {finalDescription && <meta property="og:description" content={finalDescription} />}
