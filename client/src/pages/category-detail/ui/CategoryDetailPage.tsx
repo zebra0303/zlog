@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { Rss, Info, X, ExternalLink } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
-import { Pagination, SEOHead, Skeleton, Card, CardContent, Badge, Button, Input } from "@/shared/ui";
+import {
+  Pagination,
+  SEOHead,
+  Skeleton,
+  Card,
+  CardContent,
+  Badge,
+  Button,
+  Input,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -37,33 +46,41 @@ function SubscribeDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-lg rounded-xl border border-border bg-surface shadow-xl"
+        className="border-border bg-surface w-full max-w-lg rounded-xl border shadow-xl"
         onClick={(e) => {
           e.stopPropagation();
         }}
       >
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-            <Rss className="h-5 w-5 text-primary" />
+        <div className="border-border flex items-center justify-between border-b p-4">
+          <h2 className="text-text flex items-center gap-2 text-lg font-semibold">
+            <Rss className="text-primary h-5 w-5" />
             {t("cat_subscribe_title")} &quot;{category.name}&quot; {t("cat_subscribe_category")}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t("close")} className="text-text-secondary hover:text-text">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("close")}
+            className="text-text-secondary hover:text-text"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="p-4">
-          <div className="mb-4 rounded-lg bg-background p-3">
+          <div className="bg-background mb-4 rounded-lg p-3">
             <div className="mb-2 flex items-start gap-2">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <Info className="text-primary mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <h3 className="text-sm font-medium text-text">{t("cat_subscribe_what")}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-text-secondary">
+                <h3 className="text-text text-sm font-medium">{t("cat_subscribe_what")}</h3>
+                <p className="text-text-secondary mt-1 text-xs leading-relaxed">
                   {t("cat_subscribe_desc1")} {t("cat_subscribe_desc2")}
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-text-secondary">
+                <p className="text-text-secondary mt-1 text-xs leading-relaxed">
                   {t("cat_subscribe_desc3_v2")}
                 </p>
               </div>
@@ -72,7 +89,9 @@ function SubscribeDialog({
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-text">{t("cat_subscribe_blog_url")}</label>
+              <label className="text-text mb-1 block text-sm font-medium">
+                {t("cat_subscribe_blog_url")}
+              </label>
               <Input
                 placeholder="https://myblog.example.com"
                 value={blogUrl}
@@ -85,9 +104,11 @@ function SubscribeDialog({
               />
             </div>
             {normalizedBlogUrl && (
-              <div className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-xs text-text-secondary">
+              <div className="bg-background text-text-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
                 <ExternalLink className="h-3 w-3 shrink-0" />
-                <span className="truncate">{t("cat_subscribe_redirect_desc", { url: normalizedBlogUrl })}</span>
+                <span className="truncate">
+                  {t("cat_subscribe_redirect_desc", { url: normalizedBlogUrl })}
+                </span>
               </div>
             )}
 
@@ -140,26 +161,34 @@ export default function CategoryDetailPage() {
   }, [slug, currentPage]);
 
   if (!category && !isLoading)
-    return (
-      <p className="py-20 text-center text-text-secondary">{t("cat_not_found")}</p>
-    );
+    return <p className="text-text-secondary py-20 text-center">{t("cat_not_found")}</p>;
 
   return (
     <div className="min-w-0 overflow-x-hidden">
       {category && (
         <>
-          <SEOHead title={category.name} description={category.description ?? undefined} />
+          <SEOHead
+            title={category.name}
+            description={category.description ?? undefined}
+            type="collectionpage"
+            url={`${window.location.origin}/category/${category.slug}`}
+            numberOfItems={category.postCount}
+          />
           <Card className="mb-6">
             <CardContent className="pt-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
-                  <h1 className="mb-2 text-2xl font-bold text-text">{category.name}</h1>
+                  <h1 className="text-text mb-2 text-2xl font-bold">{category.name}</h1>
                   {category.description && (
-                    <p className="mb-3 text-text-secondary">{category.description}</p>
+                    <p className="text-text-secondary mb-3">{category.description}</p>
                   )}
                   <div className="flex flex-wrap gap-3">
-                    <Badge variant="secondary">{category.postCount} {t("cat_posts_count")}</Badge>
-                    <Badge variant="outline">{category.followerCount} {t("cat_followers_count")}</Badge>
+                    <Badge variant="secondary">
+                      {category.postCount} {t("cat_posts_count")}
+                    </Badge>
+                    <Badge variant="outline">
+                      {category.followerCount} {t("cat_followers_count")}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -167,7 +196,7 @@ export default function CategoryDetailPage() {
                     href={`/category/${category.slug}/rss.xml`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm text-text-secondary transition-colors hover:border-primary hover:text-primary"
+                    className="border-border text-text-secondary hover:border-primary hover:text-primary flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-sm transition-colors"
                     title="RSS Feed"
                   >
                     <Rss className="h-4 w-4" />
@@ -189,7 +218,7 @@ export default function CategoryDetailPage() {
               </div>
               {descHtml && (
                 <div
-                  className="prose mt-4 max-w-none dark:prose-invert"
+                  className="prose dark:prose-invert mt-4 max-w-none"
                   dangerouslySetInnerHTML={{ __html: descHtml }}
                 />
               )}
@@ -224,9 +253,7 @@ export default function CategoryDetailPage() {
           </div>
         </>
       ) : (
-        <p className="py-10 text-center text-text-secondary">
-          {t("cat_no_posts")}
-        </p>
+        <p className="text-text-secondary py-10 text-center">{t("cat_no_posts")}</p>
       )}
 
       {showSubscribe && category && (

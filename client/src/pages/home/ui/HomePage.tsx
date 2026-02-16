@@ -192,7 +192,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <SEOHead title={selectedCategory?.name} />
+      <SEOHead title={selectedCategory?.name} url={window.location.origin} />
       {/* 모바일: select box */}
       <div className="mb-4 flex items-center gap-2 md:hidden">
         <div className="relative flex-1">

@@ -13,6 +13,7 @@ interface SEOHeadProps {
   author?: string;
   tags?: string[];
   articleSection?: string;
+  numberOfItems?: number;
 }
 
 export function SEOHead({
@@ -26,6 +27,7 @@ export function SEOHead({
   author,
   tags,
   articleSection,
+  numberOfItems,
 }: SEOHeadProps) {
   const settings = useSiteSettingsStore((s) => s.settings);
   const blogTitle = settings.blog_title ?? "zlog";
@@ -35,43 +37,82 @@ export function SEOHead({
   const finalDescription = description ?? seoDescription;
   const finalImage = image ?? seoOgImage;
   const fullTitle = title ? `${blogTitle} - ${title}` : blogTitle;
+  const ogType = type === "collectionpage" ? "website" : type;
 
   const jsonLd = useMemo(() => {
-    if (type !== "article" || !title) return null;
-
     const siteUrl = window.location.origin;
-    const authorName = settings.blog_title ?? "zlog";
 
-    const data: Record<string, unknown> = {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      headline: title,
-      ...(finalDescription && { description: finalDescription }),
-      ...(finalImage && { image: finalImage }),
-      ...(publishedTime && { datePublished: publishedTime }),
-      ...(modifiedTime && { dateModified: modifiedTime }),
-      author: {
-        "@type": "Person",
-        name: authorName,
-        url: `${siteUrl}/profile`,
-      },
-      publisher: {
-        "@type": "Organization",
+    if (type === "website") {
+      const data: Record<string, unknown> = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
         name: blogTitle,
-        logo: {
-          "@type": "ImageObject",
-          url: `${siteUrl}/favicons/favicon.svg`,
+        url: url ?? siteUrl,
+        ...(finalDescription && { description: finalDescription }),
+        ...(finalImage && { image: finalImage }),
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${siteUrl}/?search={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
         },
-      },
-      mainEntityOfPage: {
-        "@type": "WebPage",
-        "@id": url ?? siteUrl,
-      },
-      ...(articleSection && { articleSection }),
-      ...(tags && tags.length > 0 && { keywords: tags }),
-    };
+      };
+      return JSON.stringify(data);
+    }
 
-    return JSON.stringify(data);
+    if (type === "collectionpage" && title) {
+      const data: Record<string, unknown> = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        ...(finalDescription && { description: finalDescription }),
+        url: url ?? siteUrl,
+        isPartOf: {
+          "@type": "WebSite",
+          name: blogTitle,
+          url: siteUrl,
+        },
+        ...(numberOfItems != null && { numberOfItems }),
+      };
+      return JSON.stringify(data);
+    }
+
+    if (type === "article" && title) {
+      const authorName = settings.blog_title ?? "zlog";
+      const data: Record<string, unknown> = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: title,
+        ...(finalDescription && { description: finalDescription }),
+        ...(finalImage && { image: finalImage }),
+        ...(publishedTime && { datePublished: publishedTime }),
+        ...(modifiedTime && { dateModified: modifiedTime }),
+        author: {
+          "@type": "Person",
+          name: authorName,
+          url: `${siteUrl}/profile`,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: blogTitle,
+          logo: {
+            "@type": "ImageObject",
+            url: `${siteUrl}/favicons/favicon.svg`,
+          },
+        },
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": url ?? siteUrl,
+        },
+        ...(articleSection && { articleSection }),
+        ...(tags && tags.length > 0 && { keywords: tags }),
+      };
+      return JSON.stringify(data);
+    }
+
+    return null;
   }, [
     type,
     title,
@@ -84,6 +125,7 @@ export function SEOHead({
     settings.blog_title,
     tags,
     articleSection,
+    numberOfItems,
   ]);
 
   return (
@@ -94,7 +136,7 @@ export function SEOHead({
       <meta property="og:title" content={fullTitle} />
       {finalDescription && <meta property="og:description" content={finalDescription} />}
       {finalImage && <meta property="og:image" content={finalImage} />}
-      <meta property="og:type" content={type} />
+      <meta property="og:type" content={ogType} />
       {url && <meta property="og:url" content={url} />}
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
