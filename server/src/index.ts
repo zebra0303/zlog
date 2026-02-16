@@ -117,13 +117,6 @@ app.get("/site.webmanifest", (c) => {
 });
 
 app.get("/sw.js", serveStatic({ root: CLIENT_DIST, path: "sw.js" }));
-
-// 네이버 웹마스터 도구 소유권 확인 파일
-app.get(
-  "/navercfd1cb40218e75ac4c048480a5cdc07c.html",
-  serveStatic({ root: CLIENT_DIST, path: "navercfd1cb40218e75ac4c048480a5cdc07c.html" }),
-);
-
 app.route("/api/auth", auth);
 app.route("/api/posts", postsRoute);
 app.route("/api/categories", categoriesRoute);
