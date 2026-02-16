@@ -106,7 +106,7 @@ app.get("/site.webmanifest", (c) => {
     scope: "/",
     display: "standalone" as const,
     display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
-    background_color: "#FAF9FF",
+    background_color: "#1A1A24",
     theme_color: themeColor,
     icons,
   };
