@@ -142,6 +142,7 @@ app.get("/robots.txt", (c) => {
 Disallow: /
 
 Allow: /$
+Allow: /?category=
 Allow: /profile
 Allow: /category/
 Allow: /posts/
