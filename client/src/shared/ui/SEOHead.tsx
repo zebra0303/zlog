@@ -13,7 +13,6 @@ interface SEOHeadProps {
   author?: string;
   tags?: string[];
   articleSection?: string;
-  numberOfItems?: number;
 }
 
 export function SEOHead({
@@ -27,7 +26,6 @@ export function SEOHead({
   author,
   tags,
   articleSection,
-  numberOfItems,
 }: SEOHeadProps) {
   const settings = useSiteSettingsStore((s) => s.settings);
   const blogTitle = settings.blog_title ?? "zlog";
@@ -77,7 +75,6 @@ export function SEOHead({
           name: blogTitle,
           url: canonicalBase,
         },
-        ...(numberOfItems != null && { numberOfItems }),
       };
       return JSON.stringify(data);
     }
@@ -129,7 +126,6 @@ export function SEOHead({
     settings.blog_title,
     tags,
     articleSection,
-    numberOfItems,
   ]);
 
   return (

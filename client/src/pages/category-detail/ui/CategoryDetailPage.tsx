@@ -172,7 +172,6 @@ export default function CategoryDetailPage() {
             description={category.description ?? undefined}
             type="collectionpage"
             url={`${window.location.origin}/category/${category.slug}`}
-            numberOfItems={category.postCount}
           />
           <Card className="mb-6">
             <CardContent className="pt-6">
