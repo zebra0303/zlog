@@ -1593,6 +1593,21 @@ export default function AdminPage() {
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_seo_canonical_url")}
+                  </label>
+                  <Input
+                    value={settings.canonical_url ?? ""}
+                    onChange={(e) => {
+                      update("canonical_url", e.target.value);
+                    }}
+                    placeholder="https://example.com"
+                  />
+                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                    {t("admin_seo_canonical_url_help")}
+                  </p>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
                     {t("admin_seo_meta_desc")}
                   </label>
                   <Textarea
@@ -1612,7 +1627,9 @@ export default function AdminPage() {
                     {t("admin_seo_preview")}
                   </p>
                   <p className="text-lg text-blue-700">{title || t("admin_seo_preview_title")}</p>
-                  <p className="text-sm text-green-700">{window.location.origin}</p>
+                  <p className="text-sm text-green-700">
+                    {settings.canonical_url ?? window.location.origin}
+                  </p>
                   <p className="text-sm text-[var(--color-text-secondary)]">
                     {desc || t("admin_seo_preview_desc")}
                   </p>

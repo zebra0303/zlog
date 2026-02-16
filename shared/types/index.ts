@@ -297,6 +297,7 @@ export interface SiteSettingsMap {
   blog_title: string;
   seo_description: string;
   seo_og_image: string;
+  canonical_url: string;
   webhook_sync_interval: string;
   default_theme: string;
 }

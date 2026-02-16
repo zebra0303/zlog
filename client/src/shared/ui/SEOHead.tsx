@@ -39,22 +39,25 @@ export function SEOHead({
   const fullTitle = title ? `${blogTitle} - ${title}` : blogTitle;
   const ogType = type === "collectionpage" ? "website" : type;
 
-  const jsonLd = useMemo(() => {
-    const siteUrl = window.location.origin;
+  const canonicalBase = (settings.canonical_url ?? window.location.origin).replace(/\/$/, "");
+  const canonicalUrl = url
+    ? `${canonicalBase}${new URL(url, window.location.origin).pathname}`
+    : `${canonicalBase}${window.location.pathname}`;
 
+  const jsonLd = useMemo(() => {
     if (type === "website") {
       const data: Record<string, unknown> = {
         "@context": "https://schema.org",
         "@type": "WebSite",
         name: blogTitle,
-        url: url ?? siteUrl,
+        url: canonicalBase,
         ...(finalDescription && { description: finalDescription }),
         ...(finalImage && { image: finalImage }),
         potentialAction: {
           "@type": "SearchAction",
           target: {
             "@type": "EntryPoint",
-            urlTemplate: `${siteUrl}/?search={search_term_string}`,
+            urlTemplate: `${canonicalBase}/?search={search_term_string}`,
           },
           "query-input": "required name=search_term_string",
         },
@@ -68,11 +71,11 @@ export function SEOHead({
         "@type": "CollectionPage",
         name: title,
         ...(finalDescription && { description: finalDescription }),
-        url: url ?? siteUrl,
+        url: canonicalUrl,
         isPartOf: {
           "@type": "WebSite",
           name: blogTitle,
-          url: siteUrl,
+          url: canonicalBase,
         },
         ...(numberOfItems != null && { numberOfItems }),
       };
@@ -92,19 +95,19 @@ export function SEOHead({
         author: {
           "@type": "Person",
           name: authorName,
-          url: `${siteUrl}/profile`,
+          url: `${canonicalBase}/profile`,
         },
         publisher: {
           "@type": "Organization",
           name: blogTitle,
           logo: {
             "@type": "ImageObject",
-            url: `${siteUrl}/favicons/favicon.svg`,
+            url: `${canonicalBase}/favicons/favicon.svg`,
           },
         },
         mainEntityOfPage: {
           "@type": "WebPage",
-          "@id": url ?? siteUrl,
+          "@id": canonicalUrl,
         },
         ...(articleSection && { articleSection }),
         ...(tags && tags.length > 0 && { keywords: tags }),
@@ -120,7 +123,8 @@ export function SEOHead({
     finalImage,
     publishedTime,
     modifiedTime,
-    url,
+    canonicalBase,
+    canonicalUrl,
     blogTitle,
     settings.blog_title,
     tags,
@@ -131,13 +135,14 @@ export function SEOHead({
   return (
     <Helmet>
       <title>{fullTitle}</title>
+      <link rel="canonical" href={canonicalUrl} />
       <meta name="theme-color" content={themeColor} />
       {finalDescription && <meta name="description" content={finalDescription} />}
       <meta property="og:title" content={fullTitle} />
       {finalDescription && <meta property="og:description" content={finalDescription} />}
       {finalImage && <meta property="og:image" content={finalImage} />}
       <meta property="og:type" content={ogType} />
-      {url && <meta property="og:url" content={url} />}
+      <meta property="og:url" content={canonicalUrl} />
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
       {author && <meta property="article:author" content={author} />}

@@ -240,6 +240,7 @@ export function bootstrap() {
       : "My zlog Blog",
     seo_description: "zlog로 만든 개인 블로그입니다.",
     seo_og_image: "",
+    canonical_url: process.env.SITE_URL ?? "http://localhost:3000",
     webhook_sync_interval: process.env.WEBHOOK_SYNC_INTERVAL ?? "15",
     default_theme: "system",
   };

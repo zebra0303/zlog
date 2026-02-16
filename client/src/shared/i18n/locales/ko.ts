@@ -220,6 +220,9 @@ export const ko: Record<TranslationKeys, string> = {
   admin_seo_preview: "Google 검색 미리보기",
   admin_seo_preview_title: "블로그 제목",
   admin_seo_preview_desc: "블로그 설명이 여기에 표시됩니다.",
+  admin_seo_canonical_url: "Canonical URL",
+  admin_seo_canonical_url_help:
+    "블로그의 대표 URL입니다. canonical 태그 및 구조화 데이터에 사용됩니다.",
 
   // Admin - Theme
   admin_theme_title: "헤더/푸터 테마 커스터마이징",

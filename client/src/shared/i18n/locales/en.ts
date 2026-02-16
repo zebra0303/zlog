@@ -216,6 +216,9 @@ export const en = {
   admin_seo_preview: "Google Search Preview",
   admin_seo_preview_title: "Blog Title",
   admin_seo_preview_desc: "Blog description will appear here.",
+  admin_seo_canonical_url: "Canonical URL",
+  admin_seo_canonical_url_help:
+    "The primary URL of this blog. Used for canonical tags and structured data.",
 
   // Admin - Theme
   admin_theme_title: "Header/Footer Theme Customization",
