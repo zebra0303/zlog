@@ -1,4 +1,4 @@
-# ZLOG — 관심 있는 모든 글, 내 블로그 하나로
+<img width="800" alt="zlog_wide_log" src="https://github.com/user-attachments/assets/d132c23b-08d9-42a1-bb6a-f886b05bdf07" style="margin-bottom:100px" />  <br />
 
 > **내 블로그, 내 데이터, 내 네트워크.**
 > ZLOG는 블로그끼리 서로 **구독**하고 새 글을 **실시간으로 주고받는** 셀프 호스팅 블로그 시스템입니다. 플랫폼 없이도 독립적인 블로그들이 하나의 네트워크처럼 연결됩니다.

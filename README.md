@@ -1,4 +1,4 @@
-# ZLOG — Every Blog You Care About, One Dashboard
+<img width="800" alt="zlog_wide_log" src="https://github.com/user-attachments/assets/d132c23b-08d9-42a1-bb6a-f886b05bdf07" style="margin-bottom:100px" />  <br />
 
 > **Your blog, your data, your network.**
 > ZLOG is a self-hosted blog system where blogs **subscribe** to each other and **deliver new posts in real time**. Independent blogs connect as one network — no platform needed.
