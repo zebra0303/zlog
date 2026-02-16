@@ -133,13 +133,13 @@ app.get("/api/health", (c) => {
 app.get("/robots.txt", (c) => {
   const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
   return c.text(`User-agent: *
-Disallow: /
+Allow: /
 
-Allow: /$
-Allow: /?category=
-Allow: /profile
-Allow: /category/
-Allow: /posts/
+Disallow: /api/
+Disallow: /assets/
+Disallow: /favicons/
+Disallow: /sw.js
+Disallow: /site.webmanifest
 
 Sitemap: ${siteUrl}/sitemap.xml`);
 });
