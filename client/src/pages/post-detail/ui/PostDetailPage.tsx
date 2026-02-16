@@ -78,7 +78,6 @@ export default function PostDetailPage() {
         publishedTime={post.createdAt}
         modifiedTime={post.updatedAt}
         tags={post.tags.map((tg) => tg.name)}
-        articleSection={post.category?.name}
       />
       <Button variant="ghost" size="sm" className="mb-4" asChild>
         <Link to={backTo}>

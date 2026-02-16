@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 
@@ -12,9 +11,9 @@ interface SEOHeadProps {
   modifiedTime?: string;
   author?: string;
   tags?: string[];
-  articleSection?: string;
 }
 
+// JSON-LD는 서버에서 SSR로 주입하므로 클라이언트에서는 메타 태그만 관리
 export function SEOHead({
   title,
   description,
@@ -25,7 +24,6 @@ export function SEOHead({
   modifiedTime,
   author,
   tags,
-  articleSection,
 }: SEOHeadProps) {
   const settings = useSiteSettingsStore((s) => s.settings);
   const blogTitle = settings.blog_title ?? "zlog";
@@ -41,92 +39,6 @@ export function SEOHead({
   const canonicalUrl = url
     ? `${canonicalBase}${new URL(url, window.location.origin).pathname}`
     : `${canonicalBase}${window.location.pathname}`;
-
-  const jsonLd = useMemo(() => {
-    if (type === "website") {
-      const data: Record<string, unknown> = {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        name: blogTitle,
-        url: canonicalBase,
-        ...(finalDescription && { description: finalDescription }),
-        ...(finalImage && { image: finalImage }),
-        potentialAction: {
-          "@type": "SearchAction",
-          target: {
-            "@type": "EntryPoint",
-            urlTemplate: `${canonicalBase}/?search={search_term_string}`,
-          },
-          "query-input": "required name=search_term_string",
-        },
-      };
-      return JSON.stringify(data);
-    }
-
-    if (type === "collectionpage" && title) {
-      const data: Record<string, unknown> = {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        name: title,
-        ...(finalDescription && { description: finalDescription }),
-        url: canonicalUrl,
-        isPartOf: {
-          "@type": "WebSite",
-          name: blogTitle,
-          url: canonicalBase,
-        },
-      };
-      return JSON.stringify(data);
-    }
-
-    if (type === "article" && title) {
-      const authorName = settings.blog_title ?? "zlog";
-      const data: Record<string, unknown> = {
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        headline: title,
-        ...(finalDescription && { description: finalDescription }),
-        ...(finalImage && { image: finalImage }),
-        ...(publishedTime && { datePublished: publishedTime }),
-        ...(modifiedTime && { dateModified: modifiedTime }),
-        author: {
-          "@type": "Person",
-          name: authorName,
-          url: `${canonicalBase}/profile`,
-        },
-        publisher: {
-          "@type": "Organization",
-          name: blogTitle,
-          logo: {
-            "@type": "ImageObject",
-            url: `${canonicalBase}/favicons/favicon.svg`,
-          },
-        },
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": canonicalUrl,
-        },
-        ...(articleSection && { articleSection }),
-        ...(tags && tags.length > 0 && { keywords: tags }),
-      };
-      return JSON.stringify(data);
-    }
-
-    return null;
-  }, [
-    type,
-    title,
-    finalDescription,
-    finalImage,
-    publishedTime,
-    modifiedTime,
-    canonicalBase,
-    canonicalUrl,
-    blogTitle,
-    settings.blog_title,
-    tags,
-    articleSection,
-  ]);
 
   return (
     <Helmet>
@@ -149,7 +61,6 @@ export function SEOHead({
       <meta name="twitter:title" content={fullTitle} />
       {finalDescription && <meta name="twitter:description" content={finalDescription} />}
       {finalImage && <meta name="twitter:image" content={finalImage} />}
-      {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
     </Helmet>
   );
 }
