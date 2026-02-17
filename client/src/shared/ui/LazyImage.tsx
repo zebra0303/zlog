@@ -4,7 +4,7 @@ import { CONFIG } from "../config";
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallback?: React.ReactNode;
-  objectFit?: "cover" | "contain-mobile";
+  objectFit?: "cover" | "contain" | "contain-mobile";
 }
 
 export function LazyImage({
@@ -52,7 +52,11 @@ export function LazyImage({
           alt={alt}
           className={cn(
             "h-full w-full transition-opacity duration-400",
-            objectFit === "contain-mobile" ? "object-contain md:object-cover" : "object-cover",
+            objectFit === "contain"
+              ? "object-contain"
+              : objectFit === "contain-mobile"
+                ? "object-contain md:object-cover"
+                : "object-cover",
             isLoaded ? "opacity-100" : "opacity-0",
           )}
           onLoad={() => {

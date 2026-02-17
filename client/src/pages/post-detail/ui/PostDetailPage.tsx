@@ -86,11 +86,7 @@ export default function PostDetailPage() {
         </Link>
       </Button>
       {post.coverImage && (
-        <img
-          src={post.coverImage}
-          alt={post.title}
-          className="mb-6 h-auto max-h-96 w-full rounded-xl object-contain md:h-64 md:object-cover"
-        />
+        <img src={post.coverImage} alt={post.title} className="mb-6 h-auto w-full rounded-xl" />
       )}
       <div className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2">

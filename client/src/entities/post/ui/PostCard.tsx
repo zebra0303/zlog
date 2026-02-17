@@ -32,8 +32,8 @@ export function PostCard({ post }: PostCardProps) {
           <LazyImage
             src={post.coverImage}
             alt={post.title}
-            className="h-auto max-h-48 w-full md:h-48"
-            objectFit="contain-mobile"
+            className="h-auto w-full"
+            objectFit="contain"
           />
         )}
         <CardContent className={post.coverImage ? "pt-4" : "pt-6"}>
