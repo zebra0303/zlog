@@ -69,6 +69,7 @@ export const posts = sqliteTable(
     index("idx_posts_status").on(table.status),
     index("idx_posts_category").on(table.categoryId),
     index("idx_posts_created").on(table.createdAt),
+    index("idx_posts_status_created").on(table.status, table.createdAt),
   ],
 );
 
@@ -89,7 +90,10 @@ export const postTags = sqliteTable(
       .notNull()
       .references(() => tags.id, { onDelete: "cascade" }),
   },
-  (table) => [uniqueIndex("idx_post_tags_unique").on(table.postId, table.tagId)],
+  (table) => [
+    uniqueIndex("idx_post_tags_unique").on(table.postId, table.tagId),
+    index("idx_post_tags_tag").on(table.tagId),
+  ],
 );
 
 // ============ comments — 댓글 ============
@@ -173,33 +177,43 @@ export const categorySubscriptions = sqliteTable(
 );
 
 // ============ remotePosts — 외부 글 캐시 ============
-export const remotePosts = sqliteTable("remote_posts", {
-  id: text("id").primaryKey(),
-  remoteUri: text("remote_uri").notNull().unique(),
-  remoteBlogId: text("remote_blog_id")
-    .notNull()
-    .references(() => remoteBlogs.id, { onDelete: "cascade" }),
-  remoteCategoryId: text("remote_category_id")
-    .notNull()
-    .references(() => remoteCategories.id, { onDelete: "cascade" }),
-  localCategoryId: text("local_category_id").references(() => categories.id, {
-    onDelete: "set null",
-  }),
-  title: text("title").notNull(),
-  slug: text("slug").notNull(),
-  content: text("content").notNull(),
-  excerpt: text("excerpt"),
-  coverImage: text("cover_image"),
-  remoteStatus: text("remote_status", {
-    enum: ["published", "draft", "deleted", "unreachable"],
-  })
-    .default("published")
-    .notNull(),
-  authorName: text("author_name"),
-  remoteCreatedAt: text("remote_created_at").notNull(),
-  remoteUpdatedAt: text("remote_updated_at").notNull(),
-  fetchedAt: text("fetched_at").notNull(),
-});
+export const remotePosts = sqliteTable(
+  "remote_posts",
+  {
+    id: text("id").primaryKey(),
+    remoteUri: text("remote_uri").notNull().unique(),
+    remoteBlogId: text("remote_blog_id")
+      .notNull()
+      .references(() => remoteBlogs.id, { onDelete: "cascade" }),
+    remoteCategoryId: text("remote_category_id")
+      .notNull()
+      .references(() => remoteCategories.id, { onDelete: "cascade" }),
+    localCategoryId: text("local_category_id").references(() => categories.id, {
+      onDelete: "set null",
+    }),
+    title: text("title").notNull(),
+    slug: text("slug").notNull(),
+    content: text("content").notNull(),
+    excerpt: text("excerpt"),
+    coverImage: text("cover_image"),
+    remoteStatus: text("remote_status", {
+      enum: ["published", "draft", "deleted", "unreachable"],
+    })
+      .default("published")
+      .notNull(),
+    authorName: text("author_name"),
+    remoteCreatedAt: text("remote_created_at").notNull(),
+    remoteUpdatedAt: text("remote_updated_at").notNull(),
+    fetchedAt: text("fetched_at").notNull(),
+  },
+  (table) => [
+    index("idx_remote_posts_feed").on(
+      table.remoteStatus,
+      table.localCategoryId,
+      table.remoteCreatedAt,
+    ),
+  ],
+);
 
 // ============ subscribers — 다른 서버가 나를 구독 ============
 export const subscribers = sqliteTable(

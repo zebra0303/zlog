@@ -6,6 +6,8 @@ import {
   getAuthToken,
   createTestCategory,
   createTestPost,
+  createTestRemoteBlog,
+  createTestRemotePost,
   cleanDb,
   type TestAdmin,
 } from "./helpers.js";
@@ -27,7 +29,7 @@ describe("Posts API", () => {
 
   beforeEach(() => {
     sqlite.exec(
-      "DELETE FROM post_tags; DELETE FROM tags; DELETE FROM posts; DELETE FROM categories;",
+      "DELETE FROM remote_posts; DELETE FROM category_subscriptions; DELETE FROM remote_categories; DELETE FROM remote_blogs; DELETE FROM post_tags; DELETE FROM tags; DELETE FROM posts; DELETE FROM categories;",
     );
   });
 
@@ -324,6 +326,148 @@ describe("Posts API", () => {
         method: "DELETE",
       });
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe("Combined feed (local + remote)", () => {
+    it("should include remote posts in published feed", async () => {
+      const cat = createTestCategory({ name: "Tech", slug: "tech" });
+      createTestPost({ title: "Local Post", status: "published", categoryId: cat.id });
+      const rb = createTestRemoteBlog();
+      createTestRemotePost(rb.id, cat.id, { title: "Remote Post" });
+
+      const res = await app.request("/api/posts");
+      const data = (await res.json()) as {
+        items: { title: string; isRemote: boolean }[];
+        total: number;
+      };
+      expect(data.total).toBe(2);
+      expect(data.items).toHaveLength(2);
+      const titles = data.items.map((i) => i.title);
+      expect(titles).toContain("Local Post");
+      expect(titles).toContain("Remote Post");
+    });
+
+    it("should not duplicate remote posts across pages", async () => {
+      // perPage is 10 (from seedDefaultSettings)
+      // Create 10 local posts (fill page 1) + 2 remote posts
+      const cat = createTestCategory({ name: "Dev", slug: "dev" });
+      for (let i = 0; i < 10; i++) {
+        createTestPost({
+          title: `Local ${i}`,
+          slug: `local-${i}`,
+          status: "published",
+          categoryId: cat.id,
+          createdAt: new Date(2025, 0, i + 1).toISOString(),
+        });
+      }
+      const rb = createTestRemoteBlog();
+      createTestRemotePost(rb.id, cat.id, {
+        title: "Remote A",
+        remoteCreatedAt: new Date(2025, 0, 15).toISOString(),
+        remoteUpdatedAt: new Date(2025, 0, 15).toISOString(),
+      });
+      createTestRemotePost(rb.id, cat.id, {
+        title: "Remote B",
+        remoteUri: "https://remote.example.com/posts/b",
+        remoteCreatedAt: new Date(2025, 0, 16).toISOString(),
+        remoteUpdatedAt: new Date(2025, 0, 16).toISOString(),
+      });
+
+      const res1 = await app.request("/api/posts?page=1");
+      const page1 = (await res1.json()) as {
+        items: { id: string; title: string }[];
+        total: number;
+        totalPages: number;
+      };
+      const res2 = await app.request("/api/posts?page=2");
+      const page2 = (await res2.json()) as { items: { id: string; title: string }[] };
+
+      expect(page1.total).toBe(12);
+      expect(page1.totalPages).toBe(2);
+      expect(page1.items).toHaveLength(10);
+      expect(page2.items.length).toBeGreaterThan(0);
+
+      // No duplicate IDs across pages
+      const allIds = [...page1.items.map((i) => i.id), ...page2.items.map((i) => i.id)];
+      expect(new Set(allIds).size).toBe(allIds.length);
+    });
+
+    it("should filter remote posts by category", async () => {
+      const cat1 = createTestCategory({ name: "Cat1", slug: "cat1" });
+      const cat2 = createTestCategory({ name: "Cat2", slug: "cat2" });
+      const rb = createTestRemoteBlog();
+      createTestRemotePost(rb.id, cat1.id, { title: "In Cat1" });
+      createTestRemotePost(rb.id, cat2.id, {
+        title: "In Cat2",
+        remoteUri: "https://remote.example.com/posts/cat2",
+      });
+
+      const res = await app.request("/api/posts?category=cat1");
+      const data = (await res.json()) as { items: { title: string }[]; total: number };
+      expect(data.total).toBe(1);
+      expect(data.items[0]?.title).toBe("In Cat1");
+    });
+
+    it("should filter remote posts by search", async () => {
+      const cat = createTestCategory({ name: "All", slug: "all-cat" });
+      const rb = createTestRemoteBlog();
+      createTestRemotePost(rb.id, cat.id, { title: "Matching Title" });
+      createTestRemotePost(rb.id, cat.id, {
+        title: "Other Post",
+        remoteUri: "https://remote.example.com/posts/other",
+      });
+      createTestPost({ title: "Local Matching Title", status: "published", categoryId: cat.id });
+
+      const res = await app.request("/api/posts?search=Matching");
+      const data = (await res.json()) as { items: { title: string }[]; total: number };
+      expect(data.total).toBe(2);
+      const titles = data.items.map((i) => i.title);
+      expect(titles).toContain("Matching Title");
+      expect(titles).toContain("Local Matching Title");
+    });
+
+    it("should exclude remote posts when tag filter is active", async () => {
+      const cat = createTestCategory({ name: "Tagged", slug: "tagged" });
+      const post = createTestPost({
+        title: "Tagged Post",
+        status: "published",
+        categoryId: cat.id,
+      });
+      // Add a tag
+      db.insert(schema.tags).values({ id: "tag1", name: "js", slug: "js" }).run();
+      db.insert(schema.postTags).values({ postId: post.id, tagId: "tag1" }).run();
+
+      const rb = createTestRemoteBlog();
+      createTestRemotePost(rb.id, cat.id, { title: "Remote No Tag" });
+
+      const res = await app.request("/api/posts?tag=js");
+      const data = (await res.json()) as {
+        items: { title: string; isRemote: boolean }[];
+        total: number;
+      };
+      expect(data.total).toBe(1);
+      expect(data.items[0]?.title).toBe("Tagged Post");
+      expect(data.items[0]?.isRemote).toBe(false);
+    });
+
+    it("should include remoteBlog info in remote post items", async () => {
+      const cat = createTestCategory({ name: "Info", slug: "info" });
+      const rb = createTestRemoteBlog({ displayName: "Cool Blog", blogTitle: "Cool Title" });
+      createTestRemotePost(rb.id, cat.id, { title: "With Blog Info" });
+
+      const res = await app.request("/api/posts");
+      const data = (await res.json()) as {
+        items: {
+          isRemote: boolean;
+          remoteBlog: { displayName: string; blogTitle: string } | null;
+        }[];
+      };
+      const remote = data.items.find((i) => i.isRemote);
+      expect(remote).toBeDefined();
+      expect(remote?.remoteBlog).toBeDefined();
+      expect(remote?.remoteBlog?.displayName).toBe("Cool Blog");
+      expect(remote?.remoteBlog?.blogTitle).toBe("Cool Title");
     });
   });
 });

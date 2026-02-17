@@ -69,6 +69,7 @@ export function bootstrap() {
     CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status);
     CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category_id);
     CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at);
+    CREATE INDEX IF NOT EXISTS idx_posts_status_created ON posts(status, created_at);
 
     CREATE TABLE IF NOT EXISTS tags (
       id TEXT PRIMARY KEY,
@@ -81,6 +82,7 @@ export function bootstrap() {
       tag_id TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
       UNIQUE(post_id, tag_id)
     );
+    CREATE INDEX IF NOT EXISTS idx_post_tags_tag ON post_tags(tag_id);
 
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
@@ -155,6 +157,7 @@ export function bootstrap() {
       remote_updated_at TEXT NOT NULL,
       fetched_at TEXT NOT NULL
     );
+    CREATE INDEX IF NOT EXISTS idx_remote_posts_feed ON remote_posts(remote_status, local_category_id, remote_created_at);
 
     CREATE TABLE IF NOT EXISTS subscribers (
       id TEXT PRIMARY KEY,

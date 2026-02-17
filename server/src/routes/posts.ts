@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
+import { sqlite } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc, and, or, sql, like, isNotNull, inArray } from "drizzle-orm";
+import { eq, desc, and, or, sql, like, inArray } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
@@ -22,6 +23,48 @@ function deleteUploadedImage(imageUrl: string) {
 
 const postsRoute = new Hono();
 
+// ============ 배치 hydration 헬퍼 ============
+
+/** 카테고리를 ID 기반 Map으로 배치 로딩 */
+function batchLoadCategories(categoryIds: string[]) {
+  const map = new Map<string, { id: string; name: string; slug: string }>();
+  if (categoryIds.length === 0) return map;
+  const rows = db
+    .select({
+      id: schema.categories.id,
+      name: schema.categories.name,
+      slug: schema.categories.slug,
+    })
+    .from(schema.categories)
+    .where(inArray(schema.categories.id, categoryIds))
+    .all();
+  for (const r of rows) map.set(r.id, r);
+  return map;
+}
+
+/** 태그를 postId 기반 Map으로 배치 로딩 */
+function batchLoadTags(postIds: string[]) {
+  const map = new Map<string, { id: string; name: string; slug: string }[]>();
+  if (postIds.length === 0) return map;
+  const rows = db
+    .select({
+      postId: schema.postTags.postId,
+      id: schema.tags.id,
+      name: schema.tags.name,
+      slug: schema.tags.slug,
+    })
+    .from(schema.postTags)
+    .innerJoin(schema.tags, eq(schema.postTags.tagId, schema.tags.id))
+    .where(inArray(schema.postTags.postId, postIds))
+    .all();
+  for (const r of rows) {
+    const arr = map.get(r.postId) ?? [];
+    arr.push({ id: r.id, name: r.name, slug: r.slug });
+    map.set(r.postId, arr);
+  }
+  return map;
+}
+
 postsRoute.get("/", (c) => {
   const page = Math.max(1, Number(c.req.query("page")) || 1);
   const categorySlug = c.req.query("category");
@@ -35,7 +78,9 @@ postsRoute.get("/", (c) => {
     .where(eq(schema.siteSettings.key, "posts_per_page"))
     .get();
   const perPage = Number(perPageSetting?.value) || 10;
+  const offset = (page - 1) * perPage;
 
+  // 카테고리 slug → ID 변환
   let categoryId: string | null = null;
   if (categorySlug) {
     const cat = db
@@ -46,108 +91,207 @@ postsRoute.get("/", (c) => {
     categoryId = cat?.id ?? null;
   }
 
-  const conditions: ReturnType<typeof eq>[] = [];
-  if (status === "all") {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    conditions.push(or(eq(schema.posts.status, "published"), eq(schema.posts.status, "draft"))!);
-  } else {
-    conditions.push(eq(schema.posts.status, status as "draft" | "published" | "deleted"));
-  }
-  if (categoryId) {
-    conditions.push(eq(schema.posts.categoryId, categoryId));
-  }
-  if (search) {
-    conditions.push(like(schema.posts.title, `%${search}%`));
-  }
+  // 태그 slug → postId 목록 변환
+  let tagPostIds: string[] | null = null;
   if (tagSlug) {
     const tag = db.select().from(schema.tags).where(eq(schema.tags.slug, tagSlug)).get();
     if (tag) {
-      const tagPostIds = db
+      tagPostIds = db
         .select({ postId: schema.postTags.postId })
         .from(schema.postTags)
         .where(eq(schema.postTags.tagId, tag.id))
         .all()
         .map((r) => r.postId);
-      if (tagPostIds.length > 0) {
-        conditions.push(inArray(schema.posts.id, tagPostIds));
-      } else {
-        conditions.push(sql`0 = 1`);
-      }
-    } else {
-      conditions.push(sql`0 = 1`);
+      if (tagPostIds.length === 0) tagPostIds = null;
+    }
+    if (!tagPostIds) {
+      return c.json({ items: [], total: 0, page, perPage, totalPages: 0 });
     }
   }
 
-  const whereClause = and(...conditions);
+  const includeRemote = status === "published" && !tagSlug;
 
-  const localTotal =
-    db
-      .select({ count: sql<number>`count(*)` })
+  // ============ 경로 A: 로컬 전용 (admin / draft / tag 필터) ============
+  if (!includeRemote) {
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (status === "all") {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      conditions.push(or(eq(schema.posts.status, "published"), eq(schema.posts.status, "draft"))!);
+    } else {
+      conditions.push(eq(schema.posts.status, status as "draft" | "published" | "deleted"));
+    }
+    if (categoryId) conditions.push(eq(schema.posts.categoryId, categoryId));
+    if (search) conditions.push(like(schema.posts.title, `%${search}%`));
+    if (tagPostIds) conditions.push(inArray(schema.posts.id, tagPostIds));
+    const whereClause = and(...conditions);
+
+    const total =
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(schema.posts)
+        .where(whereClause)
+        .get()?.count ?? 0;
+
+    const postsResult = db
+      .select()
       .from(schema.posts)
       .where(whereClause)
-      .get()?.count ?? 0;
+      .orderBy(desc(schema.posts.createdAt))
+      .limit(perPage)
+      .offset(offset)
+      .all();
 
-  // published 상태 조회 시 remote_posts도 포함 (태그 필터 제외)
-  let remoteItems: {
+    const postIds = postsResult.map((p) => p.id);
+    const catIds = [...new Set(postsResult.map((p) => p.categoryId).filter(Boolean))] as string[];
+    const categoriesMap = batchLoadCategories(catIds);
+    const tagsMap = batchLoadTags(postIds);
+
+    const items = postsResult.map((post) => ({
+      ...post,
+      category: post.categoryId ? (categoriesMap.get(post.categoryId) ?? null) : null,
+      tags: tagsMap.get(post.id) ?? [],
+      isRemote: false as const,
+      remoteUri: null,
+      remoteBlog: null,
+    }));
+
+    return c.json({ items, total, page, perPage, totalPages: Math.ceil(total / perPage) });
+  }
+
+  // ============ 경로 B: 통합 피드 (UNION ALL) ============
+
+  // 동적 WHERE 조건 조합 (parameterized)
+  const localWhereParts: string[] = ["status = 'published'"];
+  const remoteWhereParts: string[] = [
+    "remote_status = 'published'",
+    "local_category_id IS NOT NULL",
+  ];
+  const params: unknown[] = [];
+
+  if (categoryId) {
+    localWhereParts.push("category_id = ?");
+    params.push(categoryId);
+    remoteWhereParts.push("local_category_id = ?");
+    params.push(categoryId);
+  }
+  if (search) {
+    localWhereParts.push("title LIKE ?");
+    params.push(`%${search}%`);
+    remoteWhereParts.push("title LIKE ?");
+    params.push(`%${search}%`);
+  }
+
+  const localWhere = localWhereParts.join(" AND ");
+  const remoteWhere = remoteWhereParts.join(" AND ");
+
+  // 카운트 쿼리
+  const countSql = `
+    SELECT
+      (SELECT COUNT(*) FROM posts WHERE ${localWhere}) +
+      (SELECT COUNT(*) FROM remote_posts WHERE ${remoteWhere})
+    AS total
+  `;
+  // 카운트용 파라미터: localWhere 파라미터 + remoteWhere 파라미터
+  const countParams = [...params]; // params에 이미 local + remote 순으로 들어있음
+  const totalRow = sqlite.prepare(countSql).get(...countParams) as { total: number } | undefined;
+  const total = totalRow?.total ?? 0;
+
+  if (total === 0) {
+    return c.json({ items: [], total: 0, page, perPage, totalPages: 0 });
+  }
+
+  // UNION ALL 페이지네이션 쿼리
+  const unionSql = `
+    SELECT id, 'local' AS source, created_at, category_id
+    FROM posts WHERE ${localWhere}
+    UNION ALL
+    SELECT id, 'remote' AS source, remote_created_at AS created_at, local_category_id AS category_id
+    FROM remote_posts WHERE ${remoteWhere}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+  const unionParams = [...params, perPage, offset];
+  const pageRows = sqlite.prepare(unionSql).all(...unionParams) as {
     id: string;
-    categoryId: string | null;
-    title: string;
-    slug: string;
-    content: string;
-    excerpt: string | null;
-    coverImage: string | null;
-    status: "published";
-    viewCount: number;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-    category: { id: string; name: string; slug: string } | null;
-    tags: { id: string; name: string; slug: string }[];
-    isRemote: true;
-    remoteUri: string | null;
-    remoteBlog: {
+    source: string;
+    created_at: string;
+    category_id: string | null;
+  }[];
+
+  const localIds = pageRows.filter((r) => r.source === "local").map((r) => r.id);
+  const remoteIds = pageRows.filter((r) => r.source === "remote").map((r) => r.id);
+
+  // 배치: 로컬 글 전체 데이터
+  const localPostsMap = new Map<string, typeof schema.posts.$inferSelect>();
+  if (localIds.length > 0) {
+    const rows = db.select().from(schema.posts).where(inArray(schema.posts.id, localIds)).all();
+    for (const r of rows) localPostsMap.set(r.id, r);
+  }
+
+  // 배치: 원격 글 전체 데이터
+  const remotePostsMap = new Map<string, typeof schema.remotePosts.$inferSelect>();
+  if (remoteIds.length > 0) {
+    const rows = db
+      .select()
+      .from(schema.remotePosts)
+      .where(inArray(schema.remotePosts.id, remoteIds))
+      .all();
+    for (const r of rows) remotePostsMap.set(r.id, r);
+  }
+
+  // 배치: 카테고리
+  const allCatIds = [...new Set(pageRows.map((r) => r.category_id).filter(Boolean))] as string[];
+  const categoriesMap = batchLoadCategories(allCatIds);
+
+  // 배치: 태그 (로컬 글만)
+  const tagsMap = batchLoadTags(localIds);
+
+  // 배치: 원격 블로그
+  const remoteBlogsMap = new Map<
+    string,
+    {
       siteUrl: string;
       displayName: string | null;
       blogTitle: string | null;
       avatarUrl: string | null;
-    } | null;
-  }[] = [];
-
-  if (status === "published" && !tagSlug) {
-    const remoteConditions = [
-      eq(schema.remotePosts.remoteStatus, "published"),
-      isNotNull(schema.remotePosts.localCategoryId),
-    ];
-    if (categoryId) {
-      remoteConditions.push(eq(schema.remotePosts.localCategoryId, categoryId));
     }
-    if (search) {
-      remoteConditions.push(like(schema.remotePosts.title, `%${search}%`));
-    }
-    const remotePostsResult = db
-      .select()
-      .from(schema.remotePosts)
-      .where(and(...remoteConditions))
-      .orderBy(desc(schema.remotePosts.remoteCreatedAt))
-      .all();
-
-    remoteItems = remotePostsResult.map((rp) => {
-      const cat = rp.localCategoryId
-        ? (db
-            .select({
-              id: schema.categories.id,
-              name: schema.categories.name,
-              slug: schema.categories.slug,
-            })
-            .from(schema.categories)
-            .where(eq(schema.categories.id, rp.localCategoryId))
-            .get() ?? null)
-        : null;
-      const rb = db
+  >();
+  if (remoteIds.length > 0) {
+    const blogIds = [...new Set([...remotePostsMap.values()].map((rp) => rp.remoteBlogId))];
+    if (blogIds.length > 0) {
+      const blogs = db
         .select()
         .from(schema.remoteBlogs)
-        .where(eq(schema.remoteBlogs.id, rp.remoteBlogId))
-        .get();
+        .where(inArray(schema.remoteBlogs.id, blogIds))
+        .all();
+      for (const b of blogs) {
+        remoteBlogsMap.set(b.id, {
+          siteUrl: b.siteUrl,
+          displayName: b.displayName,
+          blogTitle: b.blogTitle,
+          avatarUrl: b.avatarUrl,
+        });
+      }
+    }
+  }
+
+  // UNION ALL 순서대로 결과 조립
+  const items = pageRows
+    .map((row) => {
+      if (row.source === "local") {
+        const post = localPostsMap.get(row.id);
+        if (!post) return null;
+        return {
+          ...post,
+          category: post.categoryId ? (categoriesMap.get(post.categoryId) ?? null) : null,
+          tags: tagsMap.get(post.id) ?? [],
+          isRemote: false as const,
+          remoteUri: null,
+          remoteBlog: null,
+        };
+      }
+      const rp = remotePostsMap.get(row.id);
+      if (!rp) return null;
       return {
         id: rp.id,
         categoryId: rp.localCategoryId,
@@ -161,84 +305,21 @@ postsRoute.get("/", (c) => {
         createdAt: rp.remoteCreatedAt,
         updatedAt: rp.remoteUpdatedAt,
         deletedAt: null,
-        category: cat,
-        tags: [],
+        category: rp.localCategoryId ? (categoriesMap.get(rp.localCategoryId) ?? null) : null,
+        tags: [] as { id: string; name: string; slug: string }[],
         isRemote: true as const,
         remoteUri: rp.remoteUri,
-        remoteBlog: rb
-          ? {
-              siteUrl: rb.siteUrl,
-              displayName: rb.displayName,
-              blogTitle: rb.blogTitle,
-              avatarUrl: rb.avatarUrl,
-            }
-          : null,
+        remoteBlog: remoteBlogsMap.get(rp.remoteBlogId) ?? null,
       };
-    });
-  }
+    })
+    .filter(Boolean);
 
-  const remoteTotal = remoteItems.length;
-  const combinedTotal = localTotal + remoteTotal;
-
-  // 로컬 글을 현재 페이지까지 채울 만큼 가져와서 원격 글과 합산 후 페이지네이션
-  const localFetchLimit = page * perPage;
-  const postsResult = db
-    .select()
-    .from(schema.posts)
-    .where(whereClause)
-    .orderBy(desc(schema.posts.createdAt))
-    .limit(localFetchLimit)
-    .all();
-
-  const localItems = postsResult.map((post) => {
-    const category = post.categoryId
-      ? db
-          .select({
-            id: schema.categories.id,
-            name: schema.categories.name,
-            slug: schema.categories.slug,
-          })
-          .from(schema.categories)
-          .where(eq(schema.categories.id, post.categoryId))
-          .get()
-      : null;
-
-    const tagRows = db
-      .select({ id: schema.tags.id, name: schema.tags.name, slug: schema.tags.slug })
-      .from(schema.postTags)
-      .innerJoin(schema.tags, eq(schema.postTags.tagId, schema.tags.id))
-      .where(eq(schema.postTags.postId, post.id))
-      .all();
-
-    return {
-      ...post,
-      category,
-      tags: tagRows,
-      isRemote: false as const,
-      remoteUri: null,
-      remoteBlog: null,
-    };
-  });
-
-  // 합치고 날짜순 정렬 후 현재 페이지만 잘라냄
-  const allSorted = [...localItems, ...remoteItems].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-  const start = (page - 1) * perPage;
-  const pageItems = allSorted.slice(start, start + perPage);
-
-  // 원격 게시글이 포함될 때 stale한 구독을 백그라운드 동기화 트리거
-  if (remoteItems.length > 0) {
+  // 원격 글 있으면 stale 구독 동기화 트리거
+  if (remoteIds.length > 0) {
     triggerStaleSync();
   }
 
-  return c.json({
-    items: pageItems,
-    total: combinedTotal,
-    page,
-    perPage,
-    totalPages: Math.ceil(combinedTotal / perPage),
-  });
+  return c.json({ items, total, page, perPage, totalPages: Math.ceil(total / perPage) });
 });
 
 postsRoute.get("/:param", (c) => {

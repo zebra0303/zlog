@@ -126,6 +126,76 @@ export function createTestComment(
   return result;
 }
 
+export function createTestRemoteBlog(overrides?: Partial<typeof schema.remoteBlogs.$inferInsert>) {
+  const id = generateId();
+  const now = new Date().toISOString();
+  const { id: _ignoreId4, ...safeOverrides } = overrides ?? {};
+  db.insert(schema.remoteBlogs)
+    .values({
+      id,
+      siteUrl: overrides?.siteUrl ?? `https://remote-${id.slice(0, 8)}.example.com`,
+      displayName: "Remote Blog",
+      blogTitle: "Remote Blog Title",
+      createdAt: now,
+      ...safeOverrides,
+    })
+    .run();
+  const result = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, id)).get();
+  if (!result) throw new Error(`Failed to create test remote blog with id ${id}`);
+  return result;
+}
+
+export function createTestRemotePost(
+  remoteBlogId: string,
+  localCategoryId: string,
+  overrides?: Partial<typeof schema.remotePosts.$inferInsert>,
+) {
+  const id = generateId();
+  const now = new Date().toISOString();
+  // remote_category_id is required by schema, so we create one if not provided
+  let remoteCategoryId = overrides?.remoteCategoryId;
+  if (!remoteCategoryId) {
+    const rcId = generateId();
+    db.insert(schema.remoteCategories)
+      .values({
+        id: rcId,
+        remoteBlogId,
+        remoteId: "remote-cat-1",
+        name: "Remote Category",
+        slug: "remote-category",
+        createdAt: now,
+      })
+      .run();
+    remoteCategoryId = rcId;
+  }
+  const {
+    id: _ignoreId5,
+    remoteBlogId: _rb,
+    remoteCategoryId: _rc,
+    ...safeOverrides
+  } = overrides ?? {};
+  db.insert(schema.remotePosts)
+    .values({
+      id,
+      remoteUri: overrides?.remoteUri ?? `https://remote.example.com/posts/${id}`,
+      remoteBlogId,
+      remoteCategoryId,
+      localCategoryId,
+      title: "Remote Post",
+      slug: `remote-post-${id.slice(0, 8)}`,
+      content: "Remote content",
+      remoteStatus: "published",
+      remoteCreatedAt: now,
+      remoteUpdatedAt: now,
+      fetchedAt: now,
+      ...safeOverrides,
+    })
+    .run();
+  const result = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.id, id)).get();
+  if (!result) throw new Error(`Failed to create test remote post with id ${id}`);
+  return result;
+}
+
 export function cleanDb(): void {
   sqlite.exec(`
     DELETE FROM comment_likes;
