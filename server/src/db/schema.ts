@@ -169,9 +169,7 @@ export const categorySubscriptions = sqliteTable(
     lastSyncedAt: text("last_synced_at"),
     createdAt: text("created_at").notNull(),
   },
-  (table) => [
-    uniqueIndex("idx_cat_sub_unique").on(table.localCategoryId, table.remoteCategoryId),
-  ],
+  (table) => [uniqueIndex("idx_cat_sub_unique").on(table.localCategoryId, table.remoteCategoryId)],
 );
 
 // ============ remotePosts — 외부 글 캐시 ============
@@ -220,17 +218,21 @@ export const subscribers = sqliteTable(
 );
 
 // ============ commenters — OAuth 댓글 작성자 ============
-export const commenters = sqliteTable("commenters", {
-  id: text("id").primaryKey(),
-  provider: text("provider", { enum: ["github", "google"] }).notNull(),
-  providerId: text("provider_id").notNull(),
-  displayName: text("display_name").notNull(),
-  email: text("email"),
-  avatarUrl: text("avatar_url"),
-  profileUrl: text("profile_url"),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-}, (table) => [uniqueIndex("idx_commenters_provider").on(table.provider, table.providerId)]);
+export const commenters = sqliteTable(
+  "commenters",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider", { enum: ["github", "google"] }).notNull(),
+    providerId: text("provider_id").notNull(),
+    displayName: text("display_name").notNull(),
+    email: text("email"),
+    avatarUrl: text("avatar_url"),
+    profileUrl: text("profile_url"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [uniqueIndex("idx_commenters_provider").on(table.provider, table.providerId)],
+);
 
 // ============ siteSettings — 사이트 설정 (key-value) ============
 export const siteSettings = sqliteTable("site_settings", {

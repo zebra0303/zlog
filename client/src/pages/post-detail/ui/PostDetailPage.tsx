@@ -82,12 +82,14 @@ export default function PostDetailPage() {
         modifiedTime={post.updatedAt}
         tags={post.tags.map((tg) => tg.name)}
       />
-      <Button variant="ghost" size="sm" className="mb-4" asChild>
-        <Link to={backTo}>
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          {t("post_go_list")}
-        </Link>
-      </Button>
+      <div data-print-hide>
+        <Button variant="ghost" size="sm" className="mb-4" asChild>
+          <Link to={backTo}>
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            {t("post_go_list")}
+          </Link>
+        </Button>
+      </div>
       {post.coverImage && (
         <img src={post.coverImage} alt={post.title} className="mb-6 h-auto w-full rounded-xl" />
       )}
@@ -101,6 +103,66 @@ export default function PostDetailPage() {
               </Badge>
             </Link>
           )}
+          <div className="ml-auto flex items-center gap-2" data-print-hide>
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard.writeText(postUrl).then(() => {
+                  setCopied(true);
+                  setTimeout(() => {
+                    setCopied(false);
+                  }, 2000);
+                });
+              }}
+              className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+              {copied ? t("share_copied") : t("share_copy_link")}
+            </button>
+            {typeof navigator.share === "function" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void navigator.share({
+                    title: post.title,
+                    text: post.excerpt ?? post.title,
+                    url: postUrl,
+                  });
+                }}
+                className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                {t("share_native")}
+              </button>
+            ) : (
+              <>
+                <a
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(post.title)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+                >
+                  X
+                </a>
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+                >
+                  Facebook
+                </a>
+                <a
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+                >
+                  LinkedIn
+                </a>
+              </>
+            )}
+          </div>
         </div>
         <h1 className="mb-3 text-2xl font-bold text-[var(--color-text)] md:text-3xl">
           {post.title}
@@ -131,7 +193,7 @@ export default function PostDetailPage() {
           })}
         </div>
         {isAuthenticated && (
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex gap-2" data-print-hide>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/write/${post.id}`} state={{ from: backTo }}>
                 <Edit className="mr-1 h-4 w-4" />
@@ -153,51 +215,6 @@ export default function PostDetailPage() {
           />
         </CardContent>
       </Card>
-      <div className="border-border mt-6 flex flex-wrap items-center justify-end gap-2 border-t pt-4">
-        <span className="text-text-secondary mr-1 flex items-center gap-1 text-sm">
-          <Share2 className="h-4 w-4" />
-          {t("share")}
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            void navigator.clipboard.writeText(postUrl).then(() => {
-              setCopied(true);
-              setTimeout(() => {
-                setCopied(false);
-              }, 2000);
-            });
-          }}
-          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-        >
-          {copied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
-          {copied ? t("share_copied") : t("share_copy_link")}
-        </button>
-        <a
-          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(post.title)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-        >
-          X
-        </a>
-        <a
-          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-        >
-          Facebook
-        </a>
-        <a
-          href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-        >
-          LinkedIn
-        </a>
-      </div>
       <div className="mt-8">
         <CommentSection postId={post.id} />
       </div>

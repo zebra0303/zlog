@@ -14,7 +14,12 @@ export default function NotFoundPage() {
         <p className="mt-2 text-xl text-[var(--color-text)]">{t("not_found_title")}</p>
         <p className="mt-1 text-[var(--color-text-secondary)]">{t("not_found_description")}</p>
       </div>
-      <Button asChild><Link to="/"><Home className="mr-2 h-4 w-4" />{t("not_found_go_home")}</Link></Button>
+      <Button asChild>
+        <Link to="/">
+          <Home className="mr-2 h-4 w-4" />
+          {t("not_found_go_home")}
+        </Link>
+      </Button>
     </div>
   );
 }

@@ -128,7 +128,10 @@ export function CommentSection({ postId }: { postId: string }) {
 
       {/* SSO 로그인 상태 표시 (anonymous_only 모드에서는 숨김) */}
       {showSsoLogin && commenter ? (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
+        <div
+          className="mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2"
+          data-print-hide
+        >
           <div className="flex items-center gap-2">
             {commenter.avatarUrl ? (
               <img
@@ -155,7 +158,10 @@ export function CommentSection({ postId }: { postId: string }) {
           </button>
         </div>
       ) : showSsoLogin && hasProviders ? (
-        <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4">
+        <div
+          className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4"
+          data-print-hide
+        >
           <p className="mb-3 text-sm text-[var(--color-text-secondary)]">
             {t("comment_login_prompt")}
           </p>
@@ -206,7 +212,10 @@ export function CommentSection({ postId }: { postId: string }) {
           allowAnonymous={true}
         />
       ) : showSsoLogin && !hasProviders ? (
-        <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4 text-center">
+        <div
+          className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4 text-center"
+          data-print-hide
+        >
           <p className="text-sm text-[var(--color-text-secondary)]">
             {t("comment_login_required")}
           </p>

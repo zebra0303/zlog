@@ -154,10 +154,7 @@ categoriesRoute.delete("/:id", authMiddleware, (c) => {
     return c.json({ error: "카테고리를 찾을 수 없습니다." }, 404);
   }
 
-  db.update(schema.posts)
-    .set({ categoryId: null })
-    .where(eq(schema.posts.categoryId, id))
-    .run();
+  db.update(schema.posts).set({ categoryId: null }).where(eq(schema.posts.categoryId, id)).run();
 
   db.delete(schema.categories).where(eq(schema.categories.id, id)).run();
   return c.json({ message: "카테고리가 삭제되었습니다." });

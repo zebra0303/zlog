@@ -8,7 +8,8 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "border-transparent bg-[var(--color-primary)] text-white",
-        secondary: "border-transparent bg-[var(--color-primary-light)]/20 text-[var(--color-primary)]",
+        secondary:
+          "border-transparent bg-[var(--color-primary-light)]/20 text-[var(--color-primary)]",
         outline: "border-[var(--color-border)] text-[var(--color-text-secondary)]",
         destructive: "border-transparent bg-red-100 text-red-700",
       },
@@ -17,7 +18,8 @@ const badgeVariants = cva(
   },
 );
 
-export interface BadgeProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
+export interface BadgeProps
+  extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
 export function Badge({ className, variant, ...props }: BadgeProps) {
   return <div className={cn(badgeVariants({ variant }), className)} {...props} />;

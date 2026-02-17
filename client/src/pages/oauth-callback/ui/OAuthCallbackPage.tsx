@@ -15,7 +15,12 @@ export default function OAuthCallbackPage() {
     if (commenterId && displayName) {
       localStorage.setItem(
         "zlog_commenter",
-        JSON.stringify({ commenterId, displayName, avatarUrl: avatarUrl ?? "", provider: provider ?? "" }),
+        JSON.stringify({
+          commenterId,
+          displayName,
+          avatarUrl: avatarUrl ?? "",
+          provider: provider ?? "",
+        }),
       );
     }
 

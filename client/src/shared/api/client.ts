@@ -24,8 +24,11 @@ class ApiClient {
 
   setToken(token: string | null) {
     this.token = token;
-    if (token) { localStorage.setItem("zlog_token", token); }
-    else { localStorage.removeItem("zlog_token"); }
+    if (token) {
+      localStorage.setItem("zlog_token", token);
+    } else {
+      localStorage.removeItem("zlog_token");
+    }
   }
 
   getToken(): string | null {
@@ -51,7 +54,8 @@ class ApiClient {
 
   async post<T>(path: string, body?: unknown): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, {
-      method: "POST", headers: this.getHeaders("application/json"),
+      method: "POST",
+      headers: this.getHeaders("application/json"),
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
@@ -62,7 +66,8 @@ class ApiClient {
 
   async put<T>(path: string, body?: unknown): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, {
-      method: "PUT", headers: this.getHeaders("application/json"),
+      method: "PUT",
+      headers: this.getHeaders("application/json"),
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {

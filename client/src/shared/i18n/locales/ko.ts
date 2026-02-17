@@ -64,6 +64,7 @@ export const ko: Record<TranslationKeys, string> = {
   share: "공유",
   share_copy_link: "링크 복사",
   share_copied: "복사됨!",
+  share_native: "공유...",
   remote_post_deleted_alert:
     "원본 글이 작성자에 의해 삭제되었습니다. 동기화된 글도 함께 삭제됩니다.",
   remote_post_visit_blog: "블로그 방문",

@@ -410,3 +410,77 @@ pre code.hljs {
 .dark .mermaid-modal-close:hover {
   background: #1a1a24;
 }
+
+/* ============ Print styles ============ */
+@media print {
+  /* Force light colors */
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Hide navigation, sidebar, footer, and interactive elements */
+  header,
+  footer,
+  nav,
+  .mermaid-modal-overlay {
+    display: none !important;
+  }
+
+  /* Hide buttons and share links inside article */
+  article button,
+  article a[class*="rounded-full"][class*="border"],
+  article [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Remove max-width constraint so content fills the page */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Remove card borders/shadows for clean print */
+  article .prose {
+    max-width: 100% !important;
+  }
+
+  /* Code block copy buttons */
+  .code-block-copy {
+    display: none !important;
+  }
+
+  /* Comment forms (including parent Card wrapper), interactive elements */
+  article :has(> form),
+  article form,
+  article [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Comment action buttons (like, reply, edit, delete) */
+  article .flex.items-center.gap-3 > button {
+    display: none !important;
+  }
+
+  /* Links: show URL after text */
+  article .prose a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+    word-break: break-all;
+  }
+
+  /* Prevent page breaks inside images, code blocks, and tables */
+  img,
+  pre,
+  table,
+  .code-block-wrapper,
+  .mermaid-block {
+    break-inside: avoid;
+  }
+
+  /* Ensure images print */
+  img {
+    max-width: 100% !important;
+  }
+}

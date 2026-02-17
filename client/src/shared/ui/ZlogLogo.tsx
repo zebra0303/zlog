@@ -1,11 +1,27 @@
 import { cn } from "../lib/cn";
 
-interface ZlogLogoProps { size?: number; className?: string; }
+interface ZlogLogoProps {
+  size?: number;
+  className?: string;
+}
 
 export function ZlogLogo({ size = 40, className }: ZlogLogoProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" className={cn("shrink-0", className)} aria-label="zlog 로고">
-      <defs><linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#6C5CE7" /><stop offset="100%" stopColor="#A29BFE" /></linearGradient></defs>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 512 512"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={cn("shrink-0", className)}
+      aria-label="zlog 로고"
+    >
+      <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#6C5CE7" />
+          <stop offset="100%" stopColor="#A29BFE" />
+        </linearGradient>
+      </defs>
       <circle cx="256" cy="256" r="250" fill="url(#bgGrad)" />
       <ellipse cx="256" cy="280" rx="130" ry="150" fill="white" />
       <ellipse cx="170" cy="140" rx="35" ry="50" fill="white" transform="rotate(-15 170 140)" />
@@ -13,13 +29,32 @@ export function ZlogLogo({ size = 40, className }: ZlogLogoProps) {
       <ellipse cx="342" cy="140" rx="35" ry="50" fill="white" transform="rotate(15 342 140)" />
       <ellipse cx="342" cy="140" rx="22" ry="35" fill="#FFB6C1" transform="rotate(15 342 140)" />
       <path d="M220 100 Q256 60 292 100 L280 130 Q256 110 232 130 Z" fill="#333" />
-      <circle cx="210" cy="250" r="25" fill="#333" /><circle cx="302" cy="250" r="25" fill="#333" />
-      <circle cx="218" cy="242" r="8" fill="white" /><circle cx="310" cy="242" r="8" fill="white" />
+      <circle cx="210" cy="250" r="25" fill="#333" />
+      <circle cx="302" cy="250" r="25" fill="#333" />
+      <circle cx="218" cy="242" r="8" fill="white" />
+      <circle cx="310" cy="242" r="8" fill="white" />
       <ellipse cx="256" cy="330" rx="30" ry="20" fill="#333" />
-      <path d="M225 355 Q256 380 287 355" stroke="#333" strokeWidth="5" fill="none" strokeLinecap="round" />
-      <circle cx="170" cy="300" r="20" fill="#FFB6C1" opacity="0.5" /><circle cx="342" cy="300" r="20" fill="#FFB6C1" opacity="0.5" />
+      <path
+        d="M225 355 Q256 380 287 355"
+        stroke="#333"
+        strokeWidth="5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx="170" cy="300" r="20" fill="#FFB6C1" opacity="0.5" />
+      <circle cx="342" cy="300" r="20" fill="#FFB6C1" opacity="0.5" />
       <circle cx="410" cy="410" r="55" fill="#FF6B6B" />
-      <text x="410" y="430" textAnchor="middle" fill="white" fontSize="60" fontWeight="bold" fontFamily="Arial, sans-serif">Z</text>
+      <text
+        x="410"
+        y="430"
+        textAnchor="middle"
+        fill="white"
+        fontSize="60"
+        fontWeight="bold"
+        fontFamily="Arial, sans-serif"
+      >
+        Z
+      </text>
     </svg>
   );
 }

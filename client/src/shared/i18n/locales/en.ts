@@ -62,6 +62,7 @@ export const en = {
   share: "Share",
   share_copy_link: "Copy link",
   share_copied: "Copied!",
+  share_native: "Share...",
   remote_post_deleted_alert:
     "The original post has been deleted by the author. This synced post will also be removed.",
   remote_post_visit_blog: "Visit blog",

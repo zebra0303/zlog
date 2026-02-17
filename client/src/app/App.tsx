@@ -12,6 +12,15 @@ export default function App() {
   const { checkAuth } = useAuthStore();
   const { fetchSettings } = useSiteSettingsStore();
   const { initLocale } = useI18n();
-  useEffect(() => { initTheme(); initLocale(); void checkAuth(); void fetchSettings(); }, [initTheme, initLocale, checkAuth, fetchSettings]);
-  return <Providers><RouterProvider router={router} /></Providers>;
+  useEffect(() => {
+    initTheme();
+    initLocale();
+    void checkAuth();
+    void fetchSettings();
+  }, [initTheme, initLocale, checkAuth, fetchSettings]);
+  return (
+    <Providers>
+      <RouterProvider router={router} />
+    </Providers>
+  );
 }

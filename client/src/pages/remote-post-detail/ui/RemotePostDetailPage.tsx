@@ -92,13 +92,15 @@ export default function RemotePostDetailPage() {
         </Link>
       </Button>
       {post.coverImage && (
-        <img src={post.coverImage} alt={post.title} className="mb-6 h-64 w-full rounded-xl object-cover" />
+        <img src={post.coverImage} alt={post.title} className="mb-6 h-auto w-full rounded-xl" />
       )}
       <div className="mb-8">
         {/* 원본 블로그 프로필 카드 + 제목 영역 */}
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="order-2 min-w-0 flex-1 sm:order-1">
-            <h1 className="mb-3 text-2xl md:text-3xl font-bold text-[var(--color-text)]">{post.title}</h1>
+            <h1 className="mb-3 text-2xl font-bold text-[var(--color-text)] md:text-3xl">
+              {post.title}
+            </h1>
             <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
               {post.authorName && <span>{post.authorName}</span>}
               <span className="flex items-center gap-1">
@@ -138,7 +140,9 @@ export default function RemotePostDetailPage() {
               )}
               <div className="min-w-0">
                 {post.remoteBlog.blogTitle && (
-                  <p className="truncate text-sm font-semibold text-[var(--color-text)]">{post.remoteBlog.blogTitle}</p>
+                  <p className="truncate text-sm font-semibold text-[var(--color-text)]">
+                    {post.remoteBlog.blogTitle}
+                  </p>
                 )}
                 <p className="truncate text-xs text-[var(--color-text-secondary)]">
                   {post.remoteBlog.displayName ?? post.remoteBlog.siteUrl}
@@ -155,7 +159,7 @@ export default function RemotePostDetailPage() {
       <Card>
         <CardContent className="pt-6">
           <div
-            className="prose max-w-none dark:prose-invert md:prose-lg"
+            className="prose dark:prose-invert md:prose-lg max-w-none"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
         </CardContent>

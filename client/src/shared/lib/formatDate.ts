@@ -35,10 +35,14 @@ export function timeAgo(dateStr: string): string {
 
 export function formatDate(dateStr: string): string {
   const locale = getLocale();
-  return new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric" }).format(new Date(dateStr));
+  return new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric" }).format(
+    new Date(dateStr),
+  );
 }
 
 export function formatDateShort(dateStr: string): string {
   const locale = getLocale();
-  return new Intl.DateTimeFormat(locale, { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(dateStr)).replace(/\s/g, "");
+  return new Intl.DateTimeFormat(locale, { year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(dateStr))
+    .replace(/\s/g, "");
 }

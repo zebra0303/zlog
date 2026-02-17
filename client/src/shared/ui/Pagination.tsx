@@ -12,7 +12,8 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   const pages: (number | "...")[] = [];
   const delta = 2;
   for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) pages.push(i);
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta))
+      pages.push(i);
     else if (pages[pages.length - 1] !== "...") pages.push("...");
   }
   return (
@@ -28,19 +29,25 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      {pages.map((page, i) => page === "..." ? <span key={`e-${i}`} className="px-2 text-text-secondary">...</span> : (
-        <Button
-          key={page}
-          variant={page === currentPage ? "default" : "outline"}
-          size="icon"
-          onClick={() => {
-            onPageChange(page);
-          }}
-          aria-current={page === currentPage ? "page" : undefined}
-        >
-          {page}
-        </Button>
-      ))}
+      {pages.map((page, i) =>
+        page === "..." ? (
+          <span key={`e-${i}`} className="text-text-secondary px-2">
+            ...
+          </span>
+        ) : (
+          <Button
+            key={page}
+            variant={page === currentPage ? "default" : "outline"}
+            size="icon"
+            onClick={() => {
+              onPageChange(page);
+            }}
+            aria-current={page === currentPage ? "page" : undefined}
+          >
+            {page}
+          </Button>
+        ),
+      )}
       <Button
         variant="outline"
         size="icon"

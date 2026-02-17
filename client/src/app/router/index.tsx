@@ -11,16 +11,28 @@ const CategoryDetailPage = lazy(() => import("@/pages/category-detail/ui/Categor
 const LoginPage = lazy(() => import("@/pages/login/ui/LoginPage"));
 const AdminPage = lazy(() => import("@/pages/admin/ui/AdminPage"));
 const SettingsPage = lazy(() => import("@/pages/settings-profile/ui/SettingsPage"));
-const RemotePostDetailPage = lazy(() => import("@/pages/remote-post-detail/ui/RemotePostDetailPage"));
+const RemotePostDetailPage = lazy(
+  () => import("@/pages/remote-post-detail/ui/RemotePostDetailPage"),
+);
 const OAuthCallbackPage = lazy(() => import("@/pages/oauth-callback/ui/OAuthCallbackPage"));
 const NotFoundPage = lazy(() => import("@/pages/not-found/ui/NotFoundPage"));
 
 function PageLoader() {
-  return <div className="flex flex-col gap-4 p-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-48 w-full" /><Skeleton className="h-4 w-96" /></div>;
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-48 w-full" />
+      <Skeleton className="h-4 w-96" />
+    </div>
+  );
 }
 
 function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Element>) {
-  return <Suspense fallback={<PageLoader />}><Component /></Suspense>;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
+  );
 }
 
 export const router = createBrowserRouter([
