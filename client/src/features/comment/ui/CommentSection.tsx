@@ -274,14 +274,25 @@ function CommentForm({
   useEffect(() => {
     if (commenter && !parentId && localStorage.getItem("zlog_oauth_just_logged_in")) {
       localStorage.removeItem("zlog_oauth_just_logged_in");
-      setTimeout(() => {
-        textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        textareaRef.current?.focus();
-        setHighlight(true);
-        setTimeout(() => {
-          setHighlight(false);
-        }, 2000);
-      }, 100);
+      // 페이지 렌더링 완료 후 스크롤 (긴 글에서도 정확한 위치 계산을 위해 load 이벤트 대기)
+      const scrollToComment = () => {
+        requestAnimationFrame(() => {
+          textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          textareaRef.current?.focus();
+          setHighlight(true);
+          setTimeout(() => {
+            setHighlight(false);
+          }, 2000);
+        });
+      };
+      if (document.readyState === "complete") {
+        scrollToComment();
+      } else {
+        window.addEventListener("load", scrollToComment, { once: true });
+        return () => {
+          window.removeEventListener("load", scrollToComment);
+        };
+      }
     }
   }, [commenter, parentId]);
 
