@@ -80,55 +80,30 @@ postsRoute.get("/", (c) => {
 
   const whereClause = and(...conditions);
 
-  const totalResult = db
-    .select({ count: sql<number>`count(*)` })
-    .from(schema.posts)
-    .where(whereClause)
-    .get();
-  const total = totalResult?.count ?? 0;
+  const localTotal =
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.posts)
+      .where(whereClause)
+      .get()?.count ?? 0;
 
-  const postsResult = db
-    .select()
-    .from(schema.posts)
-    .where(whereClause)
-    .orderBy(desc(schema.posts.createdAt))
-    .limit(perPage)
-    .offset((page - 1) * perPage)
-    .all();
-
-  const localItems = postsResult.map((post) => {
-    const category = post.categoryId
-      ? db
-          .select({
-            id: schema.categories.id,
-            name: schema.categories.name,
-            slug: schema.categories.slug,
-          })
-          .from(schema.categories)
-          .where(eq(schema.categories.id, post.categoryId))
-          .get()
-      : null;
-
-    const tagRows = db
-      .select({ id: schema.tags.id, name: schema.tags.name, slug: schema.tags.slug })
-      .from(schema.postTags)
-      .innerJoin(schema.tags, eq(schema.postTags.tagId, schema.tags.id))
-      .where(eq(schema.postTags.postId, post.id))
-      .all();
-
-    return {
-      ...post,
-      category,
-      tags: tagRows,
-      isRemote: false as const,
-      remoteUri: null,
-      remoteBlog: null,
-    };
-  });
-
-  // published 상태 조회 시 remote_posts도 포함 (검색 제외)
-  let remoteItems: (Omit<(typeof localItems)[number], "isRemote" | "remoteUri" | "remoteBlog"> & {
-    isRemote: boolean;
+  // published 상태 조회 시 remote_posts도 포함 (태그 필터 제외)
+  let remoteItems: {
+    id: string;
+    categoryId: string | null;
+    title: string;
+    slug: string;
+    content: string;
+    excerpt: string | null;
+    coverImage: string | null;
+    status: "published";
+    viewCount: number;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+    category: { id: string; name: string; slug: string } | null;
+    tags: { id: string; name: string; slug: string }[];
+    isRemote: true;
     remoteUri: string | null;
     remoteBlog: {
       siteUrl: string;
@@ -136,7 +111,8 @@ postsRoute.get("/", (c) => {
       blogTitle: string | null;
       avatarUrl: string | null;
     } | null;
-  })[] = [];
+  }[] = [];
+
   if (status === "published" && !tagSlug) {
     const remoteConditions = [
       eq(schema.remotePosts.remoteStatus, "published"),
@@ -201,22 +177,63 @@ postsRoute.get("/", (c) => {
     });
   }
 
-  // 합치고 날짜 기준으로 정렬
-  const allItems = [...localItems, ...remoteItems].sort(
+  const remoteTotal = remoteItems.length;
+  const combinedTotal = localTotal + remoteTotal;
+
+  // 로컬 글을 현재 페이지까지 채울 만큼 가져와서 원격 글과 합산 후 페이지네이션
+  const localFetchLimit = page * perPage;
+  const postsResult = db
+    .select()
+    .from(schema.posts)
+    .where(whereClause)
+    .orderBy(desc(schema.posts.createdAt))
+    .limit(localFetchLimit)
+    .all();
+
+  const localItems = postsResult.map((post) => {
+    const category = post.categoryId
+      ? db
+          .select({
+            id: schema.categories.id,
+            name: schema.categories.name,
+            slug: schema.categories.slug,
+          })
+          .from(schema.categories)
+          .where(eq(schema.categories.id, post.categoryId))
+          .get()
+      : null;
+
+    const tagRows = db
+      .select({ id: schema.tags.id, name: schema.tags.name, slug: schema.tags.slug })
+      .from(schema.postTags)
+      .innerJoin(schema.tags, eq(schema.postTags.tagId, schema.tags.id))
+      .where(eq(schema.postTags.postId, post.id))
+      .all();
+
+    return {
+      ...post,
+      category,
+      tags: tagRows,
+      isRemote: false as const,
+      remoteUri: null,
+      remoteBlog: null,
+    };
+  });
+
+  // 합치고 날짜순 정렬 후 현재 페이지만 잘라냄
+  const allSorted = [...localItems, ...remoteItems].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
+  const start = (page - 1) * perPage;
+  const pageItems = allSorted.slice(start, start + perPage);
 
   // 원격 게시글이 포함될 때 stale한 구독을 백그라운드 동기화 트리거
   if (remoteItems.length > 0) {
     triggerStaleSync();
   }
 
-  // 전체 개수 (로컬 + 원격)
-  const remoteTotal = remoteItems.length;
-  const combinedTotal = total + remoteTotal;
-
   return c.json({
-    items: allItems,
+    items: pageItems,
     total: combinedTotal,
     page,
     perPage,
