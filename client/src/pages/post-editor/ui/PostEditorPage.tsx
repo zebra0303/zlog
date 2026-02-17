@@ -341,15 +341,24 @@ export default function PostEditorPage() {
           />
         )}
         {viewMode === "preview" && (
-          <Card className="w-full">
-            <CardContent className="pt-6">
-              <div
-                className="prose prose-lg dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: preview }}
+          <>
+            {coverImage && (
+              <img
+                src={coverImage}
+                alt={title || "Cover"}
+                className="mb-4 h-auto w-full rounded-xl"
               />
-              {!preview && <p className="text-text-secondary">{t("preview")}...</p>}
-            </CardContent>
-          </Card>
+            )}
+            <Card className="w-full">
+              <CardContent className="pt-6">
+                <div
+                  className="prose prose-lg dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: preview }}
+                />
+                {!preview && <p className="text-text-secondary">{t("preview")}...</p>}
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </div>

@@ -99,6 +99,36 @@ describe("SEO Endpoints", () => {
     });
   });
 
+  describe("SSR og:image absolute URL", () => {
+    it("should render og:image with absolute URL for posts with cover image", async () => {
+      createTestPost({
+        title: "OG Test",
+        slug: "og-test",
+        status: "published",
+        coverImage: "/uploads/images/test.webp",
+      });
+
+      const res = await app.request("/posts/og-test");
+      const html = await res.text();
+      expect(html).toContain(
+        '<meta property="og:image" content="http://localhost:3000/uploads/images/test.webp"',
+      );
+    });
+
+    it("should render og:image with absolute URL when already absolute", async () => {
+      createTestPost({
+        title: "OG Abs",
+        slug: "og-abs",
+        status: "published",
+        coverImage: "https://example.com/img.jpg",
+      });
+
+      const res = await app.request("/posts/og-abs");
+      const html = await res.text();
+      expect(html).toContain('<meta property="og:image" content="https://example.com/img.jpg"');
+    });
+  });
+
   describe("GET /api/health", () => {
     it("should return ok status", async () => {
       const res = await app.request("/api/health");

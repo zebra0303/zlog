@@ -397,6 +397,13 @@ function buildSsrTags(meta: SsrMeta): string {
   return lines.join("\n    ");
 }
 
+/** 상대 경로를 절대 URL로 변환 (og:image 등 크롤러용) */
+function toAbsoluteUrl(url: string | undefined, base: string): string | undefined {
+  if (!url) return url;
+  if (url.startsWith("/")) return base + url;
+  return url;
+}
+
 function buildCategoryMeta(
   cat: { name: string; slug: string; description: string | null },
   blogTitle: string,
@@ -408,7 +415,7 @@ function buildCategoryMeta(
   return {
     title: `${blogTitle} - ${cat.name}`,
     description: catDesc,
-    image: seoImage,
+    image: toAbsoluteUrl(seoImage, canonicalBase),
     canonicalUrl: `${canonicalBase}/category/${cat.slug}`,
     ogType: "website",
     jsonLd: {
@@ -433,7 +440,7 @@ function buildPageMeta(
   const defaultMeta: SsrMeta = {
     title: blogTitle,
     description: seoDesc,
-    image: seoImage,
+    image: toAbsoluteUrl(seoImage, canonicalBase),
     canonicalUrl: `${canonicalBase}${pathname}`,
     ogType: "website",
   };
@@ -458,7 +465,7 @@ function buildPageMeta(
         .where(eq(schema.postTags.postId, post.id))
         .all();
       const postDesc = post.excerpt ?? seoDesc;
-      const postImage = post.coverImage ?? seoImage;
+      const postImage = toAbsoluteUrl(post.coverImage ?? seoImage, canonicalBase);
       return {
         title: `${blogTitle} - ${post.title}`,
         description: postDesc,
@@ -517,7 +524,7 @@ function buildPageMeta(
     return {
       title: blogTitle,
       description: seoDesc,
-      image: seoImage,
+      image: toAbsoluteUrl(seoImage, canonicalBase),
       canonicalUrl: canonicalBase,
       ogType: "website",
       jsonLd: {
