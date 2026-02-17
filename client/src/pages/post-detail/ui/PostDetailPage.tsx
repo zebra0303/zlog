@@ -89,7 +89,7 @@ export default function PostDetailPage() {
         <img
           src={post.coverImage}
           alt={post.title}
-          className="mb-6 h-64 w-full rounded-xl object-cover"
+          className="mb-6 h-auto max-h-96 w-full rounded-xl object-contain md:h-64 md:object-cover"
         />
       )}
       <div className="mb-8">

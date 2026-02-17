@@ -29,7 +29,12 @@ export function PostCard({ post }: PostCardProps) {
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
       <Link to={linkTo} state={{ from: location.pathname + location.search }}>
         {post.coverImage && (
-          <LazyImage src={post.coverImage} alt={post.title} className="h-48 w-full" />
+          <LazyImage
+            src={post.coverImage}
+            alt={post.title}
+            className="h-auto max-h-48 w-full md:h-48"
+            objectFit="contain-mobile"
+          />
         )}
         <CardContent className={post.coverImage ? "pt-4" : "pt-6"}>
           <div className="mb-2 flex flex-wrap items-center gap-2">

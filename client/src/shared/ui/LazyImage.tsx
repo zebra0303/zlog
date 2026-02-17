@@ -4,9 +4,17 @@ import { CONFIG } from "../config";
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallback?: React.ReactNode;
+  objectFit?: "cover" | "contain-mobile";
 }
 
-export function LazyImage({ src, alt, className, fallback, ...props }: LazyImageProps) {
+export function LazyImage({
+  src,
+  alt,
+  className,
+  fallback,
+  objectFit = "cover",
+  ...props
+}: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -35,10 +43,18 @@ export function LazyImage({ src, alt, className, fallback, ...props }: LazyImage
 
   return (
     <div ref={imgRef} className={cn("relative overflow-hidden", className)}>
-      {!isLoaded && <div className="absolute inset-0 animate-pulse bg-linear-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20" />}
+      {!isLoaded && (
+        <div className="absolute inset-0 animate-pulse bg-linear-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20" />
+      )}
       {isInView && (
-        <img src={src} alt={alt}
-          className={cn("h-full w-full object-cover transition-opacity duration-400", isLoaded ? "opacity-100" : "opacity-0")}
+        <img
+          src={src}
+          alt={alt}
+          className={cn(
+            "h-full w-full transition-opacity duration-400",
+            objectFit === "contain-mobile" ? "object-contain md:object-cover" : "object-cover",
+            isLoaded ? "opacity-100" : "opacity-0",
+          )}
           onLoad={() => {
             setIsLoaded(true);
           }}
