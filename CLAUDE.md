@@ -5,6 +5,9 @@
 - 빌드: `npm run build`
 - 개발 서버 실행: `npm run dev`
 - 린트 체크: `npm run lint`
+- 포멧 체크: `npx prettier --write .`
+- 테스트 실행: `npm test`
+- 특정 테스트 실행: `npm test -- <파일경로>`
 
 ## 🎨 코딩 가이드라인
 
@@ -14,7 +17,7 @@
 - 폴더구조는 **[FSD(Feature-Sliced Design)](https://feature-sliced.design)** 아키텍처를 따릅니다.
 - 함수형 컴포넌트와 Hooks를 선호하며, 클래스 컴포넌트는 지양합니다.
 - 에러 처리는 `try-catch` 블록과 사용자 정의 에러 유틸리티를 활용하세요.
-- 코드 수정후 항상 'npm run lint' 명령어로 린트 체크를 하고 문제가 없으면 커밋을 해주세요.
+- 코드 수정후 항상 린트 체크와 포멧 체크를 하고 테스트 실행후 문제가 없으면 커밋/푸시를 해주세요.
 - 커밋 메시지는 영문으로 작성해주세요. (예: fix: correct minor typos in code)
 
 ### 기술적 제약

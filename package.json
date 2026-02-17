@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "test": "npm run test -w server"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

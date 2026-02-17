@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node --expose-gc dist/index.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
@@ -24,6 +26,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
     "drizzle-kit": "^0.30.0",
-    "tsx": "^4.19.0"
+    "tsx": "^4.19.0",
+    "vitest": "^4.0.18"
   }
 }

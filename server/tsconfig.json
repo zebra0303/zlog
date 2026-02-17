@@ -4,6 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "lib": ["ES2022"],
+    "types": ["vitest/globals"],
     "paths": {
       "@zlog/shared": ["../shared/types/index.ts"]
     }
