@@ -1,7 +1,10 @@
 <img width="800" alt="zlog_wide_log" src="https://github.com/user-attachments/assets/d132c23b-08d9-42a1-bb6a-f886b05bdf07" style="margin-bottom:100px" /> <br />
 
-> **Your blog, your data, your network.**
-> ZLOG is a self-hosted blog system where blogs **subscribe** to each other and **deliver new posts in real time**. Independent blogs connect as one network — no platform needed.
+The core feature of ZLOG is **Subscription & Federation**.
+
+Subscribe to specific categories from other ZLOG users and view their posts on your own blog, styled the way you want. The idea started from a simple thought — wouldn't it be fun if friends or community members with similar interests each ran their own blogs, subscribed to each other, and built a shared feed together?
+
+> [**Live Demo — zlog.pe.kr**](http://zlog.pe.kr)
 
 [한국어 문서 (Korean)](./README.ko.md)
 
