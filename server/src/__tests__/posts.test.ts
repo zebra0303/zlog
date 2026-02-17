@@ -136,10 +136,24 @@ describe("Posts API", () => {
       expect(data.title).toBe("My Post");
       expect(data.viewCount).toBe(1);
 
-      // Second request should increment again
-      const res2 = await app.request("/api/posts/my-post");
+      // Second request with viewed cookie should NOT increment
+      const cookie = res.headers.get("Set-Cookie") ?? "";
+      const res2 = await app.request("/api/posts/my-post", {
+        headers: { Cookie: cookie.split(";")[0] },
+      });
       const data2 = (await res2.json()) as { viewCount: number };
-      expect(data2.viewCount).toBe(2);
+      expect(data2.viewCount).toBe(1);
+    });
+
+    it("should not increment viewCount for admin", async () => {
+      createTestPost({ title: "Admin View", slug: "admin-view" });
+
+      const res = await app.request("/api/posts/admin-view", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { viewCount: number };
+      expect(data.viewCount).toBe(0);
     });
 
     it("should return post by UUID", async () => {

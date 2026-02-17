@@ -3,7 +3,7 @@ import { db } from "../db/index.js";
 import { sqlite } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, desc, and, or, sql, like, inArray } from "drizzle-orm";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, verifyToken } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
 import { sendWebhookToSubscribers } from "../services/feedService.js";
@@ -322,7 +322,7 @@ postsRoute.get("/", (c) => {
   return c.json({ items, total, page, perPage, totalPages: Math.ceil(total / perPage) });
 });
 
-postsRoute.get("/:param", (c) => {
+postsRoute.get("/:param", async (c) => {
   const param = c.req.param("param");
   // UUID v7 패턴이면 ID로 조회, 아니면 slug로 조회
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
@@ -334,10 +334,26 @@ postsRoute.get("/:param", (c) => {
     return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
   }
 
-  db.update(schema.posts)
-    .set({ viewCount: post.viewCount + 1 })
-    .where(eq(schema.posts.id, post.id))
-    .run();
+  // 조회수 증가 여부 판단: 관리자이거나 이미 조회한 방문자는 제외
+  let shouldCount = true;
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const ownerId = await verifyToken(authHeader.slice(7));
+    if (ownerId) shouldCount = false;
+  }
+  const viewedCookie = `zlog_viewed_${post.id}`;
+  const cookies = c.req.header("Cookie") ?? "";
+  if (cookies.includes(viewedCookie)) {
+    shouldCount = false;
+  }
+
+  let { viewCount } = post;
+  if (shouldCount) {
+    viewCount = post.viewCount + 1;
+    db.update(schema.posts).set({ viewCount }).where(eq(schema.posts.id, post.id)).run();
+    // 24시간 동안 같은 글 재조회 시 카운트 안 함
+    c.header("Set-Cookie", `${viewedCookie}=1; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax`);
+  }
 
   const category = post.categoryId
     ? db
@@ -358,7 +374,7 @@ postsRoute.get("/:param", (c) => {
     .where(eq(schema.postTags.postId, post.id))
     .all();
 
-  return c.json({ ...post, viewCount: post.viewCount + 1, category, tags: tagRows });
+  return c.json({ ...post, viewCount, category, tags: tagRows });
 });
 
 postsRoute.post("/", authMiddleware, async (c) => {
