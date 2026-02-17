@@ -274,25 +274,27 @@ function CommentForm({
   useEffect(() => {
     if (commenter && !parentId && localStorage.getItem("zlog_oauth_just_logged_in")) {
       localStorage.removeItem("zlog_oauth_just_logged_in");
-      // 페이지 렌더링 완료 후 스크롤 (긴 글에서도 정확한 위치 계산을 위해 load 이벤트 대기)
-      const scrollToComment = () => {
-        requestAnimationFrame(() => {
-          textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // 이미지/마크다운 렌더링으로 레이아웃이 변할 수 있으므로 여러 번 스크롤 보정
+      let count = 0;
+      const maxRetries = 5;
+      const doScroll = () => {
+        textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (count === 0) {
           textareaRef.current?.focus();
           setHighlight(true);
           setTimeout(() => {
             setHighlight(false);
           }, 2000);
-        });
+        }
+        count++;
+        if (count < maxRetries) {
+          timer = window.setTimeout(doScroll, 500);
+        }
       };
-      if (document.readyState === "complete") {
-        scrollToComment();
-      } else {
-        window.addEventListener("load", scrollToComment, { once: true });
-        return () => {
-          window.removeEventListener("load", scrollToComment);
-        };
-      }
+      let timer = window.setTimeout(doScroll, 300);
+      return () => {
+        window.clearTimeout(timer);
+      };
     }
   }, [commenter, parentId]);
 
