@@ -266,14 +266,22 @@ function CommentForm({
   const [anonPassword, setAnonPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { t } = useI18n();
 
-  // SSO 로그인 직후 → 댓글 입력창에 자동 포커스
+  // SSO 로그인 직후 → 댓글 입력창으로 스크롤 + 포커스 + 하이라이트
   useEffect(() => {
     if (commenter && !parentId && localStorage.getItem("zlog_oauth_just_logged_in")) {
       localStorage.removeItem("zlog_oauth_just_logged_in");
-      setTimeout(() => textareaRef.current?.focus(), 100);
+      setTimeout(() => {
+        textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        textareaRef.current?.focus();
+        setHighlight(true);
+        setTimeout(() => {
+          setHighlight(false);
+        }, 2000);
+      }, 100);
     }
   }, [commenter, parentId]);
 
@@ -362,6 +370,11 @@ function CommentForm({
           )}
           <Textarea
             ref={textareaRef}
+            className={
+              highlight
+                ? "ring-2 ring-[var(--color-primary)] transition-shadow duration-500"
+                : "transition-shadow duration-500"
+            }
             placeholder={t("comment_placeholder")}
             value={content}
             onChange={(e) => {
