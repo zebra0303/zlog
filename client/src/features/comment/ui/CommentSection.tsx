@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { MessageSquare, Heart, Reply, Link2, LogOut, Pencil, Trash2 } from "lucide-react";
 import { Button, Card, CardContent, Input, Textarea, DefaultAvatar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
@@ -266,7 +266,16 @@ function CommentForm({
   const [anonPassword, setAnonPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { t } = useI18n();
+
+  // SSO 로그인 직후 → 댓글 입력창에 자동 포커스
+  useEffect(() => {
+    if (commenter && !parentId && localStorage.getItem("zlog_oauth_just_logged_in")) {
+      localStorage.removeItem("zlog_oauth_just_logged_in");
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [commenter, parentId]);
 
   // SSO only mode but no commenter → no form
   if (!commenter && !allowAnonymous) return null;
@@ -352,6 +361,7 @@ function CommentForm({
             </div>
           )}
           <Textarea
+            ref={textareaRef}
             placeholder={t("comment_placeholder")}
             value={content}
             onChange={(e) => {

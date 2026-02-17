@@ -22,6 +22,7 @@ export default function OAuthCallbackPage() {
           provider: provider ?? "",
         }),
       );
+      localStorage.setItem("zlog_oauth_just_logged_in", "1");
     }
 
     const returnUrl = localStorage.getItem("zlog_oauth_return") ?? "/";
