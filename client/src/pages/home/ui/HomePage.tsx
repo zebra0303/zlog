@@ -117,6 +117,7 @@ export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const currentCategory = searchParams.get("category") ?? "";
+  const currentTag = searchParams.get("tag") ?? "";
   const currentSearch = searchParams.get("search") ?? "";
   const [posts, setPosts] = useState<PaginatedResponse<PostWithCategory> | null>(null);
   const [categories, setCategories] = useState<CategoryWithStats[]>([]);
@@ -140,6 +141,7 @@ export default function HomePage() {
     const params = new URLSearchParams();
     params.set("page", String(currentPage));
     if (currentCategory) params.set("category", currentCategory);
+    if (currentTag) params.set("tag", currentTag);
     if (currentSearch) params.set("search", currentSearch);
     void api
       .get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`)
@@ -150,7 +152,7 @@ export default function HomePage() {
       .catch(() => {
         setIsLoading(false);
       });
-  }, [currentPage, currentCategory, currentSearch]);
+  }, [currentPage, currentCategory, currentTag, currentSearch]);
 
   // Sync searchInput when URL search param changes externally (e.g. clearing category)
   useEffect(() => {
@@ -313,6 +315,27 @@ export default function HomePage() {
           </button>
         )}
       </div>
+
+      {currentTag && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-text-secondary text-sm">
+            {t("home_tag_filter", { tag: currentTag })}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams(searchParams);
+              params.delete("tag");
+              params.set("page", "1");
+              setSearchParams(params);
+            }}
+            className="text-text-secondary hover:text-text"
+            aria-label={t("home_tag_clear")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex flex-col gap-4">

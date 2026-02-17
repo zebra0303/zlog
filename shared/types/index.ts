@@ -198,7 +198,7 @@ export interface CreatePostRequest {
   categoryId?: string;
   status?: PostStatus;
   tags?: string[];
-  coverImage?: string;
+  coverImage?: string | null;
   excerpt?: string;
 }
 

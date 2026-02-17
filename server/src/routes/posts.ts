@@ -1,18 +1,31 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc, and, or, sql, like, isNotNull } from "drizzle-orm";
+import { eq, desc, and, or, sql, like, isNotNull, inArray } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
 import { sendWebhookToSubscribers } from "../services/feedService.js";
 import { triggerStaleSync } from "../services/syncService.js";
+import { unlinkSync } from "node:fs";
+import path from "node:path";
+
+function deleteUploadedImage(imageUrl: string) {
+  if (!imageUrl.startsWith("/uploads/images/")) return;
+  try {
+    const filePath = path.join(process.cwd(), imageUrl);
+    unlinkSync(filePath);
+  } catch {
+    /* ignore – file may already be deleted */
+  }
+}
 
 const postsRoute = new Hono();
 
 postsRoute.get("/", (c) => {
   const page = Math.max(1, Number(c.req.query("page")) || 1);
   const categorySlug = c.req.query("category");
+  const tagSlug = c.req.query("tag");
   const search = c.req.query("search");
   const status = c.req.query("status") ?? "published";
 
@@ -45,6 +58,24 @@ postsRoute.get("/", (c) => {
   }
   if (search) {
     conditions.push(like(schema.posts.title, `%${search}%`));
+  }
+  if (tagSlug) {
+    const tag = db.select().from(schema.tags).where(eq(schema.tags.slug, tagSlug)).get();
+    if (tag) {
+      const tagPostIds = db
+        .select({ postId: schema.postTags.postId })
+        .from(schema.postTags)
+        .where(eq(schema.postTags.tagId, tag.id))
+        .all()
+        .map((r) => r.postId);
+      if (tagPostIds.length > 0) {
+        conditions.push(inArray(schema.posts.id, tagPostIds));
+      } else {
+        conditions.push(sql`0 = 1`);
+      }
+    } else {
+      conditions.push(sql`0 = 1`);
+    }
   }
 
   const whereClause = and(...conditions);
@@ -106,7 +137,7 @@ postsRoute.get("/", (c) => {
       avatarUrl: string | null;
     } | null;
   })[] = [];
-  if (status === "published") {
+  if (status === "published" && !tagSlug) {
     const remoteConditions = [
       eq(schema.remotePosts.remoteStatus, "published"),
       isNotNull(schema.remotePosts.localCategoryId),
@@ -305,7 +336,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
     categoryId?: string;
     status?: string;
     tags?: string[];
-    coverImage?: string;
+    coverImage?: string | null;
     excerpt?: string;
   }>();
 
@@ -337,7 +368,13 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
   }
   if (body.excerpt !== undefined) updateData.excerpt = body.excerpt;
   if (body.categoryId !== undefined) updateData.categoryId = body.categoryId;
-  if (body.coverImage !== undefined) updateData.coverImage = body.coverImage;
+  if (body.coverImage !== undefined) {
+    // Delete old cover image file if it's being changed or removed
+    if (existing.coverImage && existing.coverImage !== body.coverImage) {
+      deleteUploadedImage(existing.coverImage);
+    }
+    updateData.coverImage = body.coverImage;
+  }
   if (body.status !== undefined) {
     updateData.status = body.status;
     if (body.status === "deleted") updateData.deletedAt = now;

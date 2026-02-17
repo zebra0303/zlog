@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router";
-import { Calendar, Eye, Folder, ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { Calendar, Eye, Folder, ArrowLeft, Edit, Trash2, Share2, Link2, Check } from "lucide-react";
 import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -20,6 +20,7 @@ export default function PostDetailPage() {
   const [htmlContent, setHtmlContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -67,6 +68,8 @@ export default function PostDetailPage() {
       </div>
     );
 
+  const postUrl = `${window.location.origin}/posts/${post.slug}`;
+
   return (
     <article className="min-w-0 overflow-x-hidden">
       <SEOHead
@@ -98,16 +101,11 @@ export default function PostDetailPage() {
               </Badge>
             </Link>
           )}
-          {post.tags.map((tag) => (
-            <Badge key={tag.id} variant="outline">
-              {tag.name}
-            </Badge>
-          ))}
         </div>
         <h1 className="mb-3 text-2xl font-bold text-[var(--color-text)] md:text-3xl">
           {post.title}
         </h1>
-        <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-text-secondary)]">
           <span className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
             {formatDate(post.createdAt)}
@@ -116,11 +114,26 @@ export default function PostDetailPage() {
             <Eye className="h-4 w-4" />
             {post.viewCount}
           </span>
+          {post.tags.map((tag) => {
+            const [backPath, backQuery] = backTo.split("?");
+            const tagParams = new URLSearchParams(backQuery ?? "");
+            tagParams.set("tag", tag.slug);
+            tagParams.delete("page");
+            return (
+              <Link
+                key={tag.id}
+                to={`${backPath}?${tagParams.toString()}`}
+                className="border-border text-text-secondary hover:border-primary hover:text-primary rounded-full border px-2.5 py-px text-xs font-medium transition-colors"
+              >
+                #{tag.name}
+              </Link>
+            );
+          })}
         </div>
         {isAuthenticated && (
           <div className="mt-4 flex gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link to={`/write/${post.id}`}>
+              <Link to={`/write/${post.id}`} state={{ from: backTo }}>
                 <Edit className="mr-1 h-4 w-4" />
                 {t("post_edit")}
               </Link>
@@ -140,6 +153,51 @@ export default function PostDetailPage() {
           />
         </CardContent>
       </Card>
+      <div className="border-border mt-6 flex flex-wrap items-center justify-end gap-2 border-t pt-4">
+        <span className="text-text-secondary mr-1 flex items-center gap-1 text-sm">
+          <Share2 className="h-4 w-4" />
+          {t("share")}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            void navigator.clipboard.writeText(postUrl).then(() => {
+              setCopied(true);
+              setTimeout(() => {
+                setCopied(false);
+              }, 2000);
+            });
+          }}
+          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+          {copied ? t("share_copied") : t("share_copy_link")}
+        </button>
+        <a
+          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(post.title)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+        >
+          X
+        </a>
+        <a
+          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+        >
+          Facebook
+        </a>
+        <a
+          href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+        >
+          LinkedIn
+        </a>
+      </div>
       <div className="mt-8">
         <CommentSection postId={post.id} />
       </div>

@@ -46,6 +46,8 @@ export const ko: Record<TranslationKeys, string> = {
   home_search_placeholder: "글 검색...",
   home_no_search_results: '"{query}"에 대한 검색 결과가 없습니다.',
   home_search_clear: "검색 초기화",
+  home_tag_filter: "태그: {tag}",
+  home_tag_clear: "태그 필터 해제",
 
   // Post Card
   post_external_blog: "외부 블로그",
@@ -59,6 +61,9 @@ export const ko: Record<TranslationKeys, string> = {
   post_confirm_delete: "정말 삭제하시겠습니까?",
   post_delete_failed: "삭제에 실패했습니다.",
   post_view_original: "원본 글 보기",
+  share: "공유",
+  share_copy_link: "링크 복사",
+  share_copied: "복사됨!",
   remote_post_deleted_alert:
     "원본 글이 작성자에 의해 삭제되었습니다. 동기화된 글도 함께 삭제됩니다.",
   remote_post_visit_blog: "블로그 방문",

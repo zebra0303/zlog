@@ -71,6 +71,29 @@ describe("Posts API", () => {
       expect(data.items[0]?.title).toBe("React Tutorial");
     });
 
+    it("should filter by tag", async () => {
+      const post1 = createTestPost({ title: "JS Post", slug: "js-post" });
+      createTestPost({ title: "Other Post", slug: "other-post" });
+
+      // Create tag and associate with post1
+      const tagId = "tag-js-id";
+      db.insert(schema.tags).values({ id: tagId, name: "javascript", slug: "javascript" }).run();
+      db.insert(schema.postTags).values({ postId: post1.id, tagId }).run();
+
+      const res = await app.request("/api/posts?tag=javascript");
+      const data = (await res.json()) as { items: { title: string }[] };
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0]?.title).toBe("JS Post");
+    });
+
+    it("should return empty list for non-existent tag", async () => {
+      createTestPost({ title: "Some Post" });
+
+      const res = await app.request("/api/posts?tag=nonexistent");
+      const data = (await res.json()) as { items: unknown[] };
+      expect(data.items).toHaveLength(0);
+    });
+
     it("should paginate results", async () => {
       // Set posts_per_page to 2
       db.update(schema.siteSettings)

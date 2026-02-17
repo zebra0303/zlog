@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { Eye, Edit3, Save, ArrowLeft, ImageIcon, Upload, Loader2 } from "lucide-react";
 import { Button, Input, Card, CardContent, SEOHead } from "@/shared/ui";
 import { api } from "@/shared/api/client";
@@ -13,6 +13,8 @@ type ViewMode = "edit" | "preview";
 export default function PostEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const listFrom = (location.state as { from?: string } | null)?.from ?? "/";
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
   const [title, setTitle] = useState("");
@@ -164,15 +166,15 @@ export default function PostEditorPage() {
         categoryId: categoryId || undefined,
         status: s,
         tags: tagList.length > 0 ? tagList : undefined,
-        coverImage: coverImage || undefined,
+        coverImage: coverImage || null,
       };
       const saved = id
         ? await api.put<{ slug: string }>(`/posts/${id}`, payload)
         : await api.post<{ slug: string }>("/posts", payload);
       if (s === "published" && saved.slug) {
-        void navigate(`/posts/${saved.slug}`);
+        void navigate(`/posts/${saved.slug}`, { state: { from: listFrom } });
       } else {
-        void navigate("/");
+        void navigate(listFrom);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("request_failed"));

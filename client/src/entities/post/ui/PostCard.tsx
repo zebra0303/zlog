@@ -53,11 +53,6 @@ export function PostCard({ post }: PostCardProps) {
                 {post.remoteBlog?.displayName ?? t("post_external_blog")}
               </Badge>
             )}
-            {post.tags.map((tag) => (
-              <Badge key={tag.id} variant="outline">
-                {tag.name}
-              </Badge>
-            ))}
           </div>
           <h2 className="mb-2 line-clamp-2 text-lg font-bold text-[var(--color-text)] transition-colors group-hover:text-[var(--color-primary)]">
             {post.title}
@@ -67,7 +62,7 @@ export function PostCard({ post }: PostCardProps) {
               {post.excerpt}
             </p>
           )}
-          <div className="flex items-center gap-4 text-xs text-[var(--color-text-secondary)]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-text-secondary)]">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {timeAgo(post.createdAt)}
@@ -78,6 +73,23 @@ export function PostCard({ post }: PostCardProps) {
                 {post.viewCount}
               </span>
             )}
+            {post.tags.map((tag) => {
+              const tagParams = new URLSearchParams(location.search);
+              tagParams.set("tag", tag.slug);
+              tagParams.delete("page");
+              return (
+                <Link
+                  key={tag.id}
+                  to={`${location.pathname}?${tagParams.toString()}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="rounded-full border border-[var(--color-border)] px-2 py-px text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                >
+                  #{tag.name}
+                </Link>
+              );
+            })}
           </div>
         </CardContent>
       </Link>

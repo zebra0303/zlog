@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import { Rss, Info, X, ExternalLink } from "lucide-react";
+import { Rss, Info, X, ExternalLink, Tag } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import {
   Pagination,
@@ -130,6 +130,7 @@ export default function CategoryDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
+  const currentTag = searchParams.get("tag") ?? "";
   const [category, setCategory] = useState<CategoryWithStats | null>(null);
   const [posts, setPosts] = useState<PaginatedResponse<PostWithCategory> | null>(null);
   const [descHtml, setDescHtml] = useState("");
@@ -149,8 +150,12 @@ export default function CategoryDetailPage() {
   useEffect(() => {
     if (!slug) return;
     setIsLoading(true);
+    const params = new URLSearchParams();
+    params.set("category", slug);
+    params.set("page", String(currentPage));
+    if (currentTag) params.set("tag", currentTag);
     void api
-      .get<PaginatedResponse<PostWithCategory>>(`/posts?category=${slug}&page=${currentPage}`)
+      .get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`)
       .then((d) => {
         setPosts(d);
         setIsLoading(false);
@@ -158,7 +163,7 @@ export default function CategoryDetailPage() {
       .catch(() => {
         setIsLoading(false);
       });
-  }, [slug, currentPage]);
+  }, [slug, currentPage, currentTag]);
 
   if (!category && !isLoading)
     return <p className="text-text-secondary py-20 text-center">{t("cat_not_found")}</p>;
@@ -224,6 +229,28 @@ export default function CategoryDetailPage() {
             </CardContent>
           </Card>
         </>
+      )}
+
+      {currentTag && (
+        <div className="mb-4 flex items-center gap-2">
+          <Tag className="text-text-secondary h-4 w-4" />
+          <span className="text-text-secondary text-sm">
+            {t("home_tag_filter", { tag: currentTag })}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const ps = new URLSearchParams(searchParams);
+              ps.delete("tag");
+              ps.set("page", "1");
+              setSearchParams(ps);
+            }}
+            className="text-text-secondary hover:text-text"
+            aria-label={t("home_tag_clear")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       )}
 
       {isLoading ? (

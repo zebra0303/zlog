@@ -44,6 +44,8 @@ export const en = {
   home_search_placeholder: "Search posts...",
   home_no_search_results: 'No posts found for "{query}".',
   home_search_clear: "Clear search",
+  home_tag_filter: "Tag: {tag}",
+  home_tag_clear: "Clear tag filter",
 
   // Post Card
   post_external_blog: "External Blog",
@@ -57,6 +59,9 @@ export const en = {
   post_confirm_delete: "Are you sure you want to delete this post?",
   post_delete_failed: "Failed to delete the post.",
   post_view_original: "View original post",
+  share: "Share",
+  share_copy_link: "Copy link",
+  share_copied: "Copied!",
   remote_post_deleted_alert:
     "The original post has been deleted by the author. This synced post will also be removed.",
   remote_post_visit_blog: "Visit blog",
