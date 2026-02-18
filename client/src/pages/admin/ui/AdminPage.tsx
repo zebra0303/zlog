@@ -1648,8 +1648,8 @@ export default function AdminPage() {
       {/* Content tab */}
       {activeTab === "content" && (
         <>
-          <PostManager />
           <CategoryManager />
+          <PostManager />
         </>
       )}
 

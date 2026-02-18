@@ -275,6 +275,25 @@ export function bootstrap() {
     console.log(`✅ Admin account created: ${email}`);
   }
 
+  // Default category if none exists
+  const existingCategories = db.select().from(schema.categories).limit(1).all();
+  if (existingCategories.length === 0) {
+    const now = new Date().toISOString();
+    db.insert(schema.categories)
+      .values({
+        id: generateId(),
+        name: "General",
+        slug: "general",
+        description: "General posts",
+        sortOrder: 0,
+        isPublic: true,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+    console.log("✅ Default category created: General");
+  }
+
   // Default site settings
   const defaultSettings: Record<string, string> = {
     posts_per_page: "10",
