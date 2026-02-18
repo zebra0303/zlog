@@ -1,10 +1,18 @@
 <img width="800" alt="zlog_wide_log" src="https://github.com/user-attachments/assets/d132c23b-08d9-42a1-bb6a-f886b05bdf07" style="margin-bottom:100px" /> <br />
 
-The core feature of ZLOG is **Subscription & Federation**.
+## 🌐 zlog: A Decentralized Community Network Beyond Personal Blogging
 
-Subscribe to specific categories from other ZLOG users and view their posts on your own blog, styled the way you want. The idea started from a simple thought — wouldn't it be fun if friends or community members with similar interests each ran their own blogs, subscribed to each other, and built a shared feed together?
+**"Maintain full data ownership while enjoying seamless community connectivity."**
 
-> [**Live Demo — zlog.pe.kr**](http://zlog.pe.kr)
+zlog began with a simple, exciting vision: **"What if friends or hobbyist groups with shared interests could run their own blogs while subscribing to each other to build a collective feed together?"**
+
+### 🤝 Personal Space, Shared Community
+
+- **Co-created Networks**: While each person runs their own blog, you can connect specific categories to aggregate posts from like-minded peers right on your own dashboard.
+- **Discovery through Flow**: Discover new zlogers through shared posts on your blog, and let your own content travel to others' feeds, inviting new audiences to your space.
+- **Subscribe to Tastes**: If another zloger loves your category, they can subscribe to it and integrate your latest updates into their own blog in real-time.
+
+> "Where individual islands come together to form a continent—this is the decentralized blog network zlog envisions."
 
 [한국어 문서 (Korean)](./README.ko.md)
 
@@ -29,18 +37,19 @@ Subscribe to specific categories from other ZLOG users and view their posts on y
 | **Setup Complexity**        | None                    | Build pipeline needed  | **`docker compose up`**        |
 | **Runs on Raspberry Pi**    | N/A                     | Possible               | **Yes, natively**              |
 
-### The Problem
+### The Problem: Personal Blogs as Isolated Islands
 
-Personal blogs are isolated islands. No matter how great your content is, reading posts from other blogs means relying on RSS readers or social media. Centralized platforms like Medium or WordPress.com make subscriptions easy, but they take away your data and design freedom.
+Personal blogs often become **"isolated islands."** No matter how great your content is, staying connected with peers or building a community usually requires moving into a "walled garden" (like Medium or Tumblr) or relying heavily on external tools like RSS readers and social media.
 
-### The Solution
+Centralized platforms offer connectivity at the cost of your data sovereignty and design freedom, while independent blogs offer freedom but suffer from isolation. **"Is it possible to maintain my own space while staying effortlessly connected with the people I care about?"** This is the question ZLOG aims to answer.
 
-ZLOG **builds subscription right into the blog itself**. Subscribe to another ZLOG blog from your admin dashboard, and:
+### The Solution: Your Blog, a Community Node
 
-1. When they publish a new post, it's **automatically delivered to your blog**
-2. Your posts and subscribed posts appear **together in one feed**
-3. All data is **stored on your server** — no platform lock-in
-4. RSS feeds included by default — even non-ZLOG readers can subscribe
+ZLOG transforms your blog into a **community node** by building subscription and federation right into the core engine. It creates a **"decentralized community network"** where independence and connectivity coexist.
+
+1. **Co-created Community Feeds**: Friends or hobbyist groups can run their own independent blogs. By subscribing to each other's categories, your blog becomes a shared social dashboard for your circle.
+2. **Discovery through Flow**: Your posts and subscribed posts from your peers live together in a single, unified feed. Visitors to your blog can naturally discover and jump to other amazing zlogers you follow.
+3. **Sovereignty Meets Connectivity**: All these interactions happen on your own hardware (Mac Mini, Raspberry Pi, etc.). You maintain 100% ownership of your data and design while enjoying the benefits of a connected network.
 
 Independent yet interconnected — a **decentralized blog network**. That's ZLOG.
 
@@ -466,6 +475,7 @@ For developers who want to integrate with ZLOG's federation:
 
 ## Links
 
+- **Live Demo**: [http://zlog.pe.kr](http://zlog.pe.kr)
 - **GitHub**: [https://github.com/zebra0303/zlog](https://github.com/zebra0303/zlog)
 - **License**: MIT
 
