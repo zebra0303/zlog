@@ -248,6 +248,14 @@ export const commenters = sqliteTable(
   (table) => [uniqueIndex("idx_commenters_provider").on(table.provider, table.providerId)],
 );
 
+// ============ failedLogins — brute-force protection ============
+export const failedLogins = sqliteTable("failed_logins", {
+  id: text("id").primaryKey(),
+  ipAddress: text("ip_address").notNull(),
+  attemptedEmail: text("attempted_email"),
+  attemptedAt: text("attempted_at").notNull(),
+});
+
 // ============ siteSettings — site settings (key-value) ============
 export const siteSettings = sqliteTable("site_settings", {
   id: text("id").primaryKey(),

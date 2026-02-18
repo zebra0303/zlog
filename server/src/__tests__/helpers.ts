@@ -198,6 +198,7 @@ export function createTestRemotePost(
 
 export function cleanDb(): void {
   sqlite.exec(`
+    DELETE FROM failed_logins;
     DELETE FROM comment_likes;
     DELETE FROM comments;
     DELETE FROM post_tags;

@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { createApp } from "../app.js";
+import { db } from "../db/index.js";
+import * as schema from "../db/schema.js";
 import {
   seedTestAdmin,
   seedDefaultSettings,
@@ -21,7 +23,8 @@ describe("Auth API", () => {
   });
 
   beforeEach(() => {
-    // auth tests don't mutate admin, no per-test cleanup needed
+    // Clear failed_logins between tests to avoid cross-test interference
+    db.delete(schema.failedLogins).run();
   });
 
   describe("POST /api/auth/login", () => {
@@ -87,6 +90,76 @@ describe("Auth API", () => {
         headers: { Authorization: "Bearer invalid-token-here" },
       });
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe("Brute-force protection", () => {
+    const loginWithWrongPassword = (ip = "192.168.1.100") =>
+      app.request("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": ip,
+        },
+        body: JSON.stringify({ email: admin.email, password: "wrongpassword" }),
+      });
+
+    const loginWithCorrectPassword = (ip = "192.168.1.100") =>
+      app.request("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": ip,
+        },
+        body: JSON.stringify({ email: admin.email, password: admin.password }),
+      });
+
+    it("should return 429 after 5 failed attempts", async () => {
+      // First 5 attempts should return 401
+      for (let i = 0; i < 5; i++) {
+        const res = await loginWithWrongPassword();
+        expect(res.status).toBe(401);
+      }
+
+      // 6th attempt should be blocked
+      const res = await loginWithWrongPassword();
+      expect(res.status).toBe(429);
+    });
+
+    it("should block correct password during lockout", async () => {
+      // Trigger lockout with 5 failures
+      for (let i = 0; i < 5; i++) {
+        await loginWithWrongPassword();
+      }
+
+      // Correct password should also be blocked
+      const res = await loginWithCorrectPassword();
+      expect(res.status).toBe(429);
+    });
+
+    it("should include retryAfter in 429 response", async () => {
+      for (let i = 0; i < 5; i++) {
+        await loginWithWrongPassword();
+      }
+
+      const res = await loginWithWrongPassword();
+      expect(res.status).toBe(429);
+      const data = (await res.json()) as { error: string; retryAfter: number };
+      expect(data.retryAfter).toBeDefined();
+      expect(typeof data.retryAfter).toBe("number");
+      expect(data.retryAfter).toBeGreaterThan(0);
+      expect(data.error).toBe("Too many login attempts. Try again later.");
+    });
+
+    it("should not affect different IPs", async () => {
+      // Trigger lockout for one IP
+      for (let i = 0; i < 5; i++) {
+        await loginWithWrongPassword("10.0.0.1");
+      }
+
+      // Different IP should still work
+      const res = await loginWithCorrectPassword("10.0.0.2");
+      expect(res.status).toBe(200);
     });
   });
 });

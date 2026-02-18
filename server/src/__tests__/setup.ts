@@ -222,6 +222,14 @@ beforeAll(() => {
       value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS failed_logins (
+      id TEXT PRIMARY KEY,
+      ip_address TEXT NOT NULL,
+      attempted_email TEXT,
+      attempted_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_failed_logins_ip ON failed_logins(ip_address, attempted_at);
   `);
 });
 
