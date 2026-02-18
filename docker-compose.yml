@@ -6,8 +6,8 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     volumes:
-      - zlog-data:/app/data
-      - zlog-uploads:/app/uploads
+      - ./docker-data/db:/app/data
+      - ./docker-data/uploads:/app/uploads
     env_file:
       - .env
     environment:
@@ -42,8 +42,8 @@ services:
     container_name: zlog-backup
     profiles: [backup]
     volumes:
-      - zlog-data:/data:ro
-      - zlog-backups:/backups
+      - ./docker-data/db:/data:ro
+      - ./docker-data/backups:/backups
     entrypoint: /bin/sh
     command: >
       -c 'while true; do
@@ -58,8 +58,5 @@ services:
       - zlog
 
 volumes:
-  zlog-data:
-  zlog-uploads:
-  zlog-backups:
   caddy-data:
   caddy-config:

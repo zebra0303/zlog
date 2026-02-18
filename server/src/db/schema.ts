@@ -131,7 +131,10 @@ export const commentLikes = sqliteTable(
     visitorId: text("visitor_id").notNull(),
     createdAt: text("created_at").notNull(),
   },
-  (table) => [uniqueIndex("idx_comment_likes_unique").on(table.commentId, table.visitorId)],
+  (table) => [
+    uniqueIndex("idx_comment_likes_unique").on(table.commentId, table.visitorId),
+    index("idx_comment_likes_comment").on(table.commentId),
+  ],
 );
 
 // ============ remoteBlogs — remote blog cache ============
@@ -146,17 +149,21 @@ export const remoteBlogs = sqliteTable("remote_blogs", {
 });
 
 // ============ remoteCategories — remote category cache ============
-export const remoteCategories = sqliteTable("remote_categories", {
-  id: text("id").primaryKey(),
-  remoteBlogId: text("remote_blog_id")
-    .notNull()
-    .references(() => remoteBlogs.id, { onDelete: "cascade" }),
-  remoteId: text("remote_id").notNull(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull(),
-  description: text("description"),
-  createdAt: text("created_at").notNull(),
-});
+export const remoteCategories = sqliteTable(
+  "remote_categories",
+  {
+    id: text("id").primaryKey(),
+    remoteBlogId: text("remote_blog_id")
+      .notNull()
+      .references(() => remoteBlogs.id, { onDelete: "cascade" }),
+    remoteId: text("remote_id").notNull(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    description: text("description"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [index("idx_remote_categories_blog").on(table.remoteBlogId)],
+);
 
 // ============ categorySubscriptions — subscription relations ============
 export const categorySubscriptions = sqliteTable(
@@ -249,12 +256,19 @@ export const commenters = sqliteTable(
 );
 
 // ============ failedLogins — brute-force protection ============
-export const failedLogins = sqliteTable("failed_logins", {
-  id: text("id").primaryKey(),
-  ipAddress: text("ip_address").notNull(),
-  attemptedEmail: text("attempted_email"),
-  attemptedAt: text("attempted_at").notNull(),
-});
+export const failedLogins = sqliteTable(
+  "failed_logins",
+  {
+    id: text("id").primaryKey(),
+    ipAddress: text("ip_address").notNull(),
+    attemptedEmail: text("attempted_email"),
+    attemptedAt: text("attempted_at").notNull(),
+  },
+  (table) => [
+    index("idx_failed_logins_ip").on(table.ipAddress, table.attemptedAt),
+    index("idx_failed_logins_attempted").on(table.attemptedAt),
+  ],
+);
 
 // ============ siteSettings — site settings (key-value) ============
 export const siteSettings = sqliteTable("site_settings", {

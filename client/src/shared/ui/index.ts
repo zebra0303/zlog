@@ -10,3 +10,4 @@ export { Pagination } from "./Pagination";
 export { SEOHead } from "./SEOHead";
 export { ZlogLogo } from "./ZlogLogo";
 export { DefaultAvatar } from "./DefaultAvatar";
+export { MarkdownToolbar } from "./MarkdownToolbar";

@@ -142,6 +142,7 @@ Sitemap: ${siteUrl}/sitemap.xml`);
       .from(schema.posts)
       .where(eq(schema.posts.status, "published"))
       .orderBy(desc(schema.posts.createdAt))
+      .limit(49000)
       .all();
     const categories = db.select({ slug: schema.categories.slug }).from(schema.categories).all();
 
@@ -170,9 +171,9 @@ ${urls.join("\n")}
   // Full blog RSS feed
   app.get("/rss.xml", (c) => {
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
-    const ownerInfo = db.select().from(schema.owner).get();
-    const blogTitle = ownerInfo?.blogTitle ?? "Blog";
-    const blogDesc = ownerInfo?.blogDescription ?? "";
+    const settings = getSiteSettings();
+    const blogTitle = settings.blog_title ?? "Blog";
+    const blogDesc = settings.seo_description ?? "";
 
     const posts = db
       .select({
@@ -234,12 +235,15 @@ ${urls.join("\n")}
       .limit(20)
       .all();
 
+    const settings = getSiteSettings();
+    const seoDesc = settings.seo_description ?? "";
+    const catDesc = (category.description ?? "").trim();
     const channelTitle = `${blogTitle} - ${category.name}`;
     const channelLink = `${siteUrl}/category/${category.slug}`;
     const xml = buildRssXml(
       siteUrl,
       channelTitle,
-      category.description ?? "",
+      catDesc.length > 0 ? catDesc : seoDesc,
       channelLink,
       posts.map((p) => ({ ...p, categoryName: category.name })),
     );

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { Eye, Edit3, Save, ArrowLeft, ImageIcon, Upload, Loader2 } from "lucide-react";
-import { Button, Input, Card, CardContent, SEOHead } from "@/shared/ui";
+import { Button, Input, Card, CardContent, SEOHead, MarkdownToolbar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -30,6 +30,7 @@ export default function PostEditorPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const toolbarFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -326,19 +327,38 @@ export default function PostEditorPage() {
         </div>
       </div>
       <div className="min-h-125">
+        <input
+          ref={toolbarFileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void uploadAndInsertImage(file);
+            e.target.value = "";
+          }}
+        />
         {viewMode === "edit" && (
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-            }}
-            onPaste={handlePaste}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            placeholder={t("editor_content_placeholder")}
-            className="border-border bg-surface text-text placeholder:text-text-secondary focus:ring-primary h-full min-h-125 w-full resize-none rounded-lg border p-4 font-mono text-sm focus:ring-2 focus:outline-none"
-          />
+          <>
+            <MarkdownToolbar
+              textareaRef={textareaRef}
+              value={content}
+              onChange={setContent}
+              onImageUpload={() => toolbarFileRef.current?.click()}
+            />
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => {
+                setContent(e.target.value);
+              }}
+              onPaste={handlePaste}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              placeholder={t("editor_content_placeholder")}
+              className="border-border bg-surface text-text placeholder:text-text-secondary focus:ring-primary h-full min-h-125 w-full resize-none rounded-lg rounded-t-none border border-t-0 p-4 font-mono text-sm focus:ring-2 focus:outline-none"
+            />
+          </>
         )}
         {viewMode === "preview" && (
           <>

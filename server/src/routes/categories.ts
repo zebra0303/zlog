@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, sql, asc } from "drizzle-orm";
+import { eq, sql, asc, inArray, like } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
-import { createUniqueSlug } from "../lib/slug.js";
+import { createSlug, createUniqueSlug } from "../lib/slug.js";
 
 const categoriesRoute = new Hono();
 
@@ -15,25 +15,47 @@ categoriesRoute.get("/", (c) => {
     .orderBy(asc(schema.categories.sortOrder), asc(schema.categories.name))
     .all();
 
-  const result = cats.map((cat) => {
-    const postCountResult = db
-      .select({ count: sql<number>`count(*)` })
+  const catIds = cats.map((c) => c.id);
+
+  // Batch: post counts per category (single query)
+  const postCountMap = new Map<string, number>();
+  if (catIds.length > 0) {
+    const rows = db
+      .select({
+        categoryId: schema.posts.categoryId,
+        count: sql<number>`count(*)`,
+      })
       .from(schema.posts)
-      .where(sql`${schema.posts.categoryId} = ${cat.id} AND ${schema.posts.status} = 'published'`)
-      .get();
+      .where(sql`${schema.posts.categoryId} IN ${catIds} AND ${schema.posts.status} = 'published'`)
+      .groupBy(schema.posts.categoryId)
+      .all();
+    for (const r of rows) {
+      if (r.categoryId) postCountMap.set(r.categoryId, r.count);
+    }
+  }
 
-    const followerCountResult = db
-      .select({ count: sql<number>`count(*)` })
+  // Batch: follower counts per category (single query)
+  const followerCountMap = new Map<string, number>();
+  if (catIds.length > 0) {
+    const rows = db
+      .select({
+        categoryId: schema.subscribers.categoryId,
+        count: sql<number>`count(*)`,
+      })
       .from(schema.subscribers)
-      .where(eq(schema.subscribers.categoryId, cat.id))
-      .get();
+      .where(inArray(schema.subscribers.categoryId, catIds))
+      .groupBy(schema.subscribers.categoryId)
+      .all();
+    for (const r of rows) {
+      followerCountMap.set(r.categoryId, r.count);
+    }
+  }
 
-    return {
-      ...cat,
-      postCount: postCountResult?.count ?? 0,
-      followerCount: followerCountResult?.count ?? 0,
-    };
-  });
+  const result = cats.map((cat) => ({
+    ...cat,
+    postCount: postCountMap.get(cat.id) ?? 0,
+    followerCount: followerCountMap.get(cat.id) ?? 0,
+  }));
 
   return c.json(result);
 });
@@ -78,12 +100,14 @@ categoriesRoute.post("/", authMiddleware, async (c) => {
     return c.json({ error: "Category name is required." }, 400);
   }
 
-  const existingSlugs = db
+  const baseSlug = createSlug(body.name);
+  const conflicting = db
     .select({ slug: schema.categories.slug })
     .from(schema.categories)
+    .where(like(schema.categories.slug, `${baseSlug}%`))
     .all()
     .map((c) => c.slug);
-  const slug = createUniqueSlug(body.name, existingSlugs);
+  const slug = createUniqueSlug(body.name, conflicting);
   const now = new Date().toISOString();
   const id = generateId();
 
@@ -127,13 +151,15 @@ categoriesRoute.put("/:id", authMiddleware, async (c) => {
   if (body.name !== undefined) {
     updateData.name = body.name;
     if (body.name !== existing.name) {
-      const existingSlugs = db
+      const newBase = createSlug(body.name);
+      const conflicting = db
         .select({ slug: schema.categories.slug })
         .from(schema.categories)
+        .where(like(schema.categories.slug, `${newBase}%`))
         .all()
         .map((c) => c.slug)
         .filter((s) => s !== existing.slug);
-      updateData.slug = createUniqueSlug(body.name, existingSlugs);
+      updateData.slug = createUniqueSlug(body.name, conflicting);
     }
   }
   if (body.description !== undefined) updateData.description = body.description;

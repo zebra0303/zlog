@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, and, desc, gt } from "drizzle-orm";
+import { eq, and, desc, gt, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { fixRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
@@ -710,17 +710,28 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
     const now = new Date().toISOString();
     let synced = 0;
 
+    // Batch-load existing remote posts by URI to avoid N+1 queries
+    const remoteUris = posts.map((p) => {
+      const rawUri = p.uri ?? `${remoteBlog.siteUrl}/posts/${p.id}`;
+      return rawUri.replace(/^https?:\/\/[^/]+/, remoteBlog.siteUrl);
+    });
+    const existingMap = new Map<string, typeof schema.remotePosts.$inferSelect>();
+    if (remoteUris.length > 0) {
+      const rows = db
+        .select()
+        .from(schema.remotePosts)
+        .where(inArray(schema.remotePosts.remoteUri, remoteUris))
+        .all();
+      for (const r of rows) existingMap.set(r.remoteUri, r);
+    }
+
     for (const post of posts) {
       // URI domain may be wrong (e.g., http://localhost/posts/...) — replace with actual remoteBlog URL
       const rawUri = post.uri ?? `${remoteBlog.siteUrl}/posts/${post.id}`;
       const remoteUri = rawUri.replace(/^https?:\/\/[^/]+/, remoteBlog.siteUrl);
       const fixedContent = fixRemoteContentUrls(post.content, remoteBlog.siteUrl);
       const fixedCover = fixRemoteUrl(post.coverImage ?? null, remoteBlog.siteUrl);
-      const existing = db
-        .select()
-        .from(schema.remotePosts)
-        .where(eq(schema.remotePosts.remoteUri, remoteUri))
-        .get();
+      const existing = existingMap.get(remoteUri);
       if (existing) {
         db.update(schema.remotePosts)
           .set({

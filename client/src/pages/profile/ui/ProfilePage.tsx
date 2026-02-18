@@ -152,6 +152,7 @@ export default function ProfilePage() {
                   href={l.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={`${l.label ?? l.platform} (opens in new tab)`}
                   className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-text)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                 >
                   {ICONS[l.platform] ?? <LinkIcon className="h-5 w-5" />}

@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { User, Upload, Trash2, Plus, Save, KeyRound, Eye, Edit3 } from "lucide-react";
-import { Button, Input, Textarea, Card, CardContent, SEOHead, DefaultAvatar } from "@/shared/ui";
+import {
+  Button,
+  Input,
+  Textarea,
+  Card,
+  CardContent,
+  SEOHead,
+  DefaultAvatar,
+  MarkdownToolbar,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -34,6 +43,7 @@ export default function SettingsPage() {
   const [aboutHtml, setAboutHtml] = useState("");
   const [isAboutUploading, setIsAboutUploading] = useState(false);
   const aboutTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const aboutToolbarFileRef = useRef<HTMLInputElement>(null);
 
   const uploadAndInsertAboutImage = useCallback(
     async (file: File) => {
@@ -358,21 +368,43 @@ export default function SettingsPage() {
                 )}
               </div>
             ) : (
-              <Textarea
-                ref={aboutTextareaRef}
-                value={form.aboutMe ?? ""}
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, aboutMe: e.target.value }));
-                }}
-                onPaste={handleAboutPaste}
-                onDrop={handleAboutDrop}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                }}
-                rows={6}
-                disabled={isAboutUploading}
-                placeholder={isAboutUploading ? t("uploading") + "..." : undefined}
-              />
+              <>
+                <input
+                  ref={aboutToolbarFileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void uploadAndInsertAboutImage(file);
+                    e.target.value = "";
+                  }}
+                />
+                <MarkdownToolbar
+                  textareaRef={aboutTextareaRef}
+                  value={form.aboutMe ?? ""}
+                  onChange={(v) => {
+                    setForm((f) => ({ ...f, aboutMe: v }));
+                  }}
+                  onImageUpload={() => aboutToolbarFileRef.current?.click()}
+                />
+                <Textarea
+                  ref={aboutTextareaRef}
+                  value={form.aboutMe ?? ""}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, aboutMe: e.target.value }));
+                  }}
+                  onPaste={handleAboutPaste}
+                  onDrop={handleAboutDrop}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                  }}
+                  rows={6}
+                  disabled={isAboutUploading}
+                  placeholder={isAboutUploading ? t("uploading") + "..." : undefined}
+                  className="rounded-t-none border-t-0"
+                />
+              </>
             )}
           </div>
         </CardContent>

@@ -58,6 +58,7 @@ export const en = {
   post_delete: "Delete",
   post_confirm_delete: "Are you sure you want to delete this post?",
   post_delete_failed: "Failed to delete the post.",
+  post_updated: "Updated",
   post_view_original: "View original post",
   share: "Share",
   share_copy_link: "Copy link",
@@ -333,6 +334,23 @@ export const en = {
   pagination_prev: "Previous page",
   pagination_next: "Next page",
   pagination_label: "Pagination",
+
+  // Markdown Toolbar
+  toolbar_bold: "Bold",
+  toolbar_italic: "Italic",
+  toolbar_strikethrough: "Strikethrough",
+  toolbar_h2: "Heading 2",
+  toolbar_h3: "Heading 3",
+  toolbar_link: "Link",
+  toolbar_image: "Image",
+  toolbar_bullet_list: "Bullet list",
+  toolbar_numbered_list: "Numbered list",
+  toolbar_quote: "Quote",
+  toolbar_inline_code: "Inline code",
+  toolbar_code_block: "Code block",
+  toolbar_hr: "Horizontal rule",
+  toolbar_table: "Table",
+  toolbar_callout: "Callout",
 
   // Shared
   default_avatar_label: "Default avatar",

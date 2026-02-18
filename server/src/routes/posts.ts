@@ -121,7 +121,20 @@ postsRoute.get("/", (c) => {
       conditions.push(eq(schema.posts.status, status as "draft" | "published" | "deleted"));
     }
     if (categoryId) conditions.push(eq(schema.posts.categoryId, categoryId));
-    if (search) conditions.push(like(schema.posts.title, `%${search}%`));
+    if (search) {
+      // Use FTS5 for fast full-text search, fall back to LIKE for special characters
+      const ftsPostIds = sqlite
+        .prepare(
+          `SELECT p.id FROM posts p INNER JOIN posts_fts f ON p.rowid = f.rowid WHERE posts_fts MATCH ? ORDER BY rank`,
+        )
+        .all(`"${search.replace(/"/g, '""')}"`)
+        .map((r) => (r as { id: string }).id);
+      if (ftsPostIds.length > 0) {
+        conditions.push(inArray(schema.posts.id, ftsPostIds));
+      } else {
+        conditions.push(like(schema.posts.title, `%${search}%`));
+      }
+    }
     if (tagPostIds) conditions.push(inArray(schema.posts.id, tagPostIds));
     const whereClause = and(...conditions);
 
@@ -392,12 +405,14 @@ postsRoute.post("/", authMiddleware, async (c) => {
     return c.json({ error: "Title and content are required." }, 400);
   }
 
-  const existingSlugs = db
+  const baseSlug = createSlug(body.title);
+  const conflicting = db
     .select({ slug: schema.posts.slug })
     .from(schema.posts)
+    .where(like(schema.posts.slug, `${baseSlug}%`))
     .all()
     .map((p) => p.slug);
-  const slug = createUniqueSlug(body.title, existingSlugs);
+  const slug = createUniqueSlug(body.title, conflicting);
   const now = new Date().toISOString();
   const id = generateId();
   const excerpt = body.excerpt ?? body.content.replace(/[#*`>\-[\]()!]/g, "").slice(0, 200);
@@ -420,12 +435,13 @@ postsRoute.post("/", authMiddleware, async (c) => {
 
   if (body.tags && body.tags.length > 0) {
     for (const tagName of body.tags) {
+      const normalizedName = tagName.toLowerCase().trim();
       const tagSlug = createSlug(tagName);
-      let tag = db.select().from(schema.tags).where(eq(schema.tags.name, tagName)).get();
+      let tag = db.select().from(schema.tags).where(eq(schema.tags.slug, tagSlug)).get();
       if (!tag) {
         const tagId = generateId();
-        db.insert(schema.tags).values({ id: tagId, name: tagName, slug: tagSlug }).run();
-        tag = { id: tagId, name: tagName, slug: tagSlug };
+        db.insert(schema.tags).values({ id: tagId, name: normalizedName, slug: tagSlug }).run();
+        tag = { id: tagId, name: normalizedName, slug: tagSlug };
       }
       db.insert(schema.postTags).values({ postId: id, tagId: tag.id }).run();
     }
@@ -465,13 +481,15 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
   if (body.title !== undefined) {
     updateData.title = body.title;
     if (body.title !== existing.title) {
-      const existingSlugs = db
+      const newBase = createSlug(body.title);
+      const conflicting = db
         .select({ slug: schema.posts.slug })
         .from(schema.posts)
+        .where(like(schema.posts.slug, `${newBase}%`))
         .all()
         .map((p) => p.slug)
         .filter((s) => s !== existing.slug);
-      updateData.slug = createUniqueSlug(body.title, existingSlugs);
+      updateData.slug = createUniqueSlug(body.title, conflicting);
     }
   }
   if (body.content !== undefined) {
@@ -499,12 +517,13 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
   if (body.tags !== undefined) {
     db.delete(schema.postTags).where(eq(schema.postTags.postId, id)).run();
     for (const tagName of body.tags) {
+      const normalizedName = tagName.toLowerCase().trim();
       const tagSlug = createSlug(tagName);
-      let tag = db.select().from(schema.tags).where(eq(schema.tags.name, tagName)).get();
+      let tag = db.select().from(schema.tags).where(eq(schema.tags.slug, tagSlug)).get();
       if (!tag) {
         const tagId = generateId();
-        db.insert(schema.tags).values({ id: tagId, name: tagName, slug: tagSlug }).run();
-        tag = { id: tagId, name: tagName, slug: tagSlug };
+        db.insert(schema.tags).values({ id: tagId, name: normalizedName, slug: tagSlug }).run();
+        tag = { id: tagId, name: normalizedName, slug: tagSlug };
       }
       db.insert(schema.postTags).values({ postId: id, tagId: tag.id }).run();
     }

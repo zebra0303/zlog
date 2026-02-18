@@ -17,7 +17,10 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
     else if (pages[pages.length - 1] !== "...") pages.push("...");
   }
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-center gap-1">
+    <nav
+      aria-label={`Page ${currentPage} of ${totalPages}`}
+      className="flex items-center justify-center gap-1"
+    >
       <Button
         variant="outline"
         size="icon"

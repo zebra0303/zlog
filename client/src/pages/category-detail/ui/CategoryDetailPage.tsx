@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { Rss, Info, X, ExternalLink, Tag } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
@@ -27,8 +27,13 @@ function SubscribeDialog({
   onClose: () => void;
 }) {
   const [blogUrl, setBlogUrl] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubscribe = () => {
     if (!normalizedBlogUrl) return;
@@ -48,6 +53,8 @@ function SubscribeDialog({
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
     >
       <div
@@ -93,6 +100,7 @@ function SubscribeDialog({
                 {t("cat_subscribe_blog_url")}
               </label>
               <Input
+                ref={inputRef}
                 placeholder="https://myblog.example.com"
                 value={blogUrl}
                 onChange={(e) => {

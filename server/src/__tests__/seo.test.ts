@@ -72,6 +72,14 @@ describe("SEO Endpoints", () => {
       expect(text).toContain("<title>Test Blog</title>");
       expect(text).toContain("RSS Post");
     });
+
+    it("should use seo_description from settings as description", async () => {
+      createTestPost({ title: "Desc Post", slug: "desc-post", status: "published" });
+
+      const res = await app.request("/rss.xml");
+      const text = await res.text();
+      expect(text).toContain("<description>Test blog description</description>");
+    });
   });
 
   describe("GET /category/:slug/rss.xml", () => {
@@ -89,6 +97,38 @@ describe("SEO Endpoints", () => {
       const text = await res.text();
       expect(text).toContain("Dev Post");
       expect(text).toContain("Test Blog - Dev");
+    });
+
+    it("should use category description when available", async () => {
+      const cat = createTestCategory({
+        name: "WithDesc",
+        slug: "with-desc",
+        description: "Category specific description",
+      });
+      createTestPost({
+        title: "Cat Desc Post",
+        slug: "cat-desc-post",
+        categoryId: cat.id,
+        status: "published",
+      });
+
+      const res = await app.request("/category/with-desc/rss.xml");
+      const text = await res.text();
+      expect(text).toContain("<description>Category specific description</description>");
+    });
+
+    it("should fall back to seo_description when category has no description", async () => {
+      const cat = createTestCategory({ name: "NoDesc", slug: "no-desc" });
+      createTestPost({
+        title: "No Desc Post",
+        slug: "no-desc-post",
+        categoryId: cat.id,
+        status: "published",
+      });
+
+      const res = await app.request("/category/no-desc/rss.xml");
+      const text = await res.text();
+      expect(text).toContain("<description>Test blog description</description>");
     });
 
     it("should return Not Found RSS for non-existent category", async () => {

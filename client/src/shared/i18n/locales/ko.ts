@@ -60,6 +60,7 @@ export const ko: Record<TranslationKeys, string> = {
   post_delete: "삭제",
   post_confirm_delete: "정말 삭제하시겠습니까?",
   post_delete_failed: "삭제에 실패했습니다.",
+  post_updated: "수정됨",
   post_view_original: "원본 글 보기",
   share: "공유",
   share_copy_link: "링크 복사",
@@ -337,6 +338,23 @@ export const ko: Record<TranslationKeys, string> = {
   pagination_prev: "이전 페이지",
   pagination_next: "다음 페이지",
   pagination_label: "페이지네이션",
+
+  // Markdown Toolbar
+  toolbar_bold: "굵게",
+  toolbar_italic: "기울임",
+  toolbar_strikethrough: "취소선",
+  toolbar_h2: "제목 2",
+  toolbar_h3: "제목 3",
+  toolbar_link: "링크",
+  toolbar_image: "이미지",
+  toolbar_bullet_list: "글머리 기호 목록",
+  toolbar_numbered_list: "번호 매기기 목록",
+  toolbar_quote: "인용",
+  toolbar_inline_code: "인라인 코드",
+  toolbar_code_block: "코드 블록",
+  toolbar_hr: "구분선",
+  toolbar_table: "표",
+  toolbar_callout: "콜아웃",
 
   // Shared
   default_avatar_label: "기본 아바타",

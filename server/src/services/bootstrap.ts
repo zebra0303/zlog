@@ -198,6 +198,48 @@ export function bootstrap() {
     );
   `);
 
+  // ============ New indexes (migration) ============
+  sqlite.exec(`
+    CREATE INDEX IF NOT EXISTS idx_failed_logins_attempted ON failed_logins(attempted_at);
+    CREATE INDEX IF NOT EXISTS idx_remote_categories_blog ON remote_categories(remote_blog_id);
+    CREATE INDEX IF NOT EXISTS idx_comment_likes_comment ON comment_likes(comment_id);
+  `);
+
+  // ============ FTS5 full-text search on posts ============
+  sqlite.exec(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
+      title,
+      content='posts',
+      content_rowid='rowid'
+    );
+  `);
+
+  // Populate FTS if empty (first run or rebuild)
+  const ftsCount = sqlite.prepare("SELECT count(*) AS cnt FROM posts_fts").get() as {
+    cnt: number;
+  };
+  if (ftsCount.cnt === 0) {
+    const postCount = sqlite.prepare("SELECT count(*) AS cnt FROM posts").get() as {
+      cnt: number;
+    };
+    if (postCount.cnt > 0) {
+      sqlite.exec("INSERT INTO posts_fts(rowid, title) SELECT rowid, title FROM posts");
+    }
+  }
+
+  // Triggers to keep FTS in sync with posts table
+  sqlite.exec(`
+    CREATE TRIGGER IF NOT EXISTS posts_fts_insert AFTER INSERT ON posts BEGIN
+      INSERT INTO posts_fts(rowid, title) VALUES (NEW.rowid, NEW.title);
+    END;
+    CREATE TRIGGER IF NOT EXISTS posts_fts_update AFTER UPDATE OF title ON posts BEGIN
+      UPDATE posts_fts SET title = NEW.title WHERE rowid = NEW.rowid;
+    END;
+    CREATE TRIGGER IF NOT EXISTS posts_fts_delete AFTER DELETE ON posts BEGIN
+      INSERT INTO posts_fts(posts_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
+    END;
+  `);
+
   // Add commenter_id column to comments table (migration)
   try {
     sqlite.exec(

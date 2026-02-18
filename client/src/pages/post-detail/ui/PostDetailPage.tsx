@@ -140,6 +140,7 @@ export default function PostDetailPage() {
                   href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(post.title)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Share on X (opens in new tab)"
                   className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
                 >
                   X
@@ -148,6 +149,7 @@ export default function PostDetailPage() {
                   href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Share on Facebook (opens in new tab)"
                   className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
                 >
                   Facebook
@@ -156,6 +158,7 @@ export default function PostDetailPage() {
                   href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Share on LinkedIn (opens in new tab)"
                   className="border-border text-text-secondary hover:border-primary hover:text-primary inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
                 >
                   LinkedIn
@@ -172,6 +175,14 @@ export default function PostDetailPage() {
             <Calendar className="h-4 w-4" />
             {formatDate(post.createdAt)}
           </span>
+          {new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60000 && (
+            <span
+              className="text-text-secondary flex items-center gap-1 text-xs"
+              title={new Date(post.updatedAt).toLocaleString()}
+            >
+              ({t("post_updated")} {formatDate(post.updatedAt)})
+            </span>
+          )}
           <span className="flex items-center gap-1">
             <Eye className="h-4 w-4" />
             {post.viewCount}

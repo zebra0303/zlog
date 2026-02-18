@@ -419,6 +419,137 @@ pre code.hljs {
   background: #1a1a24;
 }
 
+/* ============ Callout / Alert panels ============ */
+.callout {
+  margin: 1em 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.callout-title::before {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.callout-note .callout-title::before {
+  content: "\2139\FE0F";
+}
+.callout-tip .callout-title::before {
+  content: "\1F4A1";
+}
+.callout-important .callout-title::before {
+  content: "\2757";
+}
+.callout-warning .callout-title::before {
+  content: "\26A0\FE0F";
+}
+.callout-caution .callout-title::before {
+  content: "\1F6D1";
+}
+
+.callout-note {
+  border-left-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+}
+.callout-note .callout-title {
+  color: #2563eb;
+}
+
+.callout-tip {
+  border-left-color: #22c55e;
+  background: #f0fdf4;
+  color: #166534;
+}
+.callout-tip .callout-title {
+  color: #16a34a;
+}
+
+.callout-important {
+  border-left-color: #8b5cf6;
+  background: #f5f3ff;
+  color: #5b21b6;
+}
+.callout-important .callout-title {
+  color: #7c3aed;
+}
+
+.callout-warning {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+}
+.callout-warning .callout-title {
+  color: #d97706;
+}
+
+.callout-caution {
+  border-left-color: #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+}
+.callout-caution .callout-title {
+  color: #dc2626;
+}
+
+/* Dark mode callouts */
+.dark .callout-note {
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+}
+.dark .callout-note .callout-title {
+  color: #60a5fa;
+}
+
+.dark .callout-tip {
+  background: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+}
+.dark .callout-tip .callout-title {
+  color: #4ade80;
+}
+
+.dark .callout-important {
+  background: rgba(139, 92, 246, 0.1);
+  color: #c4b5fd;
+}
+.dark .callout-important .callout-title {
+  color: #a78bfa;
+}
+
+.dark .callout-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+}
+.dark .callout-warning .callout-title {
+  color: #fbbf24;
+}
+
+.dark .callout-caution {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+.dark .callout-caution .callout-title {
+  color: #f87171;
+}
+
+.callout-body {
+  color: inherit;
+  opacity: 0.9;
+}
+
 /* ============ Print styles ============ */
 @media print {
   /* Force light colors */

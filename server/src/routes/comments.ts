@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { verifyToken } from "../middleware/auth.js";
@@ -107,32 +107,44 @@ commentsRoute.get("/posts/:postId/comments", (c) => {
     .where(eq(schema.comments.postId, postId))
     .all();
 
-  const commentsWithLikes = allComments.map((comment) => {
-    const likeCountResult = db
-      .select({ count: sql<number>`count(*)` })
+  const commentIds = allComments.map((c) => c.id);
+
+  // Batch: like counts (single query)
+  const likeCountMap = new Map<string, number>();
+  if (commentIds.length > 0) {
+    const rows = db
+      .select({
+        commentId: schema.commentLikes.commentId,
+        count: sql<number>`count(*)`,
+      })
       .from(schema.commentLikes)
-      .where(eq(schema.commentLikes.commentId, comment.id))
-      .get();
+      .where(inArray(schema.commentLikes.commentId, commentIds))
+      .groupBy(schema.commentLikes.commentId)
+      .all();
+    for (const r of rows) likeCountMap.set(r.commentId, r.count);
+  }
 
-    const isLiked = visitorId
-      ? db
-          .select()
-          .from(schema.commentLikes)
-          .where(
-            and(
-              eq(schema.commentLikes.commentId, comment.id),
-              eq(schema.commentLikes.visitorId, visitorId),
-            ),
-          )
-          .get()
-      : null;
+  // Batch: visitor's likes (single query)
+  const myLikeSet = new Set<string>();
+  if (visitorId && commentIds.length > 0) {
+    const rows = db
+      .select({ commentId: schema.commentLikes.commentId })
+      .from(schema.commentLikes)
+      .where(
+        and(
+          inArray(schema.commentLikes.commentId, commentIds),
+          eq(schema.commentLikes.visitorId, visitorId),
+        ),
+      )
+      .all();
+    for (const r of rows) myLikeSet.add(r.commentId);
+  }
 
-    return {
-      ...stripPassword(comment),
-      likeCount: likeCountResult?.count ?? 0,
-      isLikedByMe: !!isLiked,
-    };
-  });
+  const commentsWithLikes = allComments.map((comment) => ({
+    ...stripPassword(comment),
+    likeCount: likeCountMap.get(comment.id) ?? 0,
+    isLikedByMe: myLikeSet.has(comment.id),
+  }));
 
   const tree = buildCommentTree(commentsWithLikes);
   return c.json(tree);

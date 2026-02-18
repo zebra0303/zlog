@@ -6,6 +6,7 @@ dist/
 *.db-wal
 *.db-shm
 uploads/
+docker-data/
 .DS_Store
 *.log
 .vite/

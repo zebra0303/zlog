@@ -216,6 +216,45 @@ describe("Posts API", () => {
       expect(postData.tags).toHaveLength(2);
     });
 
+    it("should treat tags as case-insensitive", async () => {
+      // Create first post with "Blog" tag
+      const res1 = await app.request("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: "Post One",
+          content: "Content",
+          tags: ["Blog"],
+        }),
+      });
+      expect(res1.status).toBe(201);
+
+      // Create second post with "blog" tag (different case) — should not error
+      const res2 = await app.request("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: "Post Two",
+          content: "Content",
+          tags: ["blog"],
+        }),
+      });
+      expect(res2.status).toBe(201);
+
+      // Both posts should share the same tag
+      const data2 = (await res2.json()) as { slug: string };
+      const getRes = await app.request(`/api/posts/${data2.slug}`);
+      const postData = (await getRes.json()) as { tags: { name: string }[] };
+      expect(postData.tags).toHaveLength(1);
+      expect(postData.tags[0]?.name).toBe("blog");
+    });
+
     it("should generate unique slug for duplicate title", async () => {
       createTestPost({ title: "Duplicate", slug: "duplicate" });
 

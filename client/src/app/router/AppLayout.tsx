@@ -147,6 +147,8 @@ export function AppLayout() {
       const overlay = document.createElement("div");
       overlay.id = "mermaid-modal";
       overlay.className = "mermaid-modal-overlay";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
       overlay.addEventListener("click", (ev) => {
         if (ev.target === overlay) closeModal();
       });
@@ -181,6 +183,7 @@ export function AppLayout() {
       overlay.appendChild(closeBtn);
       overlay.appendChild(content);
       document.body.appendChild(overlay);
+      closeBtn.focus();
     };
 
     const handleKeydown = (e: KeyboardEvent) => {
@@ -201,9 +204,15 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-lg focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-white focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       <Header />
       <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
-        <main className="min-w-0 flex-1">
+        <main id="main-content" className="min-w-0 flex-1">
           <Outlet />
         </main>
         {!hideSidebar && (

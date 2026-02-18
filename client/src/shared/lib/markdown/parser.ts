@@ -14,6 +14,7 @@ const sanitizeSchema = {
   attributes: {
     ...defaultSchema.attributes,
     iframe: ["src", "width", "height", "frameBorder", "allowFullScreen", "allow", "style"],
+    div: ["className", "class"],
   },
 };
 
@@ -37,6 +38,24 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     mermaidBlocks.push(code.trim());
     return `MERMAID_BLOCK_${idx}_PLACEHOLDER`;
   });
+
+  // GitHub-style alerts: > [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING], > [!CAUTION]
+  const calloutLabels: Record<string, string> = {
+    NOTE: "Note",
+    TIP: "Tip",
+    IMPORTANT: "Important",
+    WARNING: "Warning",
+    CAUTION: "Caution",
+  };
+  processed = processed.replace(
+    /^(?:> *)\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n((?:^>.*\n?)*)/gim,
+    (_match, type: string, body: string) => {
+      const key = type.toUpperCase();
+      const label = calloutLabels[key] ?? key;
+      const content = body.replace(/^> ?/gm, "").trim().replace(/\n/g, "<br/>");
+      return `<div class="callout callout-${key.toLowerCase()}"><div class="callout-title">${label}</div><div class="callout-body">${content}</div></div>\n`;
+    },
+  );
 
   processed = processed.replace(/@\[youtube\]\(([^)]+)\)/g, (_match, id: string) => {
     const videoId = id.includes("youtube.com")

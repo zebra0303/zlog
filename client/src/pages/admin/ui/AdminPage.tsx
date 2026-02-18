@@ -368,6 +368,8 @@ function CategoryManager() {
               <div className="flex items-center justify-between">
                 <label className="text-sm text-[var(--color-text)]">{t("public")}</label>
                 <button
+                  role="switch"
+                  aria-checked={newIsPublic}
                   onClick={() => {
                     setNewIsPublic(!newIsPublic);
                   }}
@@ -426,6 +428,8 @@ function CategoryManager() {
                     <div className="flex items-center justify-between">
                       <label className="text-sm text-[var(--color-text)]">{t("public")}</label>
                       <button
+                        role="switch"
+                        aria-checked={editIsPublic}
                         onClick={() => {
                           setEditIsPublic(!editIsPublic);
                         }}
@@ -1546,6 +1550,8 @@ export default function AdminPage() {
                     </label>
                   </div>
                   <button
+                    role="switch"
+                    aria-checked={settings.lazy_load_images === "true"}
                     onClick={() => {
                       update(
                         "lazy_load_images",

@@ -532,7 +532,7 @@ function CommentThread({
   };
 
   return (
-    <div className={depth > 0 ? "ml-6 border-l-2 border-[var(--color-border)] pl-4" : ""}>
+    <article className={depth > 0 ? "ml-6 border-l-2 border-[var(--color-border)] pl-4" : ""}>
       <div className="flex gap-3">
         {avatarUrl ? (
           <img src={avatarUrl} alt={comment.authorName} className="h-9 w-9 shrink-0 rounded-full" />
@@ -704,6 +704,6 @@ function CommentThread({
           ))}
         </div>
       )}
-    </div>
+    </article>
   );
 }
