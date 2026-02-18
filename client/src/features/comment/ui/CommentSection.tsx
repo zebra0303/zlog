@@ -129,7 +129,7 @@ export function CommentSection({ postId }: { postId: string }) {
       {/* SSO login status display (hidden in anonymous_only mode) */}
       {showSsoLogin && commenter ? (
         <div
-          className="mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2"
+          className="mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2"
           data-print-hide
         >
           <div className="flex items-center gap-2">
