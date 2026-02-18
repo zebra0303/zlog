@@ -33,6 +33,7 @@ import {
   SEOHead,
   Badge,
   Pagination,
+  ColorPicker,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -664,13 +665,11 @@ function ThemeCustomizer({
                         {t("admin_theme_bg_color")}
                       </label>
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
+                        <ColorPicker
                           value={settings[section.keys.lightColor] ?? "#ffffff"}
-                          onChange={(e) => {
-                            update(section.keys.lightColor, e.target.value);
+                          onChange={(color) => {
+                            update(section.keys.lightColor, color);
                           }}
-                          className="h-8 w-8 cursor-pointer rounded border border-[var(--color-border)]"
                         />
                         <Input
                           placeholder="#ffffff"
@@ -727,13 +726,11 @@ function ThemeCustomizer({
                         {t("admin_theme_bg_color")}
                       </label>
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
+                        <ColorPicker
                           value={settings[section.keys.darkColor] ?? "#1a1a24"}
-                          onChange={(e) => {
-                            update(section.keys.darkColor, e.target.value);
+                          onChange={(color) => {
+                            update(section.keys.darkColor, color);
                           }}
-                          className="h-8 w-8 cursor-pointer rounded border border-[var(--color-border)]"
                         />
                         <Input
                           placeholder="#1a1a24"

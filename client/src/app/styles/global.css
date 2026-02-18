@@ -73,7 +73,7 @@ body {
 .prose p > img + img,
 .prose p > img:first-child:not(:last-child) {
   display: inline !important;
-  margin: 0 0.25em 0.25em 0 !important;
+  margin: 0 0.125em 0.125em 0 !important;
   vertical-align: middle;
 }
 

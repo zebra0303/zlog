@@ -1,4 +1,5 @@
 export { Button, buttonVariants, type ButtonProps } from "./Button";
+export { ColorPicker } from "./ColorPicker";
 export { Input, type InputProps } from "./Input";
 export { Card, CardHeader, CardContent, CardFooter } from "./Card";
 export { Badge, type BadgeProps } from "./Badge";
