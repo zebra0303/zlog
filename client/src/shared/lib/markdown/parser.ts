@@ -3,6 +3,7 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
 import { formatCode, isFormattable } from "./codeFormatter";
@@ -20,6 +21,7 @@ const processor = unified()
   .use(remarkParse)
   .use(remarkGfm)
   .use(remarkRehype, { allowDangerousHtml: true })
+  .use(rehypeRaw)
   .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeHighlight, { detect: true })
   .use(rehypeStringify);
