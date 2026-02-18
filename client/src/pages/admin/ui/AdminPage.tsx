@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useThemeStore } from "@/features/toggle-theme/model/store";
 import { useNavigate, useSearchParams, Link } from "react-router";
 import {
   Settings,
@@ -583,6 +584,28 @@ function ImageUploadInput({
 }
 
 // ============ Theme Customizer ============
+interface ThemeSection {
+  title: string;
+  heightKey: string | null;
+  keys: {
+    lightColor: string;
+    darkColor: string;
+    lightImage?: string;
+    darkImage?: string;
+    lightGradientTo?: string;
+    darkGradientTo?: string;
+    lightGradientDir?: string;
+    darkGradientDir?: string;
+  };
+}
+
+const GRADIENT_DIRECTIONS = [
+  { value: "to bottom", label: "↓ Top → Bottom" },
+  { value: "to right", label: "→ Left → Right" },
+  { value: "to bottom right", label: "↘ Top-Left → Bottom-Right" },
+  { value: "to bottom left", label: "↙ Top-Right → Bottom-Left" },
+];
+
 function ThemeCustomizer({
   settings,
   update,
@@ -591,6 +614,40 @@ function ThemeCustomizer({
   update: (k: string, v: string) => void;
 }) {
   const { t } = useI18n();
+  const { isDark } = useThemeStore();
+
+  // Live preview: apply body background and primary color as settings change
+  useEffect(() => {
+    const from = isDark ? settings.body_bg_color_dark : settings.body_bg_color_light;
+    const to = isDark ? settings.body_bg_gradient_to_dark : settings.body_bg_gradient_to_light;
+    const dir = isDark
+      ? settings.body_bg_gradient_direction_dark
+      : settings.body_bg_gradient_direction_light;
+
+    if (!from) {
+      document.body.style.background = "";
+      document.body.style.backgroundColor = "";
+    } else if (to) {
+      document.body.style.background = `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})`;
+      document.body.style.backgroundColor = "";
+    } else {
+      document.body.style.background = "";
+      document.body.style.backgroundColor = from;
+    }
+
+    if (settings.primary_color) {
+      document.documentElement.style.setProperty("--color-primary", settings.primary_color);
+    } else {
+      document.documentElement.style.removeProperty("--color-primary");
+    }
+
+    return () => {
+      document.body.style.background = "";
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.removeProperty("--color-primary");
+    };
+  }, [isDark, settings]);
+
   const heightOptions = [
     { value: "auto", label: t("admin_theme_auto") },
     { value: "80px", label: "80px" },
@@ -601,7 +658,7 @@ function ThemeCustomizer({
     { value: "250px", label: "250px" },
   ];
 
-  const sections = [
+  const sections: ThemeSection[] = [
     {
       title: t("admin_theme_header"),
       heightKey: "header_height",
@@ -622,7 +679,134 @@ function ThemeCustomizer({
         darkImage: "footer_bg_image_dark",
       },
     },
+    {
+      title: t("admin_theme_body"),
+      heightKey: null,
+      keys: {
+        lightColor: "body_bg_color_light",
+        darkColor: "body_bg_color_dark",
+        lightGradientTo: "body_bg_gradient_to_light",
+        darkGradientTo: "body_bg_gradient_to_dark",
+        lightGradientDir: "body_bg_gradient_direction_light",
+        darkGradientDir: "body_bg_gradient_direction_dark",
+      },
+    },
   ];
+
+  const renderColorRow = (colorKey: string, placeholder: string) => (
+    <div>
+      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+        {t("admin_theme_bg_color")}
+      </label>
+      <div className="flex items-center gap-2">
+        <ColorPicker
+          value={settings[colorKey] ?? placeholder}
+          onChange={(color) => {
+            update(colorKey, color);
+          }}
+        />
+        <Input
+          placeholder={placeholder}
+          value={settings[colorKey] ?? ""}
+          onChange={(e) => {
+            update(colorKey, e.target.value);
+          }}
+          className="flex-1 text-xs"
+        />
+        {settings[colorKey] && (
+          <button
+            onClick={() => {
+              update(colorKey, "");
+            }}
+            className="text-xs text-red-500 hover:underline"
+          >
+            {t("reset")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderGradientControls = (
+    gradientToKey: string,
+    gradientDirKey: string,
+    fromColor: string,
+  ) => {
+    const gradientEnabled = !!settings[gradientToKey];
+    return (
+      <>
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-[var(--color-text-secondary)]">
+            {t("admin_theme_gradient")}
+          </label>
+          <button
+            role="switch"
+            aria-checked={gradientEnabled}
+            onClick={() => {
+              if (gradientEnabled) {
+                update(gradientToKey, "");
+                update(gradientDirKey, "");
+              } else {
+                update(gradientToKey, fromColor || "#000000");
+                update(gradientDirKey, "to bottom");
+              }
+            }}
+            className={`relative h-6 w-11 rounded-full transition-colors ${
+              gradientEnabled ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                gradientEnabled ? "left-[22px]" : "left-0.5"
+              }`}
+            />
+          </button>
+        </div>
+        {gradientEnabled && (
+          <>
+            <div>
+              <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                {t("admin_theme_gradient_end_color")}
+              </label>
+              <div className="flex items-center gap-2">
+                <ColorPicker
+                  value={settings[gradientToKey]}
+                  onChange={(color) => {
+                    update(gradientToKey, color);
+                  }}
+                />
+                <Input
+                  value={settings[gradientToKey]}
+                  onChange={(e) => {
+                    update(gradientToKey, e.target.value);
+                  }}
+                  className="flex-1 text-xs"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                {t("admin_theme_gradient_direction")}
+              </label>
+              <select
+                value={settings[gradientDirKey] ?? "to bottom"}
+                onChange={(e) => {
+                  update(gradientDirKey, e.target.value);
+                }}
+                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text)]"
+              >
+                {GRADIENT_DIRECTIONS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+      </>
+    );
+  };
 
   return (
     <Card>
@@ -633,157 +817,193 @@ function ThemeCustomizer({
         </h2>
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("admin_theme_desc")}</p>
 
+        {/* Primary theme color */}
+        <div className="mb-6 rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="mb-1 font-medium text-[var(--color-text)]">
+            {t("admin_theme_primary_color")}
+          </h3>
+          <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+            {t("admin_theme_primary_color_desc")}
+          </p>
+          <div className="flex items-center gap-2">
+            <ColorPicker
+              // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+              value={settings.primary_color || "#6c5ce7"}
+              onChange={(color) => {
+                update("primary_color", color);
+              }}
+            />
+            <Input
+              placeholder="#6c5ce7"
+              value={settings.primary_color ?? ""}
+              onChange={(e) => {
+                update("primary_color", e.target.value);
+              }}
+              className="flex-1 text-xs"
+            />
+            {settings.primary_color && (
+              <button
+                onClick={() => {
+                  update("primary_color", "");
+                }}
+                className="text-xs text-red-500 hover:underline"
+              >
+                {t("reset")}
+              </button>
+            )}
+          </div>
+          {settings.primary_color && (
+            <div
+              className="mt-2 h-8 rounded border border-[var(--color-border)]"
+              style={{ backgroundColor: settings.primary_color }}
+            />
+          )}
+        </div>
+
         <div className="flex flex-col gap-6">
-          {sections.map((section) => (
-            <div key={section.title} className="rounded-lg border border-[var(--color-border)] p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-medium text-[var(--color-text)]">{section.title}</h3>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-[var(--color-text-secondary)]">
-                    {t("admin_theme_height")}
-                  </label>
-                  <select
-                    value={settings[section.heightKey] ?? "auto"}
-                    onChange={(e) => {
-                      update(section.heightKey, e.target.value);
-                    }}
-                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text)]"
-                  >
-                    {heightOptions.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {/* Light Mode */}
-                <div className="rounded-lg bg-[var(--color-background)] p-3">
-                  <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
-                    {t("admin_theme_light_mode")}
-                  </h4>
-                  <div className="flex flex-col gap-2">
-                    <div>
-                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
-                        {t("admin_theme_bg_color")}
+          {sections.map((section) => {
+            const { heightKey } = section;
+            const {
+              lightColor,
+              darkColor,
+              lightImage,
+              darkImage,
+              lightGradientTo,
+              darkGradientTo,
+              lightGradientDir,
+              darkGradientDir,
+            } = section.keys;
+
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+            const showLightPreview = settings[lightColor] || (lightImage && settings[lightImage]);
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+            const showDarkPreview = settings[darkColor] || (darkImage && settings[darkImage]);
+
+            return (
+              <div
+                key={section.title}
+                className="rounded-lg border border-[var(--color-border)] p-4"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-medium text-[var(--color-text)]">{section.title}</h3>
+                  {heightKey !== null && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-[var(--color-text-secondary)]">
+                        {t("admin_theme_height")}
                       </label>
-                      <div className="flex items-center gap-2">
-                        <ColorPicker
-                          value={settings[section.keys.lightColor] ?? "#ffffff"}
-                          onChange={(color) => {
-                            update(section.keys.lightColor, color);
-                          }}
-                        />
-                        <Input
-                          placeholder="#ffffff"
-                          value={settings[section.keys.lightColor] ?? ""}
-                          onChange={(e) => {
-                            update(section.keys.lightColor, e.target.value);
-                          }}
-                          className="flex-1 text-xs"
-                        />
-                        {settings[section.keys.lightColor] && (
-                          <button
-                            onClick={() => {
-                              update(section.keys.lightColor, "");
-                            }}
-                            className="text-xs text-red-500 hover:underline"
-                          >
-                            {t("reset")}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <ImageUploadInput
-                      value={settings[section.keys.lightImage] ?? ""}
-                      onChange={(url) => {
-                        update(section.keys.lightImage, url);
-                      }}
-                      placeholder={t("admin_theme_image_placeholder")}
-                    />
-                    {[settings[section.keys.lightColor], settings[section.keys.lightImage]].some(
-                      Boolean,
-                    ) && (
-                      <div
-                        className="mt-1 h-12 rounded border border-[var(--color-border)]"
-                        style={{
-                          backgroundColor: settings[section.keys.lightColor] ?? undefined,
-                          backgroundImage: settings[section.keys.lightImage]
-                            ? `url(${settings[section.keys.lightImage]})`
-                            : undefined,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
+                      <select
+                        value={settings[heightKey] ?? "auto"}
+                        onChange={(e) => {
+                          update(heightKey, e.target.value);
                         }}
-                      />
-                    )}
+                        className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text)]"
+                      >
+                        {heightOptions.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {/* Light Mode */}
+                  <div className="rounded-lg bg-[var(--color-background)] p-3">
+                    <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
+                      {t("admin_theme_light_mode")}
+                    </h4>
+                    <div className="flex flex-col gap-2">
+                      {renderColorRow(lightColor, "#ffffff")}
+                      {lightImage !== undefined && (
+                        <ImageUploadInput
+                          value={settings[lightImage] ?? ""}
+                          onChange={(url) => {
+                            update(lightImage, url);
+                          }}
+                          placeholder={t("admin_theme_image_placeholder")}
+                        />
+                      )}
+                      {lightGradientTo !== undefined &&
+                        lightGradientDir !== undefined &&
+                        renderGradientControls(
+                          lightGradientTo,
+                          lightGradientDir,
+                          settings[lightColor] ?? "",
+                        )}
+                      {/* Preview */}
+                      {showLightPreview && (
+                        <div
+                          className="mt-1 h-12 rounded border border-[var(--color-border)]"
+                          style={
+                            lightGradientTo && settings[lightGradientTo]
+                              ? {
+                                  background: `linear-gradient(${settings[lightGradientDir ?? ""] ?? "to bottom"}, ${settings[lightColor]}, ${settings[lightGradientTo]})`,
+                                }
+                              : {
+                                  backgroundColor: settings[lightColor] ?? undefined,
+                                  backgroundImage:
+                                    lightImage && settings[lightImage]
+                                      ? `url(${settings[lightImage]})`
+                                      : undefined,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                }
+                          }
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-                {/* Dark Mode */}
-                <div className="rounded-lg bg-[var(--color-background)] p-3">
-                  <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
-                    {t("admin_theme_dark_mode")}
-                  </h4>
-                  <div className="flex flex-col gap-2">
-                    <div>
-                      <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
-                        {t("admin_theme_bg_color")}
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <ColorPicker
-                          value={settings[section.keys.darkColor] ?? "#1a1a24"}
-                          onChange={(color) => {
-                            update(section.keys.darkColor, color);
+                  {/* Dark Mode */}
+                  <div className="rounded-lg bg-[var(--color-background)] p-3">
+                    <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
+                      {t("admin_theme_dark_mode")}
+                    </h4>
+                    <div className="flex flex-col gap-2">
+                      {renderColorRow(darkColor, "#1a1a24")}
+                      {darkImage !== undefined && (
+                        <ImageUploadInput
+                          value={settings[darkImage] ?? ""}
+                          onChange={(url) => {
+                            update(darkImage, url);
                           }}
+                          placeholder={t("admin_theme_image_placeholder")}
                         />
-                        <Input
-                          placeholder="#1a1a24"
-                          value={settings[section.keys.darkColor] ?? ""}
-                          onChange={(e) => {
-                            update(section.keys.darkColor, e.target.value);
-                          }}
-                          className="flex-1 text-xs"
-                        />
-                        {settings[section.keys.darkColor] && (
-                          <button
-                            onClick={() => {
-                              update(section.keys.darkColor, "");
-                            }}
-                            className="text-xs text-red-500 hover:underline"
-                          >
-                            {t("reset")}
-                          </button>
+                      )}
+                      {darkGradientTo !== undefined &&
+                        darkGradientDir !== undefined &&
+                        renderGradientControls(
+                          darkGradientTo,
+                          darkGradientDir,
+                          settings[darkColor] ?? "",
                         )}
-                      </div>
+                      {/* Preview */}
+                      {showDarkPreview && (
+                        <div
+                          className="mt-1 h-12 rounded border border-[var(--color-border)]"
+                          style={
+                            darkGradientTo && settings[darkGradientTo]
+                              ? {
+                                  background: `linear-gradient(${settings[darkGradientDir ?? ""] ?? "to bottom"}, ${settings[darkColor]}, ${settings[darkGradientTo]})`,
+                                }
+                              : {
+                                  backgroundColor: settings[darkColor] ?? undefined,
+                                  backgroundImage:
+                                    darkImage && settings[darkImage]
+                                      ? `url(${settings[darkImage]})`
+                                      : undefined,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                }
+                          }
+                        />
+                      )}
                     </div>
-                    <ImageUploadInput
-                      value={settings[section.keys.darkImage] ?? ""}
-                      onChange={(url) => {
-                        update(section.keys.darkImage, url);
-                      }}
-                      placeholder={t("admin_theme_image_placeholder")}
-                    />
-                    {/* Preview */}
-                    {[settings[section.keys.darkColor], settings[section.keys.darkImage]].some(
-                      Boolean,
-                    ) && (
-                      <div
-                        className="mt-1 h-12 rounded border border-[var(--color-border)]"
-                        style={{
-                          backgroundColor: settings[section.keys.darkColor] ?? undefined,
-                          backgroundImage: settings[section.keys.darkImage]
-                            ? `url(${settings[section.keys.darkImage]})`
-                            : undefined,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                      />
-                    )}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

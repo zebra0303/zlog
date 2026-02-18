@@ -3,6 +3,8 @@ import { Outlet, useLocation } from "react-router";
 import { Header } from "@/widgets/header/ui/Header";
 import { Footer } from "@/widgets/footer/ui/Footer";
 import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
+import { useSiteSettingsStore } from "@/features/site-settings/model/store";
+import { useThemeStore } from "@/features/toggle-theme/model/store";
 
 const COPY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const CHECK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -46,9 +48,32 @@ async function renderMermaidBlocks() {
 export function AppLayout() {
   const { pathname } = useLocation();
   const observerRef = useRef<MutationObserver | null>(null);
+  const { getBodyStyle, settings } = useSiteSettingsStore();
+  const { isDark } = useThemeStore();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // Apply body background and primary color from settings
+  useEffect(() => {
+    const style = getBodyStyle(isDark);
+    document.body.style.background = style.background ?? "";
+    document.body.style.backgroundColor = style.backgroundColor ?? "";
+
+    const primaryColor = settings.primary_color;
+    if (primaryColor) {
+      document.documentElement.style.setProperty("--color-primary", primaryColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-primary");
+    }
+
+    return () => {
+      document.body.style.background = "";
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.removeProperty("--color-primary");
+    };
+  }, [isDark, settings, getBodyStyle]);
 
   // Mermaid diagram rendering — detect DOM changes via MutationObserver
   const handleMermaid = useCallback(() => {

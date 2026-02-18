@@ -233,11 +233,15 @@ export const ko: Record<TranslationKeys, string> = {
     "블로그의 대표 URL입니다. canonical 태그 및 구조화 데이터에 사용됩니다.",
 
   // Admin - Theme
-  admin_theme_title: "헤더/푸터 테마 커스터마이징",
+  admin_theme_title: "테마 커스터마이징",
   admin_theme_desc:
-    "밝은 모드와 어두운 모드에서 각각 다른 배경색이나 배경 이미지를 설정할 수 있습니다. 비워두면 기본 테마 색상이 사용됩니다.",
+    "밝은 모드와 어두운 모드에서 색상과 배경을 각각 설정할 수 있습니다. 비워두면 기본 테마 색상이 사용됩니다.",
+  admin_theme_primary_color: "주요 테마 색상",
+  admin_theme_primary_color_desc:
+    "버튼, 링크, 강조 표시에 사용되는 테마 색상입니다. 비워두면 기본 보라색이 사용됩니다.",
   admin_theme_header: "헤더 (Header)",
   admin_theme_footer: "푸터 (Footer)",
+  admin_theme_body: "본문 배경",
   admin_theme_height: "높이",
   admin_theme_auto: "자동",
   admin_theme_light_mode: "밝은 모드",
@@ -245,6 +249,9 @@ export const ko: Record<TranslationKeys, string> = {
   admin_theme_bg_color: "배경색",
   admin_theme_bg_image: "배경 이미지",
   admin_theme_image_placeholder: "URL 또는 파일 업로드",
+  admin_theme_gradient: "그라디에이션",
+  admin_theme_gradient_end_color: "끝색",
+  admin_theme_gradient_direction: "방향",
 
   // Admin - Federation
   admin_fed_title: "Federation 설정",

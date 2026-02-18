@@ -229,11 +229,15 @@ export const en = {
     "The primary URL of this blog. Used for canonical tags and structured data.",
 
   // Admin - Theme
-  admin_theme_title: "Header/Footer Theme Customization",
+  admin_theme_title: "Theme Customization",
   admin_theme_desc:
-    "Set different backgrounds for light and dark modes. Leave empty for default theme colors.",
+    "Customize colors and backgrounds for light and dark modes. Leave empty to use default theme colors.",
+  admin_theme_primary_color: "Primary Theme Color",
+  admin_theme_primary_color_desc:
+    "Accent color used for buttons, links, and highlights. Leave empty to use the default purple.",
   admin_theme_header: "Header",
   admin_theme_footer: "Footer",
+  admin_theme_body: "Body Background",
   admin_theme_height: "Height",
   admin_theme_auto: "Auto",
   admin_theme_light_mode: "Light Mode",
@@ -241,6 +245,9 @@ export const en = {
   admin_theme_bg_color: "Background Color",
   admin_theme_bg_image: "Background Image",
   admin_theme_image_placeholder: "URL or upload file",
+  admin_theme_gradient: "Gradient",
+  admin_theme_gradient_end_color: "End Color",
+  admin_theme_gradient_direction: "Direction",
 
   // Admin - Federation
   admin_fed_title: "Federation Settings",
