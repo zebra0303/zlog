@@ -1601,7 +1601,7 @@ function SubscriberManager() {
 }
 
 // ============ Main AdminPage ============
-type AdminTab = "general" | "content" | "federation";
+type AdminTab = "general" | "content" | "theme" | "federation";
 
 export default function AdminPage() {
   const { isAuthenticated } = useAuthStore();
@@ -1618,7 +1618,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>(
     hasSubscribeAction
       ? "federation"
-      : tabParam === "content" || tabParam === "federation"
+      : tabParam === "content" || tabParam === "theme" || tabParam === "federation"
         ? tabParam
         : "general",
   );
@@ -1689,10 +1689,31 @@ export default function AdminPage() {
     setLocale(lang as "en" | "ko");
   };
 
-  const tabs: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
-    { key: "general", label: t("admin_tab_general"), icon: <Settings className="h-4 w-4" /> },
-    { key: "content", label: t("admin_tab_content"), icon: <FileText className="h-4 w-4" /> },
-    { key: "federation", label: t("admin_tab_federation"), icon: <Globe className="h-4 w-4" /> },
+  const tabs: { key: AdminTab; label: string; icon: React.ReactNode; emoji: string }[] = [
+    {
+      key: "general",
+      label: t("admin_tab_general"),
+      icon: <Settings className="h-4 w-4" />,
+      emoji: "⚙️",
+    },
+    {
+      key: "content",
+      label: t("admin_tab_content"),
+      icon: <FileText className="h-4 w-4" />,
+      emoji: "📝",
+    },
+    {
+      key: "theme",
+      label: t("admin_tab_theme"),
+      icon: <Palette className="h-4 w-4" />,
+      emoji: "🎨",
+    },
+    {
+      key: "federation",
+      label: t("admin_tab_federation"),
+      icon: <Globe className="h-4 w-4" />,
+      emoji: "🌐",
+    },
   ];
 
   return (
@@ -1714,8 +1735,23 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tab navigation */}
-      <div className="flex gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1">
+      {/* Tab navigation — select on mobile, buttons on desktop */}
+      <div className="sm:hidden">
+        <select
+          value={activeTab}
+          onChange={(e) => {
+            handleTabChange(e.target.value as AdminTab);
+          }}
+          className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)]"
+        >
+          {tabs.map((tab) => (
+            <option key={tab.key} value={tab.key}>
+              {tab.emoji} {tab.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="hidden gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 sm:flex">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -1885,11 +1921,11 @@ export default function AdminPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Header/Footer theme customization */}
-          <ThemeCustomizer settings={settings} update={update} />
         </>
       )}
+
+      {/* Theme tab */}
+      {activeTab === "theme" && <ThemeCustomizer settings={settings} update={update} />}
 
       {/* Content tab */}
       {activeTab === "content" && (

@@ -179,6 +179,7 @@ export const ko: Record<TranslationKeys, string> = {
   admin_title: "관리자 설정",
   admin_tab_general: "일반",
   admin_tab_content: "콘텐츠",
+  admin_tab_theme: "테마",
   admin_tab_federation: "Federation",
   admin_save: "설정 저장",
   admin_saving: "저장 중...",
