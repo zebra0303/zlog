@@ -9,8 +9,8 @@ zlog began with a simple, exciting vision: **"What if friends or hobbyist groups
 ### 🤝 Personal Space, Shared Community
 
 - **Co-created Networks**: While each person runs their own blog, you can connect specific categories to aggregate posts from like-minded peers right on your own dashboard.
-- **Discovery through Flow**: Discover new zlogers through shared posts on your blog, and let your own content travel to others' feeds, inviting new audiences to your space.
-- **Subscribe to Tastes**: If another zloger loves your category, they can subscribe to it and integrate your latest updates into their own blog in real-time.
+- **Discovery through Flow**: Discover new zloggers through shared posts on your blog, and let your own content travel to others' feeds, inviting new audiences to your space.
+- **Subscribe to Tastes**: If another zlogger loves your category, they can subscribe to it and integrate your latest updates into their own blog in real-time.
 
 > "Where individual islands come together to form a continent—this is the decentralized blog network zlog envisions."
 
@@ -50,7 +50,7 @@ Centralized platforms offer connectivity at the cost of your data sovereignty an
 ZLOG transforms your blog into a **community node** by building subscription and federation right into the core engine. It creates a **"decentralized community network"** where independence and connectivity coexist.
 
 1. **Co-created Community Feeds**: Friends or hobbyist groups can run their own independent blogs. By subscribing to each other's categories, your blog becomes a shared social dashboard for your circle.
-2. **Discovery through Flow**: Your posts and subscribed posts from your peers live together in a single, unified feed. Visitors to your blog can naturally discover and jump to other amazing zlogers you follow.
+2. **Discovery through Flow**: Your posts and subscribed posts from your peers live together in a single, unified feed. Visitors to your blog can naturally discover and jump to other amazing zloggers you follow.
 3. **Sovereignty Meets Connectivity**: All these interactions happen on your own hardware (Mac Mini, Raspberry Pi, etc.). You maintain 100% ownership of your data and design while enjoying the benefits of a connected network.
 
 Independent yet interconnected — a **decentralized blog network**. That's ZLOG.
