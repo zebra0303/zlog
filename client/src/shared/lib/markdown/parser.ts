@@ -1,31 +1,55 @@
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import remarkGfm from "remark-gfm";
-import remarkRehype from "remark-rehype";
-import rehypeHighlight from "rehype-highlight";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import rehypeStringify from "rehype-stringify";
 import { formatCode, isFormattable } from "./codeFormatter";
 
-const sanitizeSchema = {
-  ...defaultSchema,
-  tagNames: [...(defaultSchema.tagNames ?? []), "iframe"],
-  attributes: {
-    ...defaultSchema.attributes,
-    iframe: ["src", "width", "height", "frameBorder", "allowFullScreen", "allow", "style"],
-    div: ["className", "class"],
-  },
-};
+// Lazy-loaded unified processor (loaded once on first call)
+let processorPromise: Promise<{
+  process: (input: string) => Promise<{ toString: () => string }>;
+}> | null = null;
 
-const processor = unified()
-  .use(remarkParse)
-  .use(remarkGfm)
-  .use(remarkRehype, { allowDangerousHtml: true })
-  .use(rehypeRaw)
-  .use(rehypeSanitize, sanitizeSchema)
-  .use(rehypeHighlight, { detect: true })
-  .use(rehypeStringify);
+function getProcessor() {
+  processorPromise ??= (async () => {
+    const [
+      { unified },
+      remarkParse,
+      remarkGfm,
+      remarkRehype,
+      rehypeHighlight,
+      rehypeRaw,
+      rehypeSanitize,
+      rehypeStringify,
+    ] = await Promise.all([
+      import("unified"),
+      import("remark-parse").then((m) => m.default),
+      import("remark-gfm").then((m) => m.default),
+      import("remark-rehype").then((m) => m.default),
+      import("rehype-highlight").then((m) => m.default),
+      import("rehype-raw").then((m) => m.default),
+      import("rehype-sanitize").then((m) => m.default),
+      import("rehype-stringify").then((m) => m.default),
+    ]);
+
+    const { defaultSchema } = await import("rehype-sanitize");
+
+    const sanitizeSchema = {
+      ...defaultSchema,
+      tagNames: [...(defaultSchema.tagNames ?? []), "iframe"],
+      attributes: {
+        ...defaultSchema.attributes,
+        iframe: ["src", "width", "height", "frameBorder", "allowFullScreen", "allow", "style"],
+        div: ["className", "class"],
+      },
+    };
+
+    return unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
+      .use(rehypeSanitize, sanitizeSchema)
+      .use(rehypeHighlight, { detect: true })
+      .use(rehypeStringify);
+  })();
+  return processorPromise;
+}
 
 export async function parseMarkdown(markdown: string): Promise<string> {
   let processed = markdown;
@@ -101,6 +125,7 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     }
   }
 
+  const processor = await getProcessor();
   const result = await processor.process(processed);
   let html = String(result);
 
