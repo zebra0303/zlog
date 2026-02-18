@@ -214,18 +214,9 @@ export function bootstrap() {
     );
   `);
 
-  // Populate FTS if empty (first run or rebuild)
-  const ftsCount = sqlite.prepare("SELECT count(*) AS cnt FROM posts_fts").get() as {
-    cnt: number;
-  };
-  if (ftsCount.cnt === 0) {
-    const postCount = sqlite.prepare("SELECT count(*) AS cnt FROM posts").get() as {
-      cnt: number;
-    };
-    if (postCount.cnt > 0) {
-      sqlite.exec("INSERT INTO posts_fts(rowid, title) SELECT rowid, title FROM posts");
-    }
-  }
+  // Rebuild FTS index on every startup to ensure consistency
+  // (handles upgrades where FTS table is newly created against an existing DB)
+  sqlite.exec("INSERT INTO posts_fts(posts_fts) VALUES('rebuild')");
 
   // Triggers to keep FTS in sync with posts table
   sqlite.exec(`
