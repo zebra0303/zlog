@@ -16,13 +16,7 @@ zlog began with a simple, exciting vision: **"What if friends or hobbyist groups
 
 [한국어 문서 (Korean)](./README.ko.md)
 
-![Self-hosted](https://img.shields.io/badge/Self--hosted-black?style=flat-square)
-![Federation](https://img.shields.io/badge/Federation-6C5CE7?style=flat-square)
-![RSS](https://img.shields.io/badge/RSS_2.0-orange?style=flat-square)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Self-hosted](https://img.shields.io/badge/Self--hosted-black?style=flat-square) ![Federation](https://img.shields.io/badge/Federation-6C5CE7?style=flat-square) ![RSS](https://img.shields.io/badge/RSS_2.0-orange?style=flat-square) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black) ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 
 ---
 
