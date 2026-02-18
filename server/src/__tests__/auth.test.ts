@@ -148,7 +148,7 @@ describe("Auth API", () => {
       expect(data.retryAfter).toBeDefined();
       expect(typeof data.retryAfter).toBe("number");
       expect(data.retryAfter).toBeGreaterThan(0);
-      expect(data.error).toBe("Too many login attempts. Try again later.");
+      expect(data.error).toMatch(/^Too many login attempts\. Try again in \d+/);
     });
 
     it("should not affect different IPs", async () => {

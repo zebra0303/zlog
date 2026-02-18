@@ -67,7 +67,16 @@ auth.post("/login", async (c) => {
 
     if (now < lockoutEnd) {
       const retryAfter = Math.ceil((lockoutEnd.getTime() - now.getTime()) / 1000);
-      return c.json({ error: "Too many login attempts. Try again later.", retryAfter }, 429);
+      const minutes = Math.floor(retryAfter / 60);
+      const seconds = retryAfter % 60;
+      const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+      return c.json(
+        {
+          error: `Too many login attempts. Try again in ${timeStr}.`,
+          retryAfter,
+        },
+        429,
+      );
     }
   }
 
