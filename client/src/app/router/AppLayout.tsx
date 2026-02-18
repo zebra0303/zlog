@@ -73,7 +73,7 @@ export function AppLayout() {
       document.body.style.backgroundColor = "";
       document.documentElement.style.removeProperty("--color-primary");
     };
-  }, [isDark, settings, getBodyStyle]);
+  }, [isDark, settings, getBodyStyle, pathname]);
 
   // Mermaid diagram rendering — detect DOM changes via MutationObserver
   const handleMermaid = useCallback(() => {

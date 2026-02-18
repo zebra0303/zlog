@@ -8,7 +8,7 @@ interface SiteSettingsState {
   fetchSettings: () => Promise<void>;
   getHeaderStyle: (isDark: boolean) => React.CSSProperties;
   getFooterStyle: (isDark: boolean) => React.CSSProperties;
-  getBodyStyle: (isDark: boolean) => React.CSSProperties;
+  getBodyStyle: (isDark: boolean) => { background?: string; backgroundColor?: string };
   hasHeaderCustomBg: (isDark: boolean) => boolean;
   hasFooterCustomBg: (isDark: boolean) => boolean;
   hasBodyCustomBg: (isDark: boolean) => boolean;
@@ -73,9 +73,7 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
       : settings.body_bg_gradient_direction_light;
     if (!from) return {};
     if (to) {
-      return {
-        background: `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})`,
-      } as React.CSSProperties;
+      return { background: `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})` };
     }
     return { backgroundColor: from };
   },

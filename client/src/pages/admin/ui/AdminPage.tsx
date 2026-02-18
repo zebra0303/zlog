@@ -727,83 +727,49 @@ function ThemeCustomizer({
     </div>
   );
 
-  const renderGradientControls = (
-    gradientToKey: string,
-    gradientDirKey: string,
-    fromColor: string,
-  ) => {
-    const gradientEnabled = !!settings[gradientToKey];
+  // Renders end color + direction fields (toggle is in the panel header)
+  const renderGradientFields = (gradientToKey: string, gradientDirKey: string) => {
+    if (!settings[gradientToKey]) return null;
     return (
       <>
-        <div className="flex items-center justify-between">
-          <label className="text-xs text-[var(--color-text-secondary)]">
-            {t("admin_theme_gradient")}
+        <div>
+          <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+            {t("admin_theme_gradient_end_color")}
           </label>
-          <button
-            role="switch"
-            aria-checked={gradientEnabled}
-            onClick={() => {
-              if (gradientEnabled) {
-                update(gradientToKey, "");
-                update(gradientDirKey, "");
-              } else {
-                update(gradientToKey, fromColor || "#000000");
-                update(gradientDirKey, "to bottom");
-              }
-            }}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              gradientEnabled ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                gradientEnabled ? "left-[22px]" : "left-0.5"
-              }`}
+          <div className="flex items-center gap-2">
+            <ColorPicker
+              value={settings[gradientToKey] ?? ""}
+              onChange={(color) => {
+                update(gradientToKey, color);
+              }}
             />
-          </button>
+            <Input
+              value={settings[gradientToKey] ?? ""}
+              onChange={(e) => {
+                update(gradientToKey, e.target.value);
+              }}
+              className="flex-1 text-xs"
+            />
+          </div>
         </div>
-        {gradientEnabled && (
-          <>
-            <div>
-              <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
-                {t("admin_theme_gradient_end_color")}
-              </label>
-              <div className="flex items-center gap-2">
-                <ColorPicker
-                  value={settings[gradientToKey]}
-                  onChange={(color) => {
-                    update(gradientToKey, color);
-                  }}
-                />
-                <Input
-                  value={settings[gradientToKey]}
-                  onChange={(e) => {
-                    update(gradientToKey, e.target.value);
-                  }}
-                  className="flex-1 text-xs"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
-                {t("admin_theme_gradient_direction")}
-              </label>
-              <select
-                value={settings[gradientDirKey] ?? "to bottom"}
-                onChange={(e) => {
-                  update(gradientDirKey, e.target.value);
-                }}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text)]"
-              >
-                {GRADIENT_DIRECTIONS.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
+        <div>
+          <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+            {t("admin_theme_gradient_direction")}
+          </label>
+          <select
+            value={settings[gradientDirKey] ?? "to bottom"}
+            onChange={(e) => {
+              update(gradientDirKey, e.target.value);
+            }}
+            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text)]"
+          >
+            {GRADIENT_DIRECTIONS.map((d) => (
+              <option key={d.value} value={d.value}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </>
     );
   };
@@ -910,9 +876,43 @@ function ThemeCustomizer({
                 <div className="grid gap-4 sm:grid-cols-2">
                   {/* Light Mode */}
                   <div className="rounded-lg bg-[var(--color-background)] p-3">
-                    <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
-                      {t("admin_theme_light_mode")}
-                    </h4>
+                    <div className="mb-2 flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-[var(--color-text)]">
+                        {t("admin_theme_light_mode")}
+                      </h4>
+                      {/* Gradient toggle in header (body section only) */}
+                      {lightGradientTo !== undefined && lightGradientDir !== undefined && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[var(--color-text-secondary)]">
+                            {t("admin_theme_gradient")}
+                          </span>
+                          <button
+                            role="switch"
+                            aria-checked={!!settings[lightGradientTo]}
+                            onClick={() => {
+                              if (settings[lightGradientTo]) {
+                                update(lightGradientTo, "");
+                                update(lightGradientDir, "");
+                              } else {
+                                update(lightGradientTo, "#000000");
+                                update(lightGradientDir, "to bottom");
+                              }
+                            }}
+                            className={`relative h-5 w-9 rounded-full transition-colors ${
+                              settings[lightGradientTo]
+                                ? "bg-[var(--color-primary)]"
+                                : "bg-[var(--color-border)]"
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                                settings[lightGradientTo] ? "left-[18px]" : "left-0.5"
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex flex-col gap-2">
                       {renderColorRow(lightColor, "#ffffff")}
                       {lightImage !== undefined && (
@@ -926,11 +926,7 @@ function ThemeCustomizer({
                       )}
                       {lightGradientTo !== undefined &&
                         lightGradientDir !== undefined &&
-                        renderGradientControls(
-                          lightGradientTo,
-                          lightGradientDir,
-                          settings[lightColor] ?? "",
-                        )}
+                        renderGradientFields(lightGradientTo, lightGradientDir)}
                       {/* Preview */}
                       {showLightPreview && (
                         <div
@@ -956,9 +952,43 @@ function ThemeCustomizer({
                   </div>
                   {/* Dark Mode */}
                   <div className="rounded-lg bg-[var(--color-background)] p-3">
-                    <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
-                      {t("admin_theme_dark_mode")}
-                    </h4>
+                    <div className="mb-2 flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-[var(--color-text)]">
+                        {t("admin_theme_dark_mode")}
+                      </h4>
+                      {/* Gradient toggle in header (body section only) */}
+                      {darkGradientTo !== undefined && darkGradientDir !== undefined && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[var(--color-text-secondary)]">
+                            {t("admin_theme_gradient")}
+                          </span>
+                          <button
+                            role="switch"
+                            aria-checked={!!settings[darkGradientTo]}
+                            onClick={() => {
+                              if (settings[darkGradientTo]) {
+                                update(darkGradientTo, "");
+                                update(darkGradientDir, "");
+                              } else {
+                                update(darkGradientTo, "#ffffff");
+                                update(darkGradientDir, "to bottom");
+                              }
+                            }}
+                            className={`relative h-5 w-9 rounded-full transition-colors ${
+                              settings[darkGradientTo]
+                                ? "bg-[var(--color-primary)]"
+                                : "bg-[var(--color-border)]"
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                                settings[darkGradientTo] ? "left-[18px]" : "left-0.5"
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex flex-col gap-2">
                       {renderColorRow(darkColor, "#1a1a24")}
                       {darkImage !== undefined && (
@@ -972,11 +1002,7 @@ function ThemeCustomizer({
                       )}
                       {darkGradientTo !== undefined &&
                         darkGradientDir !== undefined &&
-                        renderGradientControls(
-                          darkGradientTo,
-                          darkGradientDir,
-                          settings[darkColor] ?? "",
-                        )}
+                        renderGradientFields(darkGradientTo, darkGradientDir)}
                       {/* Preview */}
                       {showDarkPreview && (
                         <div
