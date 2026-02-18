@@ -1355,7 +1355,7 @@ function SubscriberManager() {
 }
 
 // ============ Main AdminPage ============
-type AdminTab = "general" | "federation";
+type AdminTab = "general" | "content" | "federation";
 
 export default function AdminPage() {
   const { isAuthenticated } = useAuthStore();
@@ -1370,7 +1370,11 @@ export default function AdminPage() {
   const tabParam = searchParams.get("tab");
   const hasSubscribeAction = searchParams.get("action") === "subscribe";
   const [activeTab, setActiveTab] = useState<AdminTab>(
-    tabParam === "federation" || hasSubscribeAction ? "federation" : "general",
+    hasSubscribeAction
+      ? "federation"
+      : tabParam === "content" || tabParam === "federation"
+        ? tabParam
+        : "general",
   );
 
   const handleTabChange = (tab: AdminTab) => {
@@ -1441,6 +1445,7 @@ export default function AdminPage() {
 
   const tabs: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
     { key: "general", label: t("admin_tab_general"), icon: <Settings className="h-4 w-4" /> },
+    { key: "content", label: t("admin_tab_content"), icon: <FileText className="h-4 w-4" /> },
     { key: "federation", label: t("admin_tab_federation"), icon: <Globe className="h-4 w-4" /> },
   ];
 
@@ -1510,12 +1515,6 @@ export default function AdminPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Post management */}
-          <PostManager />
-
-          {/* Category management */}
-          <CategoryManager />
 
           {/* Display settings */}
           <Card>
@@ -1643,6 +1642,14 @@ export default function AdminPage() {
 
           {/* Header/Footer theme customization */}
           <ThemeCustomizer settings={settings} update={update} />
+        </>
+      )}
+
+      {/* Content tab */}
+      {activeTab === "content" && (
+        <>
+          <PostManager />
+          <CategoryManager />
         </>
       )}
 

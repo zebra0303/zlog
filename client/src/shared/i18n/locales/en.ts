@@ -174,6 +174,7 @@ export const en = {
   // Admin
   admin_title: "Admin Settings",
   admin_tab_general: "General",
+  admin_tab_content: "Content",
   admin_tab_federation: "Federation",
   admin_save: "Save Settings",
   admin_saving: "Saving...",
