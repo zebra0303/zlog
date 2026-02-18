@@ -185,7 +185,7 @@ export default function PostDetailPage() {
           )}
           <span className="flex items-center gap-1">
             <Eye className="h-4 w-4" />
-            {post.viewCount}
+            {post.viewCount.toLocaleString()}
           </span>
           {post.tags.map((tag) => {
             const [backPath, backQuery] = backTo.split("?");

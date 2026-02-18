@@ -47,7 +47,7 @@ export function Sidebar() {
             <div className="mt-4 flex justify-around border-t border-[var(--color-border)] pt-4">
               <div className="flex flex-col items-center">
                 <span className="text-lg font-bold text-[var(--color-text)]">
-                  {profile.stats.totalPosts}
+                  {profile.stats.totalPosts.toLocaleString()}
                 </span>
                 <span className="text-xs text-[var(--color-text-secondary)]">
                   {t("sidebar_posts")}
@@ -55,7 +55,7 @@ export function Sidebar() {
               </div>
               <div className="flex flex-col items-center">
                 <span className="text-lg font-bold text-[var(--color-text)]">
-                  {profile.stats.totalCategories}
+                  {profile.stats.totalCategories.toLocaleString()}
                 </span>
                 <span className="text-xs text-[var(--color-text-secondary)]">
                   {t("sidebar_categories")}
@@ -63,7 +63,7 @@ export function Sidebar() {
               </div>
               <div className="flex flex-col items-center">
                 <span className="text-lg font-bold text-[var(--color-text)]">
-                  {profile.stats.totalViews}
+                  {profile.stats.totalViews.toLocaleString()}
                 </span>
                 <span className="text-xs text-[var(--color-text-secondary)]">
                   {t("sidebar_views")}
@@ -100,7 +100,7 @@ export function Sidebar() {
                     className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-background)]"
                   >
                     <span>{cat.name}</span>
-                    <Badge variant="secondary">{cat.postCount}</Badge>
+                    <Badge variant="secondary">{cat.postCount.toLocaleString()}</Badge>
                   </Link>
                 </li>
               ))}

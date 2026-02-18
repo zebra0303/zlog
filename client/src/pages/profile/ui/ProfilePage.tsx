@@ -108,13 +108,13 @@ export default function ProfilePage() {
               <div className="mt-4 flex justify-center gap-6 sm:justify-start">
                 <div className="text-center">
                   <span className="text-xl font-bold text-[var(--color-text)]">
-                    {profile.stats.totalPosts}
+                    {profile.stats.totalPosts.toLocaleString()}
                   </span>
                   <p className="text-xs text-[var(--color-text-secondary)]">{t("profile_posts")}</p>
                 </div>
                 <div className="text-center">
                   <span className="text-xl font-bold text-[var(--color-text)]">
-                    {profile.stats.totalCategories}
+                    {profile.stats.totalCategories.toLocaleString()}
                   </span>
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     {t("profile_categories")}
@@ -122,7 +122,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="text-center">
                   <span className="text-xl font-bold text-[var(--color-text)]">
-                    {profile.stats.totalViews}
+                    {profile.stats.totalViews.toLocaleString()}
                   </span>
                   <p className="text-xs text-[var(--color-text-secondary)]">{t("profile_views")}</p>
                 </div>

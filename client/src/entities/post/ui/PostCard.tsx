@@ -70,7 +70,7 @@ export function PostCard({ post }: PostCardProps) {
             {!post.isRemote && (
               <span className="flex items-center gap-1">
                 <Eye className="h-3 w-3" />
-                {post.viewCount}
+                {post.viewCount.toLocaleString()}
               </span>
             )}
             {post.tags.map((tag) => {

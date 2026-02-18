@@ -196,10 +196,10 @@ export default function CategoryDetailPage() {
                   )}
                   <div className="flex flex-wrap gap-3">
                     <Badge variant="secondary">
-                      {category.postCount} {t("cat_posts_count")}
+                      {category.postCount.toLocaleString()} {t("cat_posts_count")}
                     </Badge>
                     <Badge variant="outline">
-                      {category.followerCount} {t("cat_followers_count")}
+                      {category.followerCount.toLocaleString()} {t("cat_followers_count")}
                     </Badge>
                   </div>
                 </div>

@@ -464,7 +464,7 @@ function CategoryManager() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-[var(--color-text)]">{cat.name}</span>
                         <Badge variant="secondary">
-                          {cat.postCount} {t("admin_cat_posts_count")}
+                          {cat.postCount.toLocaleString()} {t("admin_cat_posts_count")}
                         </Badge>
                         {!cat.isPublic && <Badge variant="outline">{t("private")}</Badge>}
                       </div>
