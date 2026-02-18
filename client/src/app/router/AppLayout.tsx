@@ -55,7 +55,7 @@ export function AppLayout() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  // Apply body background and primary color from settings
+  // Apply body background, primary color, and CSS variable overrides from settings
   useEffect(() => {
     const style = getBodyStyle(isDark);
     document.body.style.background = style.background ?? "";
@@ -68,10 +68,26 @@ export function AppLayout() {
       document.documentElement.style.removeProperty("--color-primary");
     }
 
+    const surfaceColor = isDark ? settings.surface_color_dark : settings.surface_color_light;
+    if (surfaceColor) {
+      document.documentElement.style.setProperty("--color-surface", surfaceColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-surface");
+    }
+
+    const textColor = isDark ? settings.text_color_dark : settings.text_color_light;
+    if (textColor) {
+      document.documentElement.style.setProperty("--color-text", textColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-text");
+    }
+
     return () => {
       document.body.style.background = "";
       document.body.style.backgroundColor = "";
       document.documentElement.style.removeProperty("--color-primary");
+      document.documentElement.style.removeProperty("--color-surface");
+      document.documentElement.style.removeProperty("--color-text");
     };
   }, [isDark, settings, getBodyStyle, pathname]);
 

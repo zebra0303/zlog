@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
 
+// Pure helper for CSS variable color resolution (mirrors AppLayout.tsx logic)
+function computeColorVar(
+  settings: Record<string, string>,
+  lightKey: string,
+  darkKey: string,
+  isDark: boolean,
+): string | undefined {
+  return isDark ? settings[darkKey] : settings[lightKey];
+}
+
 // Pure body style computation logic (mirrors client/src/features/site-settings/model/store.ts getBodyStyle)
 function computeBodyStyle(
   settings: Record<string, string>,
@@ -80,5 +90,54 @@ describe("computeBodyStyle", () => {
       body_bg_gradient_to_light: "",
     };
     expect(computeBodyStyle(settings, false)).toEqual({ backgroundColor: "#ffffff" });
+  });
+});
+
+describe("computeColorVar (surface / text CSS variable resolution)", () => {
+  it("returns light value in light mode", () => {
+    const settings = { surface_color_light: "#ffffff", surface_color_dark: "#1a1a24" };
+    expect(computeColorVar(settings, "surface_color_light", "surface_color_dark", false)).toBe(
+      "#ffffff",
+    );
+  });
+
+  it("returns dark value in dark mode", () => {
+    const settings = { surface_color_light: "#ffffff", surface_color_dark: "#1a1a24" };
+    expect(computeColorVar(settings, "surface_color_light", "surface_color_dark", true)).toBe(
+      "#1a1a24",
+    );
+  });
+
+  it("returns undefined when key is not set", () => {
+    expect(computeColorVar({}, "surface_color_light", "surface_color_dark", false)).toBeUndefined();
+  });
+
+  it("does not use dark key in light mode", () => {
+    const settings = { surface_color_dark: "#1a1a24" };
+    expect(
+      computeColorVar(settings, "surface_color_light", "surface_color_dark", false),
+    ).toBeUndefined();
+  });
+
+  it("does not use light key in dark mode", () => {
+    const settings = { surface_color_light: "#ffffff" };
+    expect(
+      computeColorVar(settings, "surface_color_light", "surface_color_dark", true),
+    ).toBeUndefined();
+  });
+
+  it("works for text color in light mode", () => {
+    const settings = { text_color_light: "#1a1a2e", text_color_dark: "#f0f0f5" };
+    expect(computeColorVar(settings, "text_color_light", "text_color_dark", false)).toBe("#1a1a2e");
+  });
+
+  it("works for text color in dark mode", () => {
+    const settings = { text_color_light: "#1a1a2e", text_color_dark: "#f0f0f5" };
+    expect(computeColorVar(settings, "text_color_light", "text_color_dark", true)).toBe("#f0f0f5");
+  });
+
+  it("returns empty string when key is set to empty string", () => {
+    const settings = { surface_color_light: "" };
+    expect(computeColorVar(settings, "surface_color_light", "surface_color_dark", false)).toBe("");
   });
 });

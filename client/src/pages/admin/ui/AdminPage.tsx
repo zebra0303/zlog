@@ -616,7 +616,7 @@ function ThemeCustomizer({
   const { t } = useI18n();
   const { isDark } = useThemeStore();
 
-  // Live preview: apply body background and primary color as settings change
+  // Live preview: apply body background, primary color, and CSS variable overrides as settings change
   useEffect(() => {
     const from = isDark ? settings.body_bg_color_dark : settings.body_bg_color_light;
     const to = isDark ? settings.body_bg_gradient_to_dark : settings.body_bg_gradient_to_light;
@@ -641,10 +641,26 @@ function ThemeCustomizer({
       document.documentElement.style.removeProperty("--color-primary");
     }
 
+    const surfaceColor = isDark ? settings.surface_color_dark : settings.surface_color_light;
+    if (surfaceColor) {
+      document.documentElement.style.setProperty("--color-surface", surfaceColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-surface");
+    }
+
+    const textColor = isDark ? settings.text_color_dark : settings.text_color_light;
+    if (textColor) {
+      document.documentElement.style.setProperty("--color-text", textColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-text");
+    }
+
     return () => {
       document.body.style.background = "";
       document.body.style.backgroundColor = "";
       document.documentElement.style.removeProperty("--color-primary");
+      document.documentElement.style.removeProperty("--color-surface");
+      document.documentElement.style.removeProperty("--color-text");
     };
   }, [isDark, settings]);
 
@@ -824,6 +840,180 @@ function ThemeCustomizer({
               style={{ backgroundColor: settings.primary_color }}
             />
           )}
+        </div>
+
+        {/* Surface & Text Colors */}
+        <div className="mb-6 rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="mb-1 font-medium text-[var(--color-text)]">
+            {t("admin_theme_surface_text")}
+          </h3>
+          <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+            {t("admin_theme_surface_text_desc")}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Light Mode */}
+            <div className="rounded-lg bg-[var(--color-background)] p-3">
+              <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
+                {t("admin_theme_light_mode")}
+              </h4>
+              <div className="flex flex-col gap-2">
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                    {t("admin_theme_surface_color")}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      value={settings.surface_color_light ?? "#ffffff"}
+                      onChange={(color) => {
+                        update("surface_color_light", color);
+                      }}
+                    />
+                    <Input
+                      placeholder="#ffffff"
+                      value={settings.surface_color_light ?? ""}
+                      onChange={(e) => {
+                        update("surface_color_light", e.target.value);
+                      }}
+                      className="flex-1 text-xs"
+                    />
+                    {settings.surface_color_light && (
+                      <button
+                        onClick={() => {
+                          update("surface_color_light", "");
+                        }}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        {t("reset")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                    {t("admin_theme_text_color")}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      value={settings.text_color_light ?? "#1a1a2e"}
+                      onChange={(color) => {
+                        update("text_color_light", color);
+                      }}
+                    />
+                    <Input
+                      placeholder="#1a1a2e"
+                      value={settings.text_color_light ?? ""}
+                      onChange={(e) => {
+                        update("text_color_light", e.target.value);
+                      }}
+                      className="flex-1 text-xs"
+                    />
+                    {settings.text_color_light && (
+                      <button
+                        onClick={() => {
+                          update("text_color_light", "");
+                        }}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        {t("reset")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {(settings.surface_color_light ?? settings.text_color_light) && (
+                  <div
+                    className="mt-1 rounded border border-[var(--color-border)] p-3"
+                    style={{
+                      backgroundColor: settings.surface_color_light ?? "#ffffff",
+                      color: settings.text_color_light ?? "#1a1a2e",
+                    }}
+                  >
+                    <span className="text-xs font-medium">Aa</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Dark Mode */}
+            <div className="rounded-lg bg-[var(--color-background)] p-3">
+              <h4 className="mb-2 text-sm font-medium text-[var(--color-text)]">
+                {t("admin_theme_dark_mode")}
+              </h4>
+              <div className="flex flex-col gap-2">
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                    {t("admin_theme_surface_color")}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      value={settings.surface_color_dark ?? "#1a1a24"}
+                      onChange={(color) => {
+                        update("surface_color_dark", color);
+                      }}
+                    />
+                    <Input
+                      placeholder="#1a1a24"
+                      value={settings.surface_color_dark ?? ""}
+                      onChange={(e) => {
+                        update("surface_color_dark", e.target.value);
+                      }}
+                      className="flex-1 text-xs"
+                    />
+                    {settings.surface_color_dark && (
+                      <button
+                        onClick={() => {
+                          update("surface_color_dark", "");
+                        }}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        {t("reset")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                    {t("admin_theme_text_color")}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      value={settings.text_color_dark ?? "#f0f0f5"}
+                      onChange={(color) => {
+                        update("text_color_dark", color);
+                      }}
+                    />
+                    <Input
+                      placeholder="#f0f0f5"
+                      value={settings.text_color_dark ?? ""}
+                      onChange={(e) => {
+                        update("text_color_dark", e.target.value);
+                      }}
+                      className="flex-1 text-xs"
+                    />
+                    {settings.text_color_dark && (
+                      <button
+                        onClick={() => {
+                          update("text_color_dark", "");
+                        }}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        {t("reset")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {(settings.surface_color_dark ?? settings.text_color_dark) && (
+                  <div
+                    className="mt-1 rounded border border-[var(--color-border)] p-3"
+                    style={{
+                      backgroundColor: settings.surface_color_dark ?? "#1a1a24",
+                      color: settings.text_color_dark ?? "#f0f0f5",
+                    }}
+                  >
+                    <span className="text-xs font-medium">Aa</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-6">

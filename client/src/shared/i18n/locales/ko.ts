@@ -253,6 +253,11 @@ export const ko: Record<TranslationKeys, string> = {
   admin_theme_gradient: "그라디에이션",
   admin_theme_gradient_end_color: "끝색",
   admin_theme_gradient_direction: "방향",
+  admin_theme_surface_text: "서피스 & 텍스트 색상",
+  admin_theme_surface_text_desc:
+    "카드/패널 배경색과 기본 텍스트 색상을 설정합니다. 비워두면 기본값이 사용됩니다.",
+  admin_theme_surface_color: "서피스 색상",
+  admin_theme_text_color: "텍스트 색상",
 
   // Admin - Federation
   admin_fed_title: "Federation 설정",
