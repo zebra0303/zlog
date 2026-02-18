@@ -45,6 +45,14 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     return `<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius:8px;aspect-ratio:16/9;"></iframe>`;
   });
 
+  // Auto-embed standalone YouTube URLs (plain URL on its own line)
+  processed = processed.replace(
+    /^(?:[ \t]*)(?:<)?(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]+)(?:[^\s)]*?)>?[ \t]*$/gm,
+    (_match, videoId: string) => {
+      return `<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius:8px;aspect-ratio:16/9;"></iframe>`;
+    },
+  );
+
   processed = processed.replace(/@\[codepen\]\(([^)]+)\)/g, (_match, path: string) => {
     const parts = path.split("/");
     return `<iframe height="400" style="width:100%;border-radius:8px;" scrolling="no" src="https://codepen.io/${parts.join("/embed/")}?default-tab=result" frameborder="no" allowfullscreen></iframe>`;
