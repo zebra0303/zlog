@@ -9,30 +9,30 @@ import { verifyToken } from "../middleware/auth.js";
 const commentsRoute = new Hono();
 
 /**
- * HTML 태그 및 XSS 위험 요소 제거 — 평문 텍스트만 허용
+ * Strip HTML tags and XSS risk elements — allow plain text only
  */
 function sanitizePlainText(input: string): string {
   return (
     input
-      // HTML 태그 모두 제거
+      // Remove all HTML tags
       .replace(/<[^>]*>/g, "")
-      // HTML 엔티티 인코딩되지 않은 위험 문자 치환
+      // Replace dangerous characters not encoded as HTML entities
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#x27;")
-      // javascript: / data: URI 스킴 제거
+      // Remove javascript: / data: URI schemes
       .replace(/javascript\s*:/gi, "")
       .replace(/data\s*:/gi, "")
-      // on* 이벤트 핸들러 패턴 제거
+      // Remove on* event handler patterns
       .replace(/on\w+\s*=/gi, "")
       .trim()
   );
 }
 
 /**
- * URL 검증 — http/https만 허용
+ * URL validation — allow http/https only
  */
 function sanitizeUrl(url: string): string | null {
   const trimmed = url.trim();
@@ -48,7 +48,7 @@ function sanitizeUrl(url: string): string | null {
   }
 }
 
-/** comment_mode 설정 조회 */
+/** Get comment_mode setting */
 function getCommentMode(): string {
   const setting = db
     .select()
@@ -58,7 +58,7 @@ function getCommentMode(): string {
   return setting?.value ?? "sso_only";
 }
 
-/** JWT 토큰에서 관리자 여부 확인 (optional) */
+/** Check if the user is an admin from JWT token (optional) */
 async function isAdmin(c: {
   req: { header: (name: string) => string | undefined };
 }): Promise<boolean> {
@@ -69,7 +69,7 @@ async function isAdmin(c: {
   return !!ownerId;
 }
 
-/** password 필드를 제외하고 hasPassword 플래그를 추가 */
+/** Exclude password field and add hasPassword flag */
 function stripPassword(comment: typeof schema.comments.$inferSelect) {
   const { password, ...rest } = comment;
   return { ...rest, hasPassword: !!password };
@@ -96,7 +96,7 @@ function buildCommentTree(
     }));
 }
 
-// ==================== GET 댓글 목록 ====================
+// ==================== GET comment list ====================
 commentsRoute.get("/posts/:postId/comments", (c) => {
   const postId = c.req.param("postId");
   const visitorId = c.req.query("visitorId") ?? "";
@@ -138,7 +138,7 @@ commentsRoute.get("/posts/:postId/comments", (c) => {
   return c.json(tree);
 });
 
-// ==================== POST 댓글 작성 ====================
+// ==================== POST create comment ====================
 commentsRoute.post("/posts/:postId/comments", async (c) => {
   const postId = c.req.param("postId");
   const body = await c.req.json<{
@@ -152,7 +152,7 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     parentId?: string;
   }>();
 
-  // 입력값 sanitize (평문 텍스트만 허용, XSS 방지)
+  // Sanitize input (allow plain text only, prevent XSS)
   const authorName = sanitizePlainText(body.authorName);
   const authorEmail = sanitizePlainText(body.authorEmail);
   const content = sanitizePlainText(body.content);
@@ -170,11 +170,11 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   }
 
   if (commentMode === "anonymous_only" && body.commenterId) {
-    // anonymous_only 모드에서는 SSO 댓글 비허용 (무시하고 익명 처리)
-    // body.commenterId를 무시
+    // In anonymous_only mode, SSO comments are not allowed (ignore and treat as anonymous)
+    // Ignore body.commenterId
   }
 
-  // 익명 댓글(commenterId 없음)에는 비밀번호 필수
+  // Password is required for anonymous comments (no commenterId)
   const isAnonymous = !body.commenterId || commentMode === "anonymous_only";
   if (isAnonymous && !body.password) {
     return c.json({ error: "Password is required for anonymous comments." }, 400);
@@ -235,7 +235,7 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   return c.json(newComment ? stripPassword(newComment) : null, 201);
 });
 
-// ==================== PUT 댓글 수정 ====================
+// ==================== PUT update comment ====================
 commentsRoute.put("/comments/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json<{
@@ -257,14 +257,14 @@ commentsRoute.put("/comments/:id", async (c) => {
     return c.json({ error: "Comment must be 2,000 characters or less." }, 400);
   }
 
-  // 권한 확인: SSO 댓글 → commenterId 일치, 익명 댓글 → password 일치
+  // Authorization check: SSO comment → match commenterId, anonymous comment → match password
   if (comment.commenterId) {
-    // SSO 댓글
+    // SSO comment
     if (!body.commenterId || body.commenterId !== comment.commenterId) {
       return c.json({ error: "You can only edit your own comment." }, 403);
     }
   } else {
-    // 익명 댓글
+    // Anonymous comment
     if (!body.password || !comment.password) {
       return c.json({ error: "Password is required to edit this comment." }, 403);
     }
@@ -283,7 +283,7 @@ commentsRoute.put("/comments/:id", async (c) => {
   return c.json(updated ? stripPassword(updated) : null);
 });
 
-// ==================== DELETE 댓글 삭제 ====================
+// ==================== DELETE comment ====================
 commentsRoute.delete("/comments/:id", async (c) => {
   const id = c.req.param("id");
   const comment = db.select().from(schema.comments).where(eq(schema.comments.id, id)).get();
@@ -291,10 +291,10 @@ commentsRoute.delete("/comments/:id", async (c) => {
     return c.json({ error: "Comment not found." }, 404);
   }
 
-  // 관리자 체크 (JWT 토큰)
+  // Admin check (JWT token)
   const admin = await isAdmin(c);
   if (admin) {
-    // 관리자는 무조건 삭제 가능
+    // Admin can always delete
     const now = new Date().toISOString();
     db.update(schema.comments)
       .set({ content: "Deleted comment.", deletedAt: now, updatedAt: now })
@@ -303,21 +303,21 @@ commentsRoute.delete("/comments/:id", async (c) => {
     return c.json({ message: "Comment deleted." });
   }
 
-  // 본인 확인
+  // Verify ownership
   let body: { commenterId?: string; password?: string } = {};
   try {
     body = await c.req.json();
   } catch {
-    // body 없이 요청한 경우
+    // Request sent without body
   }
 
   if (comment.commenterId) {
-    // SSO 댓글: commenterId 확인
+    // SSO comment: verify commenterId
     if (!body.commenterId || body.commenterId !== comment.commenterId) {
       return c.json({ error: "You can only delete your own comment." }, 403);
     }
   } else {
-    // 익명 댓글: 비밀번호 확인
+    // Anonymous comment: verify password
     if (!body.password || !comment.password) {
       return c.json({ error: "Password is required to delete this comment." }, 403);
     }
@@ -335,7 +335,7 @@ commentsRoute.delete("/comments/:id", async (c) => {
   return c.json({ message: "Comment deleted." });
 });
 
-// ==================== POST 좋아요 ====================
+// ==================== POST like ====================
 commentsRoute.post("/comments/:id/like", async (c) => {
   const commentId = c.req.param("id");
   const body = await c.req.json<{ visitorId: string }>();

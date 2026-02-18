@@ -13,7 +13,7 @@ interface SEOHeadProps {
   tags?: string[];
 }
 
-// JSON-LD는 서버에서 SSR로 주입하므로 클라이언트에서는 메타 태그만 관리
+// JSON-LD is injected server-side via SSR, so the client only manages meta tags
 export function SEOHead({
   title,
   description,

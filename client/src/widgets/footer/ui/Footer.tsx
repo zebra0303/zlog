@@ -18,7 +18,7 @@ export function Footer() {
   const [expanded, setExpanded] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // sentinel이 뷰포트에 들어오면 확장 (sentinel 높이는 고정 -> 루프 없음)
+  // Expand when sentinel enters viewport (sentinel height is fixed -> no loop)
   useEffect(() => {
     if (!hasCustomHeight) return;
     const el = sentinelRef.current;
@@ -58,7 +58,7 @@ export function Footer() {
 
   return (
     <>
-      {/* 확장 높이만큼 공간을 미리 확보하는 sentinel (높이 고정 -> 깜빡임 방지) */}
+      {/* Sentinel that reserves space for the expanded height (fixed height -> prevents flickering) */}
       {hasCustomHeight && (
         <div
           ref={sentinelRef}

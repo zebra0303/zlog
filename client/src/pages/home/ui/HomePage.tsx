@@ -204,7 +204,7 @@ export default function HomePage() {
             : undefined
         }
       />
-      {/* 모바일: select box */}
+      {/* Mobile: select box */}
       <div className="mb-4 flex items-center gap-2 md:hidden">
         <div className="relative flex-1">
           <select
@@ -256,7 +256,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* 데스크톱: 기존 배지 */}
+      {/* Desktop: category badges */}
       <div className="mb-4 hidden items-start gap-2 md:flex">
         <div className="flex flex-1 flex-wrap gap-2">
           <CategoryBadge slug="all" name={t("home_all")} isActive={!currentCategory} />
@@ -293,7 +293,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* 검색 */}
+      {/* Search */}
       <div className="relative mb-6">
         <Search className="text-text-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <Input

@@ -9,12 +9,12 @@ import type { WebhookEvent } from "@zlog/shared";
 
 const federationRoute = new Hono();
 
-/** 마크다운 content 내 상대 경로 이미지를 절대 URL로 변환 (제공 측에서 사용) */
+/** Convert relative path images in markdown content to absolute URLs (used by provider) */
 function resolveRelativeUrls(content: string, siteUrl: string): string {
   return content.replace(/(!\[.*?\]\()(\/\/(uploads|img)\/[^)]+\))/g, `$1${siteUrl}$2`);
 }
 
-/** 상대 경로를 절대 URL로 변환 (coverImage 등) */
+/** Convert relative path to absolute URL (coverImage, etc.) */
 function resolveUrl(url: string | null, siteUrl: string): string | null {
   if (!url) return url;
   return url.startsWith("/") ? siteUrl + url : url;
@@ -22,7 +22,7 @@ function resolveUrl(url: string | null, siteUrl: string): string | null {
 
 federationRoute.get("/info", (c) => {
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  if (!ownerRecord) return c.json({ error: "블로그 정보를 찾을 수 없습니다." }, 404);
+  if (!ownerRecord) return c.json({ error: "Blog information not found." }, 404);
   const siteUrl = ownerRecord.siteUrl;
   const avatarAbsoluteUrl = ownerRecord.avatarUrl?.startsWith("/")
     ? `${siteUrl}${ownerRecord.avatarUrl}`
@@ -95,7 +95,7 @@ federationRoute.get("/posts/:id", (c) => {
     .from(schema.posts)
     .where(and(eq(schema.posts.id, id), eq(schema.posts.status, "published")))
     .get();
-  if (!post) return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+  if (!post) return c.json({ error: "Post not found." }, 404);
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
   const siteUrl = ownerRecord?.siteUrl ?? "";
   return c.json({
@@ -119,14 +119,14 @@ federationRoute.post("/subscribe", async (c) => {
     callbackUrl: string;
   }>();
   if (!body.categoryId || !body.subscriberUrl || !body.callbackUrl)
-    return c.json({ error: "필수 필드가 누락되었습니다." }, 400);
+    return c.json({ error: "Required fields are missing." }, 400);
 
   const cat = db
     .select()
     .from(schema.categories)
     .where(eq(schema.categories.id, body.categoryId))
     .get();
-  if (!cat) return c.json({ error: "카테고리를 찾을 수 없습니다." }, 404);
+  if (!cat) return c.json({ error: "Category not found." }, 404);
 
   const existing = db
     .select()
@@ -143,7 +143,7 @@ federationRoute.post("/subscribe", async (c) => {
       .set({ isActive: true, callbackUrl: body.callbackUrl })
       .where(eq(schema.subscribers.id, existing.id))
       .run();
-    return c.json({ message: "구독이 재활성화되었습니다.", id: existing.id });
+    return c.json({ message: "Subscription has been reactivated.", id: existing.id });
   }
 
   const id = generateId();
@@ -156,7 +156,7 @@ federationRoute.post("/subscribe", async (c) => {
       createdAt: new Date().toISOString(),
     })
     .run();
-  return c.json({ message: "구독이 등록되었습니다.", id }, 201);
+  return c.json({ message: "Subscription has been registered.", id }, 201);
 });
 
 federationRoute.post("/unsubscribe", async (c) => {
@@ -171,18 +171,18 @@ federationRoute.post("/unsubscribe", async (c) => {
       ),
     )
     .get();
-  if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  if (!existing) return c.json({ error: "Subscription not found." }, 404);
   db.update(schema.subscribers)
     .set({ isActive: false })
     .where(eq(schema.subscribers.id, existing.id))
     .run();
-  return c.json({ message: "구독이 해제되었습니다." });
+  return c.json({ message: "Subscription has been cancelled." });
 });
 
 federationRoute.post("/webhook", async (c) => {
   const body = await c.req.json<Partial<WebhookEvent>>();
   if (!body.event || !body.post || !body.categoryId || !body.siteUrl)
-    return c.json({ error: "잘못된 웹훅 데이터입니다." }, 400);
+    return c.json({ error: "Invalid webhook data." }, 400);
 
   let remoteBlog = db
     .select()
@@ -211,7 +211,7 @@ federationRoute.post("/webhook", async (c) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, id)).get()!;
     } catch {
-      return c.json({ error: "원격 블로그 정보를 가져올 수 없습니다." }, 502);
+      return c.json({ error: "Failed to fetch remote blog information." }, 502);
     }
   }
 
@@ -310,10 +310,10 @@ federationRoute.post("/webhook", async (c) => {
       .run();
   }
 
-  return c.json({ message: "웹훅 처리 완료" });
+  return c.json({ message: "Webhook processed successfully." });
 });
 
-// ============ 로컬 구독 등록 (내가 외부 블로그 카테고리를 구독) ============
+// ============ Local subscription (subscribe to an external blog category) ============
 federationRoute.post("/local-subscribe", async (c) => {
   const body = await c.req.json<{
     remoteSiteUrl: string;
@@ -324,18 +324,18 @@ federationRoute.post("/local-subscribe", async (c) => {
   }>();
 
   if (!body.remoteSiteUrl || !body.remoteCategoryId || !body.localCategorySlug) {
-    return c.json({ error: "필수 필드가 누락되었습니다." }, 400);
+    return c.json({ error: "Required fields are missing." }, 400);
   }
 
-  // 로컬 카테고리 찾기
+  // Find local category
   const localCat = db
     .select()
     .from(schema.categories)
     .where(eq(schema.categories.slug, body.localCategorySlug))
     .get();
-  if (!localCat) return c.json({ error: "로컬 카테고리를 찾을 수 없습니다." }, 404);
+  if (!localCat) return c.json({ error: "Local category not found." }, 404);
 
-  // remoteBlog 찾기/생성
+  // Find or create remoteBlog
   let remoteBlog = db
     .select()
     .from(schema.remoteBlogs)
@@ -369,7 +369,7 @@ federationRoute.post("/local-subscribe", async (c) => {
     remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, id)).get()!;
   }
 
-  // remoteCategory 찾기/생성
+  // Find or create remoteCategory
   let remoteCat = db
     .select()
     .from(schema.remoteCategories)
@@ -400,7 +400,7 @@ federationRoute.post("/local-subscribe", async (c) => {
       .get()!;
   }
 
-  // categorySubscription 찾기/생성
+  // Find or create categorySubscription
   const existingSub = db
     .select()
     .from(schema.categorySubscriptions)
@@ -416,7 +416,7 @@ federationRoute.post("/local-subscribe", async (c) => {
       .set({ isActive: true })
       .where(eq(schema.categorySubscriptions.id, existingSub.id))
       .run();
-    // 기존 remotePosts의 localCategoryId 복원
+    // Restore localCategoryId for existing remotePosts
     db.update(schema.remotePosts)
       .set({ localCategoryId: localCat.id })
       .where(
@@ -426,7 +426,10 @@ federationRoute.post("/local-subscribe", async (c) => {
         ),
       )
       .run();
-    return c.json({ message: "구독이 재활성화되었습니다.", subscriptionId: existingSub.id });
+    return c.json({
+      message: "Subscription has been reactivated.",
+      subscriptionId: existingSub.id,
+    });
   }
 
   const subId = generateId();
@@ -439,7 +442,7 @@ federationRoute.post("/local-subscribe", async (c) => {
     })
     .run();
 
-  // 원격 블로그에 구독자 등록 (웹훅을 받을 수 있도록 — 실패해도 로컬 구독은 유지)
+  // Register as subscriber on remote blog (for webhook delivery — local subscription persists on failure)
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
   const mySiteUrl = ownerRecord?.siteUrl ?? process.env.SITE_URL ?? "http://localhost:3000";
   try {
@@ -454,13 +457,15 @@ federationRoute.post("/local-subscribe", async (c) => {
       signal: AbortSignal.timeout(10000),
     });
   } catch {
-    console.warn("⚠️ 원격 블로그 구독자 등록 실패 (로컬 구독은 유지됨)");
+    console.warn(
+      "⚠️ Failed to register as subscriber on remote blog (local subscription persisted)",
+    );
   }
 
-  return c.json({ message: "로컬 구독이 등록되었습니다.", subscriptionId: subId }, 201);
+  return c.json({ message: "Local subscription registered.", subscriptionId: subId }, 201);
 });
 
-// ============ 로컬 구독 해제 ============
+// ============ Local unsubscribe ============
 federationRoute.post("/local-unsubscribe", async (c) => {
   const body = await c.req.json<{
     remoteSiteUrl: string;
@@ -473,14 +478,14 @@ federationRoute.post("/local-unsubscribe", async (c) => {
     .from(schema.categories)
     .where(eq(schema.categories.slug, body.localCategorySlug))
     .get();
-  if (!localCat) return c.json({ error: "로컬 카테고리를 찾을 수 없습니다." }, 404);
+  if (!localCat) return c.json({ error: "Local category not found." }, 404);
 
   const remoteBlog = db
     .select()
     .from(schema.remoteBlogs)
     .where(eq(schema.remoteBlogs.siteUrl, body.remoteSiteUrl))
     .get();
-  if (!remoteBlog) return c.json({ error: "원격 블로그를 찾을 수 없습니다." }, 404);
+  if (!remoteBlog) return c.json({ error: "Remote blog not found." }, 404);
 
   const remoteCat = db
     .select()
@@ -492,7 +497,7 @@ federationRoute.post("/local-unsubscribe", async (c) => {
       ),
     )
     .get();
-  if (!remoteCat) return c.json({ error: "원격 카테고리를 찾을 수 없습니다." }, 404);
+  if (!remoteCat) return c.json({ error: "Remote category not found." }, 404);
 
   const sub = db
     .select()
@@ -504,20 +509,20 @@ federationRoute.post("/local-unsubscribe", async (c) => {
       ),
     )
     .get();
-  if (!sub) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  if (!sub) return c.json({ error: "Subscription not found." }, 404);
 
   db.update(schema.categorySubscriptions)
     .set({ isActive: false })
     .where(eq(schema.categorySubscriptions.id, sub.id))
     .run();
-  return c.json({ message: "로컬 구독이 해제되었습니다." });
+  return c.json({ message: "Local subscription cancelled." });
 });
 
-// ============ 외부 글 상세보기 (원본 상태 실시간 확인) ============
+// ============ Remote post detail (real-time source status check) ============
 federationRoute.get("/remote-posts/:id", async (c) => {
   const id = c.req.param("id");
   const rp = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.id, id)).get();
-  if (!rp) return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+  if (!rp) return c.json({ error: "Post not found." }, 404);
 
   const remoteBlog = db
     .select()
@@ -534,9 +539,9 @@ federationRoute.get("/remote-posts/:id", async (c) => {
       }
     : null;
 
-  // 원본 블로그에서 최신 상태 확인 (백그라운드 검증)
+  // Check latest status from source blog (background verification)
   if (remoteBlog && rp.remoteUri) {
-    // remoteUri 형태: "https://blog.example.com/posts/{postId}"
+    // remoteUri format: "https://blog.example.com/posts/{postId}"
     const uriParts = rp.remoteUri.split("/posts/");
     const remotePostId = uriParts.length > 1 ? uriParts[uriParts.length - 1] : null;
     if (remotePostId) {
@@ -546,7 +551,7 @@ federationRoute.get("/remote-posts/:id", async (c) => {
         });
         const now = new Date().toISOString();
         if (res.status === 404) {
-          // 원본이 삭제됨 → 로컬 상태 업데이트
+          // Source deleted → update local status
           db.update(schema.remotePosts)
             .set({ remoteStatus: "deleted", fetchedAt: now })
             .where(eq(schema.remotePosts.id, id))
@@ -565,7 +570,7 @@ federationRoute.get("/remote-posts/:id", async (c) => {
             coverImage?: string | null;
             updatedAt: string;
           };
-          // 원본이 업데이트되었다면 로컬 캐시 갱신
+          // If source was updated, refresh local cache
           if (original.updatedAt > rp.remoteUpdatedAt) {
             const fixedContent = fixRemoteContentUrls(original.content, remoteBlog.siteUrl);
             const fixedCover = fixRemoteUrl(original.coverImage ?? null, remoteBlog.siteUrl);
@@ -581,7 +586,7 @@ federationRoute.get("/remote-posts/:id", async (c) => {
               })
               .where(eq(schema.remotePosts.id, id))
               .run();
-            // 갱신된 데이터로 응답
+            // Respond with refreshed data
             const updated = db
               .select()
               .from(schema.remotePosts)
@@ -593,14 +598,14 @@ federationRoute.get("/remote-posts/:id", async (c) => {
             });
           }
         }
-        // res가 다른 상태(502, timeout 등)이면 기존 캐시 그대로 반환
+        // For other statuses (502, timeout, etc.), return existing cache as-is
       } catch {
-        // 네트워크 오류 시 기존 캐시 반환
+        // Return existing cache on network error
       }
     }
   }
 
-  if (rp.remoteStatus !== "published") return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+  if (rp.remoteStatus !== "published") return c.json({ error: "Post not found." }, 404);
 
   return c.json({
     ...rp,
@@ -608,25 +613,25 @@ federationRoute.get("/remote-posts/:id", async (c) => {
   });
 });
 
-// ============ 관리자용: 원격 블로그 카테고리 프록시 조회 ============
+// ============ Admin: proxy fetch remote blog categories ============
 federationRoute.get("/remote-categories", authMiddleware, async (c) => {
   const url = c.req.query("url");
-  if (!url) return c.json({ error: "url 파라미터가 필요합니다." }, 400);
+  if (!url) return c.json({ error: "url parameter is required." }, 400);
 
   const normalized = url.replace(/\/+$/, "");
   try {
     const res = await fetch(`${normalized}/api/federation/categories`, {
       signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok) return c.json({ error: `원격 서버 응답 오류: ${res.status}` }, 502);
+    if (!res.ok) return c.json({ error: `Remote server error: ${res.status}` }, 502);
     const cats = await res.json();
     return c.json(cats);
   } catch {
-    return c.json({ error: "원격 서버에 연결할 수 없습니다." }, 502);
+    return c.json({ error: "Failed to connect to remote server." }, 502);
   }
 });
 
-// ============ 관리자용: 내가 구독 중인 카테고리 목록 ============
+// ============ Admin: list my subscribed categories ============
 federationRoute.get("/subscriptions", authMiddleware, (c) => {
   const subs = db
     .select({
@@ -661,7 +666,7 @@ federationRoute.get("/subscriptions", authMiddleware, (c) => {
   return c.json(subs);
 });
 
-// ============ 관리자용: 구독 카테고리 수동 싱크 ============
+// ============ Admin: manual sync subscription category ============
 federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const sub = db
@@ -669,27 +674,27 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
     .from(schema.categorySubscriptions)
     .where(eq(schema.categorySubscriptions.id, id))
     .get();
-  if (!sub) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  if (!sub) return c.json({ error: "Subscription not found." }, 404);
 
   const remoteCat = db
     .select()
     .from(schema.remoteCategories)
     .where(eq(schema.remoteCategories.id, sub.remoteCategoryId))
     .get();
-  if (!remoteCat) return c.json({ error: "원격 카테고리를 찾을 수 없습니다." }, 404);
+  if (!remoteCat) return c.json({ error: "Remote category not found." }, 404);
 
   const remoteBlog = db
     .select()
     .from(schema.remoteBlogs)
     .where(eq(schema.remoteBlogs.id, remoteCat.remoteBlogId))
     .get();
-  if (!remoteBlog) return c.json({ error: "원격 블로그를 찾을 수 없습니다." }, 404);
+  if (!remoteBlog) return c.json({ error: "Remote blog not found." }, 404);
 
   try {
-    // 항상 전체 글을 가져와서 이미지 URL 등도 최신화
+    // Always fetch all posts to refresh image URLs etc.
     const postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts`;
     const res = await fetch(postsUrl, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return c.json({ error: `원격 서버 응답 오류: ${res.status}` }, 502);
+    if (!res.ok) return c.json({ error: `Remote server error: ${res.status}` }, 502);
     const posts = (await res.json()) as {
       id: string;
       title: string;
@@ -706,7 +711,7 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
     let synced = 0;
 
     for (const post of posts) {
-      // uri의 도메인이 잘못되었을 수 있으므로 (예: http://localhost/posts/...) 실제 remoteBlog URL로 치환
+      // URI domain may be wrong (e.g., http://localhost/posts/...) — replace with actual remoteBlog URL
       const rawUri = post.uri ?? `${remoteBlog.siteUrl}/posts/${post.id}`;
       const remoteUri = rawUri.replace(/^https?:\/\/[^/]+/, remoteBlog.siteUrl);
       const fixedContent = fixRemoteContentUrls(post.content, remoteBlog.siteUrl);
@@ -761,17 +766,17 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
       .run();
 
     return c.json({
-      message: `${synced}개의 글이 동기화되었습니다.`,
+      message: `${synced} post(s) synced.`,
       syncedCount: synced,
       lastSyncedAt: now,
     });
   } catch (err) {
-    console.error("❌ 수동 싱크 실패:", err);
-    return c.json({ error: "원격 서버에 연결할 수 없습니다." }, 502);
+    console.error("❌ Manual sync failed:", err);
+    return c.json({ error: "Failed to connect to remote server." }, 502);
   }
 });
 
-// ============ 관리자용: 구독 활성/비활성 토글 ============
+// ============ Admin: toggle subscription active/inactive ============
 federationRoute.put("/subscriptions/:id/toggle", authMiddleware, (c) => {
   const id = c.req.param("id");
   const existing = db
@@ -779,14 +784,14 @@ federationRoute.put("/subscriptions/:id/toggle", authMiddleware, (c) => {
     .from(schema.categorySubscriptions)
     .where(eq(schema.categorySubscriptions.id, id))
     .get();
-  if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  if (!existing) return c.json({ error: "Subscription not found." }, 404);
   const newActive = !existing.isActive;
   db.update(schema.categorySubscriptions)
     .set({ isActive: newActive })
     .where(eq(schema.categorySubscriptions.id, id))
     .run();
   if (!newActive) {
-    // 비활성화 시 remotePosts에서 localCategoryId를 null로 설정하여 목록에서 제거
+    // On deactivation, set localCategoryId to null in remotePosts to remove from listing
     db.update(schema.remotePosts)
       .set({ localCategoryId: null })
       .where(
@@ -797,7 +802,7 @@ federationRoute.put("/subscriptions/:id/toggle", authMiddleware, (c) => {
       )
       .run();
   } else {
-    // 활성화 시 remotePosts에 localCategoryId 복원
+    // On activation, restore localCategoryId in remotePosts
     db.update(schema.remotePosts)
       .set({ localCategoryId: existing.localCategoryId })
       .where(
@@ -809,12 +814,12 @@ federationRoute.put("/subscriptions/:id/toggle", authMiddleware, (c) => {
       .run();
   }
   return c.json({
-    message: newActive ? "구독이 활성화되었습니다." : "구독이 비활성화되었습니다.",
+    message: newActive ? "Subscription activated." : "Subscription deactivated.",
     isActive: newActive,
   });
 });
 
-// ============ 관리자용: 구독 삭제 ============
+// ============ Admin: delete subscription ============
 federationRoute.delete("/subscriptions/:id", authMiddleware, (c) => {
   const id = c.req.param("id");
   const existing = db
@@ -822,8 +827,8 @@ federationRoute.delete("/subscriptions/:id", authMiddleware, (c) => {
     .from(schema.categorySubscriptions)
     .where(eq(schema.categorySubscriptions.id, id))
     .get();
-  if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
-  // remotePosts에서 localCategoryId를 null로 설정
+  if (!existing) return c.json({ error: "Subscription not found." }, 404);
+  // Set localCategoryId to null in remotePosts
   db.update(schema.remotePosts)
     .set({ localCategoryId: null })
     .where(
@@ -833,12 +838,12 @@ federationRoute.delete("/subscriptions/:id", authMiddleware, (c) => {
       ),
     )
     .run();
-  // 구독 레코드 완전 삭제
+  // Permanently delete subscription record
   db.delete(schema.categorySubscriptions).where(eq(schema.categorySubscriptions.id, id)).run();
-  return c.json({ message: "구독이 삭제되었습니다." });
+  return c.json({ message: "Subscription deleted." });
 });
 
-// ============ 관리자용: 구독자 목록 조회 ============
+// ============ Admin: list subscribers ============
 federationRoute.get("/subscribers", authMiddleware, (c) => {
   const subs = db
     .select({
@@ -858,13 +863,13 @@ federationRoute.get("/subscribers", authMiddleware, (c) => {
   return c.json(subs);
 });
 
-// ============ 관리자용: 구독자 삭제 ============
+// ============ Admin: delete subscriber ============
 federationRoute.delete("/subscribers/:id", authMiddleware, (c) => {
   const id = c.req.param("id");
   const existing = db.select().from(schema.subscribers).where(eq(schema.subscribers.id, id)).get();
-  if (!existing) return c.json({ error: "구독 정보를 찾을 수 없습니다." }, 404);
+  if (!existing) return c.json({ error: "Subscription not found." }, 404);
   db.delete(schema.subscribers).where(eq(schema.subscribers.id, id)).run();
-  return c.json({ message: "구독자가 삭제되었습니다." });
+  return c.json({ message: "Subscriber deleted." });
 });
 
 export default federationRoute;

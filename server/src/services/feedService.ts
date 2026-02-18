@@ -44,7 +44,7 @@ export async function sendWebhookToSubscribers(
         signal: AbortSignal.timeout(10000),
       });
     } catch (err) {
-      console.error(`❌ Webhook 전송 실패 (${sub.callbackUrl}):`, err);
+      console.error(`❌ Webhook delivery failed (${sub.callbackUrl}):`, err);
     }
   }
 }

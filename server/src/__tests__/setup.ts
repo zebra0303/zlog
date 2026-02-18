@@ -3,19 +3,19 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "../db/schema.js";
 import { vi, beforeAll, afterAll } from "vitest";
 
-// 1. in-memory SQLite 생성
+// 1. Create in-memory SQLite
 const testSqlite = new Database(":memory:");
 testSqlite.pragma("journal_mode = WAL");
 testSqlite.pragma("foreign_keys = ON");
 const testDb = drizzle(testSqlite, { schema });
 
-// 2. DB 모듈 mock
+// 2. Mock DB module
 vi.mock("../db/index.js", () => ({
   db: testDb,
   sqlite: testSqlite,
 }));
 
-// 3. 백그라운드 서비스 mock
+// 3. Mock background services
 vi.mock("../services/syncService.js", () => ({
   startSyncWorker: vi.fn(),
   stopSyncWorker: vi.fn(),
@@ -28,13 +28,13 @@ vi.mock("../services/feedService.js", () => ({
   sendWebhookToSubscribers: vi.fn(),
 }));
 
-// 4. 글로벌 fetch mock (webhook 등 외부 요청 방지)
+// 4. Global fetch mock (prevent external requests like webhooks)
 vi.stubGlobal(
   "fetch",
   vi.fn(() => Promise.resolve(new Response("{}", { status: 200 }))),
 );
 
-// 5. 테스트 환경변수
+// 5. Test environment variables
 process.env.JWT_SECRET = "test-secret-key-for-testing";
 process.env.SITE_URL = "http://localhost:3000";
 process.env.ADMIN_EMAIL = "admin@test.com";
@@ -43,7 +43,7 @@ process.env.ADMIN_DISPLAY_NAME = "Test Admin";
 process.env.ADMIN_BLOG_HANDLE = "testadmin";
 process.env.NODE_ENV = "test";
 
-// 6. 테스트 시작 전 스키마 생성
+// 6. Create schema before tests
 beforeAll(() => {
   testSqlite.exec(`
     CREATE TABLE IF NOT EXISTS commenters (

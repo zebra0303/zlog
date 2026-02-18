@@ -7,7 +7,7 @@ import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
 const COPY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const CHECK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
-/** Mermaid 다이어그램 렌더링 (dynamic import) */
+/** Render Mermaid diagrams (dynamic import) */
 async function renderMermaidBlocks() {
   const blocks = document.querySelectorAll<HTMLElement>(".mermaid-block:not([data-rendered])");
   if (blocks.length === 0) return;
@@ -36,7 +36,7 @@ async function renderMermaidBlocks() {
       block.innerHTML = svg;
       block.setAttribute("data-rendered", "true");
     } catch {
-      // 렌더링 실패 시 코드를 그대로 표시
+      // On render failure, display the raw code as-is
       block.innerHTML = `<pre class="mermaid-error"><code>${decoded.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`;
       block.setAttribute("data-rendered", "true");
     }
@@ -50,16 +50,16 @@ export function AppLayout() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  // Mermaid 다이어그램 렌더링 — MutationObserver로 DOM 변화 감지
+  // Mermaid diagram rendering — detect DOM changes via MutationObserver
   const handleMermaid = useCallback(() => {
     void renderMermaidBlocks();
   }, []);
 
   useEffect(() => {
-    // 초기 렌더링
+    // Initial rendering
     handleMermaid();
 
-    // DOM 변화 감지 (SPA 페이지 전환 시 새로운 mermaid 블록)
+    // Detect DOM changes (new mermaid blocks on SPA page transitions)
     observerRef.current = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
@@ -81,10 +81,10 @@ export function AppLayout() {
     };
   }, [handleMermaid]);
 
-  // 테마 변경 시 mermaid 다이어그램 재렌더링
+  // Re-render mermaid diagrams on theme change
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      // data-rendered 속성 제거하여 재렌더링 트리거
+      // Remove data-rendered attribute to trigger re-rendering
       document.querySelectorAll<HTMLElement>(".mermaid-block[data-rendered]").forEach((el) => {
         el.removeAttribute("data-rendered");
       });
@@ -96,7 +96,7 @@ export function AppLayout() {
     };
   }, []);
 
-  // 코드블록 복사 버튼 — 전역 이벤트 위임
+  // Code block copy button — global event delegation
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".code-block-copy");
@@ -128,7 +128,7 @@ export function AppLayout() {
     };
   }, []);
 
-  // Mermaid 다이어그램 클릭 → 전체화면 모달
+  // Mermaid diagram click → fullscreen modal
   useEffect(() => {
     function closeModal() {
       document.getElementById("mermaid-modal")?.remove();
@@ -138,7 +138,7 @@ export function AppLayout() {
       const block = (e.target as HTMLElement).closest<HTMLElement>(".mermaid-block[data-rendered]");
       if (!block) return;
 
-      // 이미 모달이 열려 있으면 무시
+      // Ignore if modal is already open
       if (document.getElementById("mermaid-modal")) return;
 
       const svg = block.querySelector("svg");
@@ -160,11 +160,11 @@ export function AppLayout() {
       const content = document.createElement("div");
       content.className = "mermaid-modal-content";
 
-      // SVG를 복제하고 고정 크기 속성을 제거하여 모달 너비에 맞춰 확대
+      // Clone SVG and remove fixed size attributes to scale to modal width
       const clonedSvg = svg.cloneNode(true) as SVGSVGElement;
       const origW = clonedSvg.getAttribute("width");
       const origH = clonedSvg.getAttribute("height");
-      // viewBox가 없으면 원본 width/height로 설정
+      // Set viewBox from original width/height if not present
       if (!clonedSvg.getAttribute("viewBox") && origW && origH) {
         const w = parseFloat(origW);
         const h = parseFloat(origH);

@@ -17,7 +17,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
     else if (pages[pages.length - 1] !== "...") pages.push("...");
   }
   return (
-    <nav aria-label="페이지네이션" className="flex items-center justify-center gap-1">
+    <nav aria-label="Pagination" className="flex items-center justify-center gap-1">
       <Button
         variant="outline"
         size="icon"
@@ -25,7 +25,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         onClick={() => {
           onPageChange(currentPage - 1);
         }}
-        aria-label="이전 페이지"
+        aria-label="Previous page"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -55,7 +55,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         onClick={() => {
           onPageChange(currentPage + 1);
         }}
-        aria-label="다음 페이지"
+        aria-label="Next page"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

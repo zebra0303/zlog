@@ -135,7 +135,7 @@ function PostManager() {
           </div>
         </div>
 
-        {/* 검색 */}
+        {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--color-text-secondary)]" />
           <Input
@@ -762,7 +762,7 @@ function ThemeCustomizer({
                       }}
                       placeholder={t("admin_theme_image_placeholder")}
                     />
-                    {/* 미리보기 */}
+                    {/* Preview */}
                     {[settings[section.keys.darkColor], settings[section.keys.darkImage]].some(
                       Boolean,
                     ) && (
@@ -789,7 +789,7 @@ function ThemeCustomizer({
   );
 }
 
-// ============ Subscription Manager (내가 구독 중인 카테고리) ============
+// ============ Subscription Manager (categories I'm subscribed to) ============
 interface MySubscription {
   id: string;
   isActive: boolean;
@@ -838,7 +838,7 @@ function SubscriptionManager({
   const sectionRef = useRef<HTMLDivElement>(null);
   const localCatSelectRef = useRef<HTMLSelectElement>(null);
 
-  // 구독 추가 폼 상태
+  // Add subscription form state
   const [showAddForm, setShowAddForm] = useState(false);
   const [addUrl, setAddUrl] = useState("");
   const [isFetchingCats, setIsFetchingCats] = useState(false);
@@ -868,14 +868,14 @@ function SubscriptionManager({
     fetchSubs();
   }, []);
 
-  // 로컬 카테고리 목록 (폼 열릴 때)
+  // Local category list (when form is opened)
   useEffect(() => {
     if (showAddForm && localCats.length === 0) {
       void api.get<CategoryWithStats[]>("/categories").then(setLocalCats);
     }
   }, [showAddForm, localCats.length]);
 
-  // subscribeAction 으로 자동 열기
+  // Auto-open via subscribeAction
   const actionProcessed = useRef(false);
   useEffect(() => {
     if (!subscribeAction || actionProcessed.current) return;
@@ -885,7 +885,7 @@ function SubscriptionManager({
     if (!url.startsWith("http")) url = `https://${url}`;
     url = url.replace(/\/+$/, "");
     setAddUrl(url);
-    // 자동으로 카테고리 fetch
+    // Automatically fetch categories
     setIsFetchingCats(true);
     setAddMessage(null);
     setRemoteCats([]);
@@ -894,7 +894,7 @@ function SubscriptionManager({
       .then((cats) => {
         if (cats.length > 0) {
           setRemoteCats(cats);
-          // remoteCatId 와 일치하는 카테고리 선택
+          // Select category matching remoteCatId
           const match = cats.find((c) => c.id === subscribeAction.remoteCatId);
           if (match) setSelectedRemoteCat(match.id);
         } else {
@@ -906,7 +906,7 @@ function SubscriptionManager({
       })
       .finally(() => {
         setIsFetchingCats(false);
-        // 구독관리 섹션으로 스크롤 + 로컬 카테고리 포커스
+        // Scroll to subscription management section + focus local category
         setTimeout(() => {
           sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
           setTimeout(() => {
@@ -919,7 +919,7 @@ function SubscriptionManager({
   const handleFetchRemoteCategories = async () => {
     let url = addUrl.trim();
     if (!url) return;
-    // URL 정규화
+    // URL normalization
     if (!url.startsWith("http")) url = `https://${url}`;
     url = url.replace(/\/+$/, "");
     setAddUrl(url);
@@ -958,7 +958,7 @@ function SubscriptionManager({
     setIsSubscribing(true);
     setAddMessage(null);
     try {
-      // 서버에서 로컬 구독 + 원격 블로그 구독자 등록을 모두 처리
+      // Server handles both local subscription + remote blog subscriber registration
       await api.post("/federation/local-subscribe", {
         remoteSiteUrl,
         remoteCategoryId: remoteCat.id,
@@ -967,7 +967,7 @@ function SubscriptionManager({
         localCategorySlug: localCat.slug,
       });
       setAddMessage({ text: t("admin_mysub_add_success"), type: "success" });
-      // 리셋
+      // Reset
       setAddUrl("");
       setRemoteCats([]);
       setSelectedRemoteCat("");
@@ -1044,11 +1044,11 @@ function SubscriptionManager({
         </div>
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("admin_mysub_desc")}</p>
 
-        {/* 구독 추가 폼 */}
+        {/* Add subscription form */}
         {showAddForm && (
           <div className="mb-4 rounded-lg border border-[var(--color-primary)] bg-[var(--color-surface)] p-4">
             <div className="flex flex-col gap-3">
-              {/* Step 1: URL 입력 + 카테고리 불러오기 */}
+              {/* Step 1: URL input + fetch categories */}
               <div className="flex gap-2">
                 <Input
                   value={addUrl}
@@ -1078,7 +1078,7 @@ function SubscriptionManager({
                 </Button>
               </div>
 
-              {/* Step 2: 원격 카테고리 + 로컬 카테고리 선택 */}
+              {/* Step 2: Select remote category + local category */}
               {remoteCats.length > 0 && (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
@@ -1123,7 +1123,7 @@ function SubscriptionManager({
                 </div>
               )}
 
-              {/* Step 3: 구독 버튼 */}
+              {/* Step 3: Subscribe button */}
               {remoteCats.length > 0 && (
                 <div className="flex justify-end">
                   <Button size="sm" onClick={handleAddSubscribe} disabled={isSubscribing}>
@@ -1353,7 +1353,7 @@ function SubscriberManager() {
   );
 }
 
-// ============ 메인 AdminPage ============
+// ============ Main AdminPage ============
 type AdminTab = "general" | "federation";
 
 export default function AdminPage() {
@@ -1365,7 +1365,7 @@ export default function AdminPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  // 탭 상태 — subscribe 액션이 있으면 Federation 탭으로
+  // Tab state — switch to Federation tab if subscribe action is present
   const tabParam = searchParams.get("tab");
   const hasSubscribeAction = searchParams.get("action") === "subscribe";
   const [activeTab, setActiveTab] = useState<AdminTab>(
@@ -1380,7 +1380,7 @@ export default function AdminPage() {
     } else {
       params.set("tab", tab);
     }
-    // subscribe 액션 파라미터는 탭 변경 시 유지하지 않음
+    // Don't preserve subscribe action params when changing tabs
     if (tab !== "federation") {
       params.delete("action");
       params.delete("remoteUrl");
@@ -1391,7 +1391,7 @@ export default function AdminPage() {
     setSearchParams(params, { replace: true });
   };
 
-  // subscribe action 쿼리 파라미터 감지
+  // Detect subscribe action query parameters
   const subscribeAction =
     searchParams.get("action") === "subscribe"
       ? {
@@ -1404,7 +1404,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      // 로그인 후 현재 URL(쿼리 파라미터 포함)으로 리디렉트
+      // Redirect to current URL (including query params) after login
       const currentPath = window.location.pathname + window.location.search;
       void navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
       return;
@@ -1462,7 +1462,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* 탭 네비게이션 */}
+      {/* Tab navigation */}
       <div className="flex gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1">
         {tabs.map((tab) => (
           <button
@@ -1482,10 +1482,10 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* 일반 설정 탭 */}
+      {/* General settings tab */}
       {activeTab === "general" && (
         <>
-          {/* 언어 설정 */}
+          {/* Language settings */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
@@ -1510,13 +1510,13 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          {/* 글 관리 */}
+          {/* Post management */}
           <PostManager />
 
-          {/* 카테고리 관리 */}
+          {/* Category management */}
           <CategoryManager />
 
-          {/* 표시 설정 */}
+          {/* Display settings */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
@@ -1583,7 +1583,7 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          {/* SEO 설정 */}
+          {/* SEO settings */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
@@ -1638,15 +1638,15 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          {/* 헤더/푸터 테마 커스터마이징 */}
+          {/* Header/Footer theme customization */}
           <ThemeCustomizer settings={settings} update={update} />
         </>
       )}
 
-      {/* Federation 탭 */}
+      {/* Federation tab */}
       {activeTab === "federation" && (
         <>
-          {/* Federation 설정 */}
+          {/* Federation settings */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
@@ -1681,10 +1681,10 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          {/* 내가 구독 중인 카테고리 */}
+          {/* Categories I'm subscribed to */}
           <SubscriptionManager subscribeAction={subscribeAction} />
 
-          {/* 구독자 관리 */}
+          {/* Subscriber management */}
           <SubscriberManager />
         </>
       )}

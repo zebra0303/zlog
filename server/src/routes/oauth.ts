@@ -9,7 +9,7 @@ const oauthRoute = new Hono();
 // ============ GitHub OAuth ============
 oauthRoute.get("/github", (c) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
-  if (!clientId) return c.json({ error: "GitHub OAuth가 설정되지 않았습니다." }, 500);
+  if (!clientId) return c.json({ error: "GitHub OAuth is not configured." }, 500);
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/github/callback`;
   const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user user:email`;
@@ -18,16 +18,15 @@ oauthRoute.get("/github", (c) => {
 
 oauthRoute.get("/github/callback", async (c) => {
   const code = c.req.query("code");
-  if (!code) return c.json({ error: "인증 코드가 없습니다." }, 400);
+  if (!code) return c.json({ error: "Authorization code is missing." }, 400);
 
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  if (!clientId || !clientSecret)
-    return c.json({ error: "GitHub OAuth가 설정되지 않았습니다." }, 500);
+  if (!clientId || !clientSecret) return c.json({ error: "GitHub OAuth is not configured." }, 500);
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/github/callback`;
 
-  // Access Token 발급
+  // Issue access token
   const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -39,9 +38,9 @@ oauthRoute.get("/github/callback", async (c) => {
     }),
   });
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
-  if (!tokenData.access_token) return c.json({ error: "토큰 발급 실패" }, 400);
+  if (!tokenData.access_token) return c.json({ error: "Failed to issue token." }, 400);
 
-  // 사용자 정보 조회
+  // Fetch user info
   const userRes = await fetch("https://api.github.com/user", {
     headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: "application/json" },
   });
@@ -54,7 +53,7 @@ oauthRoute.get("/github/callback", async (c) => {
     html_url?: string;
   };
 
-  // 이메일이 없으면 별도 API로 조회
+  // If email is not available, fetch via separate API
   let email = user.email;
   if (!email) {
     try {
@@ -87,7 +86,7 @@ oauthRoute.get("/github/callback", async (c) => {
     profileUrl,
   );
 
-  // 클라이언트로 리다이렉트 (commenter 정보를 쿼리 파라미터로)
+  // Redirect to client (pass commenter info as query parameters)
   const params = new URLSearchParams({
     commenterId: commenter.id,
     displayName: commenter.displayName,
@@ -100,7 +99,7 @@ oauthRoute.get("/github/callback", async (c) => {
 // ============ Google OAuth ============
 oauthRoute.get("/google", (c) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) return c.json({ error: "Google OAuth가 설정되지 않았습니다." }, 500);
+  if (!clientId) return c.json({ error: "Google OAuth is not configured." }, 500);
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/google/callback`;
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent("openid email profile")}&access_type=offline`;
@@ -109,16 +108,15 @@ oauthRoute.get("/google", (c) => {
 
 oauthRoute.get("/google/callback", async (c) => {
   const code = c.req.query("code");
-  if (!code) return c.json({ error: "인증 코드가 없습니다." }, 400);
+  if (!code) return c.json({ error: "Authorization code is missing." }, 400);
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret)
-    return c.json({ error: "Google OAuth가 설정되지 않았습니다." }, 500);
+  if (!clientId || !clientSecret) return c.json({ error: "Google OAuth is not configured." }, 500);
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/google/callback`;
 
-  // Access Token 발급
+  // Issue access token
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -131,9 +129,9 @@ oauthRoute.get("/google/callback", async (c) => {
     }),
   });
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
-  if (!tokenData.access_token) return c.json({ error: "토큰 발급 실패" }, 400);
+  if (!tokenData.access_token) return c.json({ error: "Failed to issue token." }, 400);
 
-  // 사용자 정보 조회
+  // Fetch user info
   const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
@@ -160,15 +158,15 @@ oauthRoute.get("/google/callback", async (c) => {
   return c.redirect(`/oauth-callback?${params.toString()}`);
 });
 
-// ============ 현재 commenter 정보 조회 ============
+// ============ Get current commenter info ============
 oauthRoute.get("/commenter/:id", (c) => {
   const id = c.req.param("id");
   const commenter = db.select().from(schema.commenters).where(eq(schema.commenters.id, id)).get();
-  if (!commenter) return c.json({ error: "찾을 수 없습니다." }, 404);
+  if (!commenter) return c.json({ error: "Not found." }, 404);
   return c.json(commenter);
 });
 
-// ============ 설정 상태 조회 (어떤 OAuth가 활성화되었는지) ============
+// ============ Check which OAuth providers are enabled ============
 oauthRoute.get("/providers", (c) => {
   return c.json({
     github: !!process.env.GITHUB_CLIENT_ID,

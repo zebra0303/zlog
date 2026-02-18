@@ -43,7 +43,7 @@ categoriesRoute.get("/:slug", (c) => {
   const cat = db.select().from(schema.categories).where(eq(schema.categories.slug, slug)).get();
 
   if (!cat) {
-    return c.json({ error: "카테고리를 찾을 수 없습니다." }, 404);
+    return c.json({ error: "Category not found." }, 404);
   }
 
   const postCountResult = db
@@ -75,7 +75,7 @@ categoriesRoute.post("/", authMiddleware, async (c) => {
   }>();
 
   if (!body.name) {
-    return c.json({ error: "카테고리 이름을 입력해주세요." }, 400);
+    return c.json({ error: "Category name is required." }, 400);
   }
 
   const existingSlugs = db
@@ -118,7 +118,7 @@ categoriesRoute.put("/:id", authMiddleware, async (c) => {
 
   const existing = db.select().from(schema.categories).where(eq(schema.categories.id, id)).get();
   if (!existing) {
-    return c.json({ error: "카테고리를 찾을 수 없습니다." }, 404);
+    return c.json({ error: "Category not found." }, 404);
   }
 
   const now = new Date().toISOString();
@@ -151,13 +151,13 @@ categoriesRoute.delete("/:id", authMiddleware, (c) => {
   const id = c.req.param("id");
   const existing = db.select().from(schema.categories).where(eq(schema.categories.id, id)).get();
   if (!existing) {
-    return c.json({ error: "카테고리를 찾을 수 없습니다." }, 404);
+    return c.json({ error: "Category not found." }, 404);
   }
 
   db.update(schema.posts).set({ categoryId: null }).where(eq(schema.posts.categoryId, id)).run();
 
   db.delete(schema.categories).where(eq(schema.categories.id, id)).run();
-  return c.json({ message: "카테고리가 삭제되었습니다." });
+  return c.json({ message: "Category has been deleted." });
 });
 
 export default categoriesRoute;

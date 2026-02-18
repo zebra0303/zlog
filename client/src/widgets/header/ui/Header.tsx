@@ -40,20 +40,20 @@ export function Header() {
   );
   const hasCustomHeight = !!customStyle.minHeight;
 
-  // 커스텀 높이 값 (px) 파싱
+  // Parse custom height value (px)
   const parsedMinHeight = hasCustomHeight
     ? Number.parseInt(customStyle.minHeight as string, 10)
     : 0;
   const fullHeightPx = Number.isNaN(parsedMinHeight) ? 0 : parsedMinHeight;
 
   /**
-   * 스크롤 감지 — DOM dataset 직접 토글 (React re-render 없음)
+   * Scroll detection — toggle DOM dataset directly (no React re-render)
    *
-   * 깜빡임 방지 핵심:
-   *  - compact 진입 threshold = fullHeightPx (헤더 전체 높이)
-   *    → 헤더 높이가 줄어들어 scrollY가 ~186px 감소해도
-   *      expand threshold(10px)에 도달하지 못함
-   *  - expand threshold = 10px (거의 맨 위)
+   * Key to preventing flickering:
+   *  - compact entry threshold = fullHeightPx (full header height)
+   *    → even if scrollY decreases by ~186px due to header height reduction,
+   *      it won't reach the expand threshold (10px)
+   *  - expand threshold = 10px (nearly at the top)
    */
   useEffect(() => {
     if (!hasCustomHeight || fullHeightPx === 0) return;

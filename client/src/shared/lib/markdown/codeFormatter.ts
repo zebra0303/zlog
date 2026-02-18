@@ -1,8 +1,8 @@
 /**
- * 코드블록 자동 포맷팅 — Prettier standalone (dynamic import로 번들 최적화)
+ * Code block auto-formatting — Prettier standalone (bundle optimization via dynamic import)
  */
 
-// Prettier 지원 언어 → parser 매핑
+// Prettier supported language → parser mapping
 const LANG_PARSER_MAP: Record<string, string> = {
   javascript: "babel",
   js: "babel",
@@ -22,24 +22,24 @@ const LANG_PARSER_MAP: Record<string, string> = {
   yml: "yaml",
 };
 
-/** 해당 언어가 Prettier로 포맷 가능한지 */
+/** Check if the language is formattable by Prettier */
 export function isFormattable(lang: string): boolean {
   return lang.toLowerCase() in LANG_PARSER_MAP;
 }
 
-/** 코드를 Prettier로 포맷 (지원 언어만, 실패 시 원본 반환) */
+/** Format code with Prettier (supported languages only, returns original on failure) */
 export async function formatCode(code: string, lang: string): Promise<string> {
   const parser = LANG_PARSER_MAP[lang.toLowerCase()];
   if (!parser) return code;
 
   try {
-    // dynamic import로 필요시에만 로드 (번들 최적화)
+    // Load only when needed via dynamic import (bundle optimization)
     const [prettier, estreePlugin] = await Promise.all([
       import("prettier/standalone"),
       import("prettier/plugins/estree"),
     ]);
 
-    // parser에 따라 필요한 플러그인만 로드
+    // Load only the required plugins based on the parser
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const plugins: any[] = [estreePlugin.default ?? estreePlugin]; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 
@@ -80,10 +80,10 @@ export async function formatCode(code: string, lang: string): Promise<string> {
       trailingComma: "all",
     });
 
-    // prettier는 끝에 줄바꿈을 추가하므로 trim
+    // Prettier adds a trailing newline, so trim it
     return formatted.trimEnd();
   } catch {
-    // 포맷 실패 시 (구문 오류 등) 원본 유지
+    // On format failure (e.g. syntax error), keep the original
     return code;
   }
 }

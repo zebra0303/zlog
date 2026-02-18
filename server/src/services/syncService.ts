@@ -1,8 +1,8 @@
 /**
- * 구독 동기화 서비스
+ * Subscription sync service
  *
- * 서버 시작 시 1회 + 이후 주기적으로 모든 활성 구독을 pull 방식으로 동기화합니다.
- * webhook_sync_interval 설정값(분 단위)에 따라 간격이 정해집니다.
+ * Syncs all active subscriptions via pull on server start (once) and periodically thereafter.
+ * The interval is determined by the webhook_sync_interval setting (in minutes).
  */
 
 import { db } from "../db/index.js";
@@ -12,7 +12,7 @@ import { generateId } from "../lib/uuid.js";
 import { fixRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
 
 /**
- * 단일 구독의 글을 pull 동기화
+ * Pull-sync posts for a single subscription
  */
 export async function syncSubscription(
   sub: typeof schema.categorySubscriptions.$inferSelect,
@@ -31,7 +31,7 @@ export async function syncSubscription(
     .get();
   if (!remoteBlog) return 0;
 
-  // lastSyncedAt 이후 글만 가져오기 (있으면)
+  // Only fetch posts after lastSyncedAt (if available)
   let postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts`;
   if (sub.lastSyncedAt) {
     postsUrl += `?since=${encodeURIComponent(sub.lastSyncedAt)}`;
@@ -115,7 +115,7 @@ export async function syncSubscription(
 }
 
 /**
- * 모든 활성 구독을 동기화
+ * Sync all active subscriptions
  */
 export async function syncAllSubscriptions(): Promise<void> {
   const subs = db
@@ -126,7 +126,7 @@ export async function syncAllSubscriptions(): Promise<void> {
 
   if (subs.length === 0) return;
 
-  console.log(`🔄 ${subs.length}개 구독 동기화 시작...`);
+  console.log(`🔄 Starting sync for ${subs.length} subscription(s)...`);
   let totalSynced = 0;
 
   for (const sub of subs) {
@@ -134,22 +134,22 @@ export async function syncAllSubscriptions(): Promise<void> {
       const count = await syncSubscription(sub);
       totalSynced += count;
     } catch (err) {
-      // 개별 구독 실패 시 다른 구독은 계속 진행
+      // On individual subscription failure, continue with the rest
       const remoteCat = db
         .select()
         .from(schema.remoteCategories)
         .where(eq(schema.remoteCategories.id, sub.remoteCategoryId))
         .get();
       console.error(
-        `⚠️ 구독 동기화 실패 (${remoteCat?.name ?? sub.id}):`,
+        `⚠️ Subscription sync failed (${remoteCat?.name ?? sub.id}):`,
         err instanceof Error ? err.message : err,
       );
     }
   }
 
-  console.log(`✅ 동기화 완료: ${totalSynced}개 글 동기화됨`);
+  console.log(`✅ Sync complete: ${totalSynced} post(s) synced`);
 
-  // 동기화 후 GC 트리거 (fetch 응답, JSON 파싱 등 임시 객체 정리)
+  // Trigger GC after sync (clean up temporary objects from fetch responses, JSON parsing, etc.)
   if (typeof globalThis.gc === "function") {
     globalThis.gc();
   }
@@ -157,13 +157,13 @@ export async function syncAllSubscriptions(): Promise<void> {
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 
-// 최근 트리거된 구독 ID를 추적하여 중복 동기화 방지
+// Track recently triggered subscription IDs to prevent duplicate syncs
 const recentlyTriggered = new Set<string>();
 
 /**
- * 게시글 목록 조회 시 stale한 구독을 백그라운드에서 동기화
- * - 마지막 동기화 이후 충분한 시간이 경과한 구독만 대상
- * - 동일 구독에 대한 중복 트리거 방지 (30초 쿨다운)
+ * Background-sync stale subscriptions when post lists are queried
+ * - Only targets subscriptions where enough time has passed since last sync
+ * - Prevents duplicate triggers for the same subscription (30-second cooldown)
  */
 export function triggerStaleSync(): void {
   const subs = db
@@ -175,7 +175,7 @@ export function triggerStaleSync(): void {
   if (subs.length === 0) return;
 
   const now = Date.now();
-  // stale 기준: 마지막 동기화 이후 3분 이상 경과
+  // Stale threshold: more than 3 minutes since last sync
   const staleThresholdMs = 3 * 60 * 1000;
 
   const staleSubs = subs.filter((sub) => {
@@ -186,28 +186,28 @@ export function triggerStaleSync(): void {
 
   if (staleSubs.length === 0) return;
 
-  // 중복 방지: 트리거된 구독 ID를 30초간 기록
+  // Dedup: record triggered subscription IDs for 30 seconds
   for (const sub of staleSubs) {
     recentlyTriggered.add(sub.id);
     setTimeout(() => recentlyTriggered.delete(sub.id), 30000);
   }
 
-  // 비동기로 백그라운드 실행 (응답을 블로킹하지 않음)
+  // Run asynchronously in the background (non-blocking)
   void (async () => {
     for (const sub of staleSubs) {
       try {
         await syncSubscription(sub);
       } catch {
-        // 개별 실패 무시
+        // Ignore individual failures
       }
     }
   })();
 }
 
 /**
- * 백그라운드 동기화 워커 시작
- * - 서버 시작 5초 후 첫 동기화
- * - 이후 webhook_sync_interval(분) 간격으로 반복
+ * Start background sync worker
+ * - First sync 5 seconds after server start
+ * - Then repeats at webhook_sync_interval (minutes) intervals
  */
 export function startSyncWorker(): void {
   const intervalSetting = db
@@ -218,21 +218,21 @@ export function startSyncWorker(): void {
   const intervalMinutes = Math.max(1, Number(intervalSetting?.value) || 15);
   const intervalMs = intervalMinutes * 60 * 1000;
 
-  // 서버 시작 5초 후 첫 동기화 (부트스트랩 완료 대기)
+  // First sync 5 seconds after start (wait for bootstrap to complete)
   setTimeout(() => {
     void syncAllSubscriptions();
   }, 5000);
 
-  // 주기적 동기화
+  // Periodic sync
   syncTimer = setInterval(() => {
     void syncAllSubscriptions();
   }, intervalMs);
 
-  console.log(`🔄 백그라운드 동기화 워커 시작 (간격: ${intervalMinutes}분)`);
+  console.log(`🔄 Background sync worker started (interval: ${intervalMinutes}min)`);
 }
 
 /**
- * 워커 정리 (테스트 등에서 사용)
+ * Clean up worker (used in tests, etc.)
  */
 export function stopSyncWorker(): void {
   if (syncTimer) {

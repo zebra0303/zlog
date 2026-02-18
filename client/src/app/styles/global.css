@@ -42,7 +42,7 @@ body {
   word-break: break-word;
 }
 
-/* 모바일 최적화: prose 헤딩 반응형 크기 + 한글 줄바꿈 */
+/* Mobile optimization: responsive prose heading sizes + CJK line-break */
 .prose h1 {
   font-size: clamp(1.4rem, 4.5vw, 2.25rem) !important;
   line-height: 1.3 !important;
@@ -79,7 +79,7 @@ body {
   outline-offset: 2px;
 }
 
-/* 코드블록 래퍼 */
+/* Code block wrapper */
 .code-block-wrapper {
   position: relative;
   margin: 1em 0;
@@ -96,7 +96,7 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* 코드블록 헤더 (언어 라벨 + 복사 버튼) */
+/* Code block header (language label + copy button) */
 .code-block-header {
   display: flex;
   align-items: center;
@@ -164,7 +164,7 @@ body {
   color: #3fb950;
 }
 
-/* 래퍼 안의 pre는 margin/border/radius 제거 (래퍼가 담당) */
+/* Remove margin/border/radius from pre inside wrapper (wrapper handles it) */
 .code-block-wrapper pre {
   margin: 0 !important;
   border: none !important;
@@ -173,7 +173,7 @@ body {
   background: transparent !important;
 }
 
-/* 래퍼 없는 일반 코드블록 (언어 미지정) */
+/* Plain code block without wrapper (no language specified) */
 .prose pre {
   background: #f6f8fa;
   border: 1px solid #e5e7eb;
@@ -189,7 +189,7 @@ pre code.hljs {
   background: transparent;
 }
 
-/* 어두운 테마 코드블록 */
+/* Dark theme code blocks */
 .dark .prose pre {
   background: #0d1117;
   border: 1px solid #30363d;
@@ -275,7 +275,7 @@ pre code.hljs {
   background-color: #67060c;
 }
 
-/* Mermaid 다이어그램 컨테이너 */
+/* Mermaid diagram container */
 .mermaid-block {
   display: flex;
   justify-content: center;
@@ -333,7 +333,7 @@ pre code.hljs {
   color: #fca5a5;
 }
 
-/* Mermaid 전체화면 모달 */
+/* Mermaid fullscreen modal */
 .mermaid-modal-overlay {
   position: fixed;
   inset: 0;

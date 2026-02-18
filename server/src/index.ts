@@ -1,12 +1,12 @@
-// .env 로딩: tsx --env-file=../.env 로 이미 로드됨
-// 프로덕션 fallback: dotenv로 명시적 경로 지정
+// .env loading: already loaded via tsx --env-file=../.env
+// Production fallback: explicitly specify path with dotenv
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
-// 루트 .env를 명시적으로 로드 (--env-file로 이미 로드된 경우 중복은 무시됨)
+// Explicitly load root .env (duplicates are ignored if already loaded via --env-file)
 dotenv.config({ path: path.resolve(PROJECT_ROOT, ".env") });
 
 import { serve } from "@hono/node-server";
@@ -21,8 +21,8 @@ function main() {
   bootstrap();
   startSyncWorker();
   serve({ fetch: app.fetch, port }, () => {
-    console.log(`🦓 zlog 서버가 포트 ${port}에서 실행 중입니다.`);
-    console.log(`📋 환경변수 로드됨: ADMIN_EMAIL=${process.env.ADMIN_EMAIL ?? "(미설정)"}`);
+    console.log(`🦓 zlog server running on port ${port}`);
+    console.log(`📋 Environment loaded: ADMIN_EMAIL=${process.env.ADMIN_EMAIL ?? "(not set)"}`);
   });
 }
 

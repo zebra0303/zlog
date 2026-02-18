@@ -45,7 +45,7 @@ export default function RemotePostDetailPage() {
     void api
       .get<RemotePost>(`/federation/remote-posts/${id}`)
       .then(async (data) => {
-        // 원본이 삭제된 경우
+        // If the original has been deleted
         if (data.remoteStatus === "deleted") {
           alert(t("remote_post_deleted_alert"));
           void navigate("/");
@@ -95,7 +95,7 @@ export default function RemotePostDetailPage() {
         <img src={post.coverImage} alt={post.title} className="mb-6 h-auto w-full rounded-xl" />
       )}
       <div className="mb-8">
-        {/* 원본 블로그 프로필 카드 + 제목 영역 */}
+        {/* Original blog profile card + title area */}
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="order-2 min-w-0 flex-1 sm:order-1">
             <h1 className="mb-3 text-2xl font-bold text-[var(--color-text)] md:text-3xl">
@@ -121,7 +121,7 @@ export default function RemotePostDetailPage() {
             )}
           </div>
 
-          {/* 원본 블로그 프로필 */}
+          {/* Original blog profile */}
           {post.remoteBlog && (
             <a
               href={post.remoteBlog.siteUrl}

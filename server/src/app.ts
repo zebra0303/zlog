@@ -23,7 +23,7 @@ const CLIENT_DIST = path.resolve(PROJECT_ROOT, "client/dist");
 export function createApp() {
   const app = new Hono();
 
-  // Federation API는 다른 블로그(다른 origin)에서도 호출 가능해야 하므로 CORS 허용
+  // Allow CORS for Federation API since it may be called from other blog origins
   app.use(
     "/api/federation/*",
     cors({
@@ -47,14 +47,14 @@ export function createApp() {
   app.use("/img/*", serveStatic({ root: CLIENT_DIST }));
   app.use("/favicons/*", serveStatic({ root: CLIENT_DIST }));
 
-  // 동적 PWA 매니페스트 — 블로그 제목과 프로필 아바타 사용
+  // Dynamic PWA manifest — uses blog title and profile avatar
   app.get("/site.webmanifest", (c) => {
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
     const ownerRecord = db.select().from(schema.owner).get();
     const blogTitle = ownerRecord?.blogTitle ?? "zlog";
-    const blogDesc = ownerRecord?.blogDescription ?? "관심 있는 모든 글, 내 블로그 하나로";
+    const blogDesc = ownerRecord?.blogDescription ?? "A personal blog powered by zlog";
 
-    // 헤더 어두운 모드 배경색 → theme_color
+    // Header dark mode background color → theme_color
     const themeColorRow = db
       .select()
       .from(schema.siteSettings)
@@ -62,7 +62,7 @@ export function createApp() {
       .get();
     const themeColor = themeColorRow?.value ?? "#6C5CE7";
 
-    // 아이콘: 프로필 아바타가 있으면 사용, 없으면 기본 favicon
+    // Icons: use profile avatar if available, otherwise default favicon
     const icons: { src: string; sizes: string; type: string; purpose: string }[] = [];
     if (ownerRecord?.avatarUrl) {
       const uuid = ownerRecord.avatarUrl.split("/").pop()?.replace(".webp", "") ?? "";
@@ -165,9 +165,9 @@ ${urls.join("\n")}
 </urlset>`);
   });
 
-  // ============ RSS 피드 ============
+  // ============ RSS Feed ============
 
-  // 전체 블로그 RSS 피드
+  // Full blog RSS feed
   app.get("/rss.xml", (c) => {
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
     const ownerInfo = db.select().from(schema.owner).get();
@@ -201,7 +201,7 @@ ${urls.join("\n")}
     return c.body(xml);
   });
 
-  // 카테고리별 RSS 피드
+  // Per-category RSS feed
   app.get("/category/:slug/rss.xml", (c) => {
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
     const slug = c.req.param("slug");
@@ -247,7 +247,7 @@ ${urls.join("\n")}
     return c.body(xml);
   });
 
-  // ============ SSR 메타 태그 + JSON-LD 주입 ============
+  // ============ SSR meta tags + JSON-LD injection ============
 
   let indexHtmlTemplate = "";
 
@@ -397,7 +397,7 @@ function buildSsrTags(meta: SsrMeta): string {
   return lines.join("\n    ");
 }
 
-/** 상대 경로를 절대 URL로 변환 (og:image 등 크롤러용) */
+/** Convert relative paths to absolute URLs (for og:image and crawlers) */
 function toAbsoluteUrl(url: string | undefined, base: string): string | undefined {
   if (!url) return url;
   if (url.startsWith("/")) return base + url;

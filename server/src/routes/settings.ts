@@ -14,7 +14,7 @@ const settingsRoute = new Hono<{ Variables: AppVariables }>();
 
 settingsRoute.get("/profile", (c) => {
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  if (!ownerRecord) return c.json({ error: "프로필을 찾을 수 없습니다." }, 404);
+  if (!ownerRecord) return c.json({ error: "Profile not found." }, 404);
 
   const { passwordHash: _, ...ownerData } = ownerRecord;
   const socialLinksData = db
@@ -74,7 +74,7 @@ settingsRoute.put("/profile", authMiddleware, async (c) => {
 
   db.update(schema.owner).set(updateData).where(eq(schema.owner.id, ownerId)).run();
 
-  // blogTitle이 변경되면 siteSettings의 blog_title도 동기화
+  // Sync siteSettings blog_title when blogTitle is changed
   if (body.blogTitle !== undefined) {
     const now2 = new Date().toISOString();
     const existing = db
@@ -95,7 +95,7 @@ settingsRoute.put("/profile", authMiddleware, async (c) => {
   }
 
   const updated = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
-  if (!updated) return c.json({ error: "업데이트 실패" }, 500);
+  if (!updated) return c.json({ error: "Update failed." }, 500);
   const { passwordHash: _, ...ownerData } = updated;
   return c.json(ownerData);
 });
@@ -104,12 +104,12 @@ settingsRoute.post("/profile/avatar", authMiddleware, async (c) => {
   const ownerId = c.get("ownerId");
   const formData = await c.req.formData();
   const file = formData.get("avatar") as File | null;
-  if (!file) return c.json({ error: "이미지 파일을 선택해주세요." }, 400);
+  if (!file) return c.json({ error: "Please select an image file." }, 400);
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   if (!allowedTypes.includes(file.type))
-    return c.json({ error: "JPEG, PNG, WebP, GIF 형식만 지원합니다." }, 400);
-  if (file.size > 5 * 1024 * 1024) return c.json({ error: "파일 크기는 최대 5MB입니다." }, 400);
+    return c.json({ error: "Only JPEG, PNG, WebP, and GIF formats are supported." }, 400);
+  if (file.size > 5 * 1024 * 1024) return c.json({ error: "File size must not exceed 5MB." }, 400);
 
   const uploadsBase = path.join(process.cwd(), "uploads", "avatar");
   mkdirSync(path.join(uploadsBase, "original"), { recursive: true });
@@ -178,7 +178,7 @@ settingsRoute.delete("/profile/avatar", authMiddleware, (c) => {
     })
     .where(eq(schema.owner.id, ownerId))
     .run();
-  return c.json({ message: "아바타가 삭제되었습니다." });
+  return c.json({ message: "Avatar has been deleted." });
 });
 
 settingsRoute.get("/profile/social-links", (c) => {
@@ -204,7 +204,7 @@ settingsRoute.put("/profile/social-links", authMiddleware, async (c) => {
   return c.json(db.select().from(schema.socialLinks).orderBy(schema.socialLinks.sortOrder).all());
 });
 
-// ============ 계정 (이메일/비밀번호) 변경 ============
+// ============ Account (email/password) change ============
 settingsRoute.put("/profile/account", authMiddleware, async (c) => {
   const ownerId = c.get("ownerId");
   const body = await c.req.json<{
@@ -214,34 +214,34 @@ settingsRoute.put("/profile/account", authMiddleware, async (c) => {
   }>();
 
   if (!body.currentPassword) {
-    return c.json({ error: "현재 비밀번호를 입력해주세요." }, 400);
+    return c.json({ error: "Please enter your current password." }, 400);
   }
 
   const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
   if (!ownerRecord) {
-    return c.json({ error: "사용자를 찾을 수 없습니다." }, 404);
+    return c.json({ error: "User not found." }, 404);
   }
 
-  // 현재 비밀번호 확인
+  // Verify current password
   if (!verifyPassword(body.currentPassword, ownerRecord.passwordHash)) {
-    return c.json({ error: "현재 비밀번호가 올바르지 않습니다." }, 401);
+    return c.json({ error: "Current password is incorrect." }, 401);
   }
 
   const now = new Date().toISOString();
   const updateData: Record<string, unknown> = { updatedAt: now };
 
-  // 이메일 변경
+  // Change email
   if (body.email !== undefined && body.email !== ownerRecord.email) {
     if (!body.email.includes("@")) {
-      return c.json({ error: "유효한 이메일 주소를 입력해주세요." }, 400);
+      return c.json({ error: "Please enter a valid email address." }, 400);
     }
     updateData.email = body.email;
   }
 
-  // 비밀번호 변경
+  // Change password
   if (body.newPassword) {
     if (body.newPassword.length < 8) {
-      return c.json({ error: "새 비밀번호는 최소 8자 이상이어야 합니다." }, 400);
+      return c.json({ error: "New password must be at least 8 characters long." }, 400);
     }
     updateData.passwordHash = hashPassword(body.newPassword);
   }
@@ -249,21 +249,22 @@ settingsRoute.put("/profile/account", authMiddleware, async (c) => {
   db.update(schema.owner).set(updateData).where(eq(schema.owner.id, ownerId)).run();
 
   const updated = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
-  if (!updated) return c.json({ error: "업데이트 실패" }, 500);
+  if (!updated) return c.json({ error: "Update failed." }, 500);
   const { passwordHash: _, ...ownerData } = updated;
-  return c.json({ ...ownerData, message: "계정 정보가 변경되었습니다." });
+  return c.json({ ...ownerData, message: "Account information has been updated." });
 });
 
-// ============ 범용 이미지 업로드 ============
+// ============ General image upload ============
 settingsRoute.post("/upload/image", authMiddleware, async (c) => {
   const formData = await c.req.formData();
   const file = formData.get("image") as File | null;
-  if (!file) return c.json({ error: "이미지 파일을 선택해주세요." }, 400);
+  if (!file) return c.json({ error: "Please select an image file." }, 400);
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   if (!allowedTypes.includes(file.type))
-    return c.json({ error: "JPEG, PNG, WebP, GIF 형식만 지원합니다." }, 400);
-  if (file.size > 10 * 1024 * 1024) return c.json({ error: "파일 크기는 최대 10MB입니다." }, 400);
+    return c.json({ error: "Only JPEG, PNG, WebP, and GIF formats are supported." }, 400);
+  if (file.size > 10 * 1024 * 1024)
+    return c.json({ error: "File size must not exceed 10MB." }, 400);
 
   const uploadsDir = path.join(process.cwd(), "uploads", "images");
   mkdirSync(uploadsDir, { recursive: true });
@@ -271,7 +272,7 @@ settingsRoute.post("/upload/image", authMiddleware, async (c) => {
   const uuid = generateId();
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // 원본 비율 유지, 최대 1920px, WebP 변환
+  // Maintain original aspect ratio, max 1920px, convert to WebP
   await sharp(buffer)
     .resize(1920, 1920, { fit: "inside", withoutEnlargement: true })
     .webp({ quality: 85 })
@@ -286,7 +287,7 @@ settingsRoute.get("/settings", (c) => {
   const result: Record<string, string> = {};
   for (const s of settings) result[s.key] = s.value;
 
-  // blog_title이 siteSettings에 없으면 owner.blogTitle에서 가져옴
+  // If blog_title is not in siteSettings, get it from owner.blogTitle
   if (!result.blog_title) {
     const ownerRecord = db.select().from(schema.owner).limit(1).get();
     if (ownerRecord?.blogTitle) result.blog_title = ownerRecord.blogTitle;

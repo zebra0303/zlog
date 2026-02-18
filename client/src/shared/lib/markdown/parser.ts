@@ -27,8 +27,8 @@ const processor = unified()
 export async function parseMarkdown(markdown: string): Promise<string> {
   let processed = markdown;
 
-  // mermaid 코드블록을 placeholder로 추출 (Prettier/highlight에서 제외)
-  // HTML 코멘트는 rehype-sanitize가 제거하므로, 일반 텍스트 마커 사용
+  // Extract mermaid code blocks as placeholders (excluded from Prettier/highlight)
+  // HTML comments are stripped by rehype-sanitize, so use plain text markers
   const mermaidBlocks: string[] = [];
   processed = processed.replace(/```mermaid\n([\s\S]*?)```/g, (_match, code: string) => {
     const idx = mermaidBlocks.length;
@@ -54,7 +54,7 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     return `<iframe src="https://codesandbox.io/embed/${id}" style="width:100%;height:500px;border:0;border-radius:8px;overflow:hidden;" allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking" sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"></iframe>`;
   });
 
-  // 코드블록 자동 포맷팅: ```lang ... ``` 패턴을 찾아 Prettier로 포맷
+  // Auto-format code blocks: find ```lang ... ``` patterns and format with Prettier
   const codeBlockRegex = /```(\w+)\n([\s\S]*?)```/g;
   const matches = [...processed.matchAll(codeBlockRegex)];
   if (matches.length > 0) {
@@ -75,21 +75,21 @@ export async function parseMarkdown(markdown: string): Promise<string> {
   const result = await processor.process(processed);
   let html = String(result);
 
-  // 코드블록에 언어 라벨 + 복사 버튼 헤더 추가
+  // Add language label + copy button header to code blocks
   html = html.replace(/<pre><code class="hljs language-(\w+)">/g, (_match, lang: string) => {
     const displayLang = lang.toLowerCase();
     return `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-block-lang">${displayLang}</span><button type="button" class="code-block-copy" aria-label="Copy code"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div><pre><code class="hljs language-${lang}">`;
   });
 
-  // 래핑된 코드블록의 닫는 태그 처리
-  // code-block-wrapper로 감싼 <pre>의 </code></pre> 뒤에 </div> 추가
+  // Handle closing tags for wrapped code blocks
+  // Append </div> after </code></pre> for <pre> wrapped in code-block-wrapper
   html = html.replace(/(<div class="code-block-wrapper">[\s\S]*?<\/code><\/pre>)/g, "$1</div>");
 
-  // 모든 링크를 새 탭에서 열리도록 target="_blank" 추가
+  // Add target="_blank" to all links so they open in a new tab
   html = html.replace(/<a\s+(href="[^"]*")/g, '<a target="_blank" rel="noopener noreferrer" $1');
 
-  // mermaid placeholder를 렌더링용 div로 교체
-  // unified 파이프라인 통과 후 <p>MERMAID_BLOCK_0_PLACEHOLDER</p> 형태로 남음
+  // Replace mermaid placeholders with rendering divs
+  // After passing through the unified pipeline, they remain as <p>MERMAID_BLOCK_0_PLACEHOLDER</p>
   for (let i = 0; i < mermaidBlocks.length; i++) {
     const raw = mermaidBlocks[i] ?? "";
     const encoded = raw

@@ -23,9 +23,9 @@ function deleteUploadedImage(imageUrl: string) {
 
 const postsRoute = new Hono();
 
-// ============ 배치 hydration 헬퍼 ============
+// ============ Batch hydration helpers ============
 
-/** 카테고리를 ID 기반 Map으로 배치 로딩 */
+/** Batch load categories into an ID-based Map */
 function batchLoadCategories(categoryIds: string[]) {
   const map = new Map<string, { id: string; name: string; slug: string }>();
   if (categoryIds.length === 0) return map;
@@ -42,7 +42,7 @@ function batchLoadCategories(categoryIds: string[]) {
   return map;
 }
 
-/** 태그를 postId 기반 Map으로 배치 로딩 */
+/** Batch load tags into a postId-based Map */
 function batchLoadTags(postIds: string[]) {
   const map = new Map<string, { id: string; name: string; slug: string }[]>();
   if (postIds.length === 0) return map;
@@ -80,7 +80,7 @@ postsRoute.get("/", (c) => {
   const perPage = Number(perPageSetting?.value) || 10;
   const offset = (page - 1) * perPage;
 
-  // 카테고리 slug → ID 변환
+  // Convert category slug to ID
   let categoryId: string | null = null;
   if (categorySlug) {
     const cat = db
@@ -91,7 +91,7 @@ postsRoute.get("/", (c) => {
     categoryId = cat?.id ?? null;
   }
 
-  // 태그 slug → postId 목록 변환
+  // Convert tag slug to postId list
   let tagPostIds: string[] | null = null;
   if (tagSlug) {
     const tag = db.select().from(schema.tags).where(eq(schema.tags.slug, tagSlug)).get();
@@ -111,7 +111,7 @@ postsRoute.get("/", (c) => {
 
   const includeRemote = status === "published" && !tagSlug;
 
-  // ============ 경로 A: 로컬 전용 (admin / draft / tag 필터) ============
+  // ============ Path A: Local only (admin / draft / tag filter) ============
   if (!includeRemote) {
     const conditions: ReturnType<typeof eq>[] = [];
     if (status === "all") {
@@ -158,9 +158,9 @@ postsRoute.get("/", (c) => {
     return c.json({ items, total, page, perPage, totalPages: Math.ceil(total / perPage) });
   }
 
-  // ============ 경로 B: 통합 피드 (UNION ALL) ============
+  // ============ Path B: Combined feed (UNION ALL) ============
 
-  // 동적 WHERE 조건 조합 (parameterized)
+  // Dynamic WHERE condition composition (parameterized)
   const localWhereParts: string[] = ["status = 'published'"];
   const remoteWhereParts: string[] = [
     "remote_status = 'published'",
@@ -184,15 +184,15 @@ postsRoute.get("/", (c) => {
   const localWhere = localWhereParts.join(" AND ");
   const remoteWhere = remoteWhereParts.join(" AND ");
 
-  // 카운트 쿼리
+  // Count query
   const countSql = `
     SELECT
       (SELECT COUNT(*) FROM posts WHERE ${localWhere}) +
       (SELECT COUNT(*) FROM remote_posts WHERE ${remoteWhere})
     AS total
   `;
-  // 카운트용 파라미터: localWhere 파라미터 + remoteWhere 파라미터
-  const countParams = [...params]; // params에 이미 local + remote 순으로 들어있음
+  // Count parameters: localWhere params + remoteWhere params
+  const countParams = [...params]; // params already ordered: local + remote
   const totalRow = sqlite.prepare(countSql).get(...countParams) as { total: number } | undefined;
   const total = totalRow?.total ?? 0;
 
@@ -200,7 +200,7 @@ postsRoute.get("/", (c) => {
     return c.json({ items: [], total: 0, page, perPage, totalPages: 0 });
   }
 
-  // UNION ALL 페이지네이션 쿼리
+  // UNION ALL pagination query
   const unionSql = `
     SELECT id, 'local' AS source, created_at, category_id
     FROM posts WHERE ${localWhere}
@@ -221,14 +221,14 @@ postsRoute.get("/", (c) => {
   const localIds = pageRows.filter((r) => r.source === "local").map((r) => r.id);
   const remoteIds = pageRows.filter((r) => r.source === "remote").map((r) => r.id);
 
-  // 배치: 로컬 글 전체 데이터
+  // Batch: full data for local posts
   const localPostsMap = new Map<string, typeof schema.posts.$inferSelect>();
   if (localIds.length > 0) {
     const rows = db.select().from(schema.posts).where(inArray(schema.posts.id, localIds)).all();
     for (const r of rows) localPostsMap.set(r.id, r);
   }
 
-  // 배치: 원격 글 전체 데이터
+  // Batch: full data for remote posts
   const remotePostsMap = new Map<string, typeof schema.remotePosts.$inferSelect>();
   if (remoteIds.length > 0) {
     const rows = db
@@ -239,14 +239,14 @@ postsRoute.get("/", (c) => {
     for (const r of rows) remotePostsMap.set(r.id, r);
   }
 
-  // 배치: 카테고리
+  // Batch: categories
   const allCatIds = [...new Set(pageRows.map((r) => r.category_id).filter(Boolean))] as string[];
   const categoriesMap = batchLoadCategories(allCatIds);
 
-  // 배치: 태그 (로컬 글만)
+  // Batch: tags (local posts only)
   const tagsMap = batchLoadTags(localIds);
 
-  // 배치: 원격 블로그
+  // Batch: remote blogs
   const remoteBlogsMap = new Map<
     string,
     {
@@ -275,7 +275,7 @@ postsRoute.get("/", (c) => {
     }
   }
 
-  // UNION ALL 순서대로 결과 조립
+  // Assemble results in UNION ALL order
   const items = pageRows
     .map((row) => {
       if (row.source === "local") {
@@ -314,7 +314,7 @@ postsRoute.get("/", (c) => {
     })
     .filter(Boolean);
 
-  // 원격 글 있으면 stale 구독 동기화 트리거
+  // Trigger stale subscription sync if remote posts exist
   if (remoteIds.length > 0) {
     triggerStaleSync();
   }
@@ -324,17 +324,17 @@ postsRoute.get("/", (c) => {
 
 postsRoute.get("/:param", async (c) => {
   const param = c.req.param("param");
-  // UUID v7 패턴이면 ID로 조회, 아니면 slug로 조회
+  // If UUID v7 pattern, look up by ID; otherwise look up by slug
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
   const post = isUuid
     ? db.select().from(schema.posts).where(eq(schema.posts.id, param)).get()
     : db.select().from(schema.posts).where(eq(schema.posts.slug, param)).get();
 
   if (!post || post.status === "deleted") {
-    return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+    return c.json({ error: "Post not found." }, 404);
   }
 
-  // 조회수 증가 여부 판단: 관리자이거나 이미 조회한 방문자는 제외
+  // Determine whether to increment view count: exclude admins or already-viewed visitors
   let shouldCount = true;
   const authHeader = c.req.header("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
@@ -351,7 +351,7 @@ postsRoute.get("/:param", async (c) => {
   if (shouldCount) {
     viewCount = post.viewCount + 1;
     db.update(schema.posts).set({ viewCount }).where(eq(schema.posts.id, post.id)).run();
-    // 24시간 동안 같은 글 재조회 시 카운트 안 함
+    // Do not count re-views of the same post for 24 hours
     c.header("Set-Cookie", `${viewedCookie}=1; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax`);
   }
 
@@ -389,7 +389,7 @@ postsRoute.post("/", authMiddleware, async (c) => {
   }>();
 
   if (!body.title || !body.content) {
-    return c.json({ error: "제목과 내용을 입력해주세요." }, 400);
+    return c.json({ error: "Title and content are required." }, 400);
   }
 
   const existingSlugs = db
@@ -456,7 +456,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
 
   const existing = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
   if (!existing) {
-    return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+    return c.json({ error: "Post not found." }, 404);
   }
 
   const now = new Date().toISOString();
@@ -515,7 +515,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
     const catId = body.categoryId ?? existing.categoryId;
     if (catId) {
       if (body.status && body.status !== existing.status) {
-        // status가 변경된 경우
+        // Status has changed
         if (body.status === "published") {
           void sendWebhookToSubscribers("post.published", updatedPost, catId);
         } else if (body.status === "deleted") {
@@ -524,7 +524,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
           void sendWebhookToSubscribers("post.unpublished", updatedPost, catId);
         }
       } else if (existing.status === "published" && !body.status) {
-        // published 상태를 유지하면서 내용이 변경된 경우 (커버이미지, 본문 등)
+        // Content changed while maintaining published status (cover image, body, etc.)
         const contentChanged =
           (body.title !== undefined && body.title !== existing.title) ||
           (body.content !== undefined && body.content !== existing.content) ||
@@ -546,7 +546,7 @@ postsRoute.delete("/:id", authMiddleware, (c) => {
   const id = c.req.param("id");
   const existing = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
   if (!existing) {
-    return c.json({ error: "게시글을 찾을 수 없습니다." }, 404);
+    return c.json({ error: "Post not found." }, 404);
   }
 
   const now = new Date().toISOString();
@@ -559,7 +559,7 @@ postsRoute.delete("/:id", authMiddleware, (c) => {
     void sendWebhookToSubscribers("post.deleted", existing, existing.categoryId);
   }
 
-  return c.json({ message: "게시글이 삭제되었습니다." });
+  return c.json({ message: "Post has been deleted." });
 });
 
 export default postsRoute;

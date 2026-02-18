@@ -126,7 +126,7 @@ export function CommentSection({ postId }: { postId: string }) {
         {t("comment_title")}
       </h3>
 
-      {/* SSO 로그인 상태 표시 (anonymous_only 모드에서는 숨김) */}
+      {/* SSO login status display (hidden in anonymous_only mode) */}
       {showSsoLogin && commenter ? (
         <div
           className="mb-4 flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2"
@@ -196,7 +196,7 @@ export function CommentSection({ postId }: { postId: string }) {
         </div>
       ) : null}
 
-      {/* 댓글 작성 폼 */}
+      {/* Comment form */}
       {showSsoLogin && commenter ? (
         <CommentForm
           postId={postId}
@@ -270,11 +270,11 @@ function CommentForm({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { t } = useI18n();
 
-  // SSO 로그인 직후 → 댓글 입력창으로 스크롤 + 포커스 + 하이라이트
+  // After SSO login → scroll to comment input + focus + highlight
   useEffect(() => {
     if (commenter && !parentId && localStorage.getItem("zlog_oauth_just_logged_in")) {
       localStorage.removeItem("zlog_oauth_just_logged_in");
-      // 이미지/마크다운 렌더링으로 레이아웃이 변할 수 있으므로 여러 번 스크롤 보정
+      // Layout may shift due to image/markdown rendering, so retry scroll multiple times
       let count = 0;
       const maxRetries = 5;
       const doScroll = () => {
@@ -452,13 +452,13 @@ function CommentThread({
 
   const avatarUrl = comment.authorAvatarUrl;
 
-  // 수정 가능 여부: SSO 본인 또는 익명(hasPassword)
+  // Editable: SSO owner or anonymous (hasPassword)
   const isSsoOwner = Boolean(
     commenter?.commenterId && commenter.commenterId === comment.commenterId,
   );
   const isAnonComment = !comment.commenterId && comment.hasPassword;
   const canEdit = !isDeleted && (isSsoOwner || isAnonComment);
-  // 삭제 가능 여부: 관리자 또는 SSO 본인 또는 익명(hasPassword)
+  // Deletable: admin or SSO owner or anonymous (hasPassword)
   const canDelete = !isDeleted && (isAdmin || isSsoOwner || isAnonComment);
 
   const handleEdit = async () => {
@@ -489,7 +489,7 @@ function CommentThread({
     } else if (isAnonComment && password) {
       payload.password = password;
     }
-    // 관리자는 body 비워도 됨 (JWT 토큰으로 인증)
+    // Admin can leave body empty (authenticated via JWT token)
 
     try {
       await api.delete(`/comments/${comment.id}`, payload);
@@ -501,12 +501,12 @@ function CommentThread({
 
   const onDeleteClick = () => {
     if (isAdmin || isSsoOwner) {
-      // 관리자 또는 SSO 본인: confirm 다이얼로그
+      // Admin or SSO owner: confirm dialog
       if (window.confirm(t("comment_delete_confirm"))) {
         void handleDelete();
       }
     } else if (isAnonComment) {
-      // 익명 댓글: 비밀번호 입력 표시
+      // Anonymous comment: show password input
       setShowDeletePassword(true);
     }
   };
@@ -525,7 +525,7 @@ function CommentThread({
       setIsEditing(true);
       setEditContent(comment.content);
     } else if (isAnonComment) {
-      // 익명: 비밀번호 필요 - 수정 모드 진입
+      // Anonymous: password required - enter edit mode
       setIsEditing(true);
       setEditContent(comment.content);
     }
@@ -641,7 +641,7 @@ function CommentThread({
             </div>
           )}
 
-          {/* 익명 댓글 삭제 비밀번호 입력 */}
+          {/* Anonymous comment delete password input */}
           {showDeletePassword && (
             <div className="mt-2 flex items-center gap-2">
               <Input

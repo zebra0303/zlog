@@ -1,6 +1,6 @@
 import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 
-// ============ owner — 블로그 소유자 (1명) ============
+// ============ owner — blog owner (single) ============
 export const owner = sqliteTable("owner", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -23,7 +23,7 @@ export const owner = sqliteTable("owner", {
   updatedAt: text("updated_at").notNull(),
 });
 
-// ============ socialLinks — 소셜 링크 ============
+// ============ socialLinks — social links ============
 export const socialLinks = sqliteTable("social_links", {
   id: text("id").primaryKey(),
   platform: text("platform").notNull(),
@@ -32,7 +32,7 @@ export const socialLinks = sqliteTable("social_links", {
   sortOrder: integer("sort_order").default(0).notNull(),
 });
 
-// ============ categories — 카테고리 ============
+// ============ categories — post categories ============
 export const categories = sqliteTable("categories", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -46,7 +46,7 @@ export const categories = sqliteTable("categories", {
   updatedAt: text("updated_at").notNull(),
 });
 
-// ============ posts — 게시글 ============
+// ============ posts — blog posts ============
 export const posts = sqliteTable(
   "posts",
   {
@@ -96,7 +96,7 @@ export const postTags = sqliteTable(
   ],
 );
 
-// ============ comments — 댓글 ============
+// ============ comments — post comments ============
 export const comments = sqliteTable(
   "comments",
   {
@@ -120,7 +120,7 @@ export const comments = sqliteTable(
   (table) => [index("idx_comments_post").on(table.postId)],
 );
 
-// ============ commentLikes — 댓글 좋아요 ============
+// ============ commentLikes — comment likes ============
 export const commentLikes = sqliteTable(
   "comment_likes",
   {
@@ -134,7 +134,7 @@ export const commentLikes = sqliteTable(
   (table) => [uniqueIndex("idx_comment_likes_unique").on(table.commentId, table.visitorId)],
 );
 
-// ============ remoteBlogs — 외부 블로그 캐시 ============
+// ============ remoteBlogs — remote blog cache ============
 export const remoteBlogs = sqliteTable("remote_blogs", {
   id: text("id").primaryKey(),
   siteUrl: text("site_url").notNull().unique(),
@@ -145,7 +145,7 @@ export const remoteBlogs = sqliteTable("remote_blogs", {
   createdAt: text("created_at").notNull(),
 });
 
-// ============ remoteCategories — 외부 카테고리 캐시 ============
+// ============ remoteCategories — remote category cache ============
 export const remoteCategories = sqliteTable("remote_categories", {
   id: text("id").primaryKey(),
   remoteBlogId: text("remote_blog_id")
@@ -158,7 +158,7 @@ export const remoteCategories = sqliteTable("remote_categories", {
   createdAt: text("created_at").notNull(),
 });
 
-// ============ categorySubscriptions — 구독 관계 ============
+// ============ categorySubscriptions — subscription relations ============
 export const categorySubscriptions = sqliteTable(
   "category_subscriptions",
   {
@@ -176,7 +176,7 @@ export const categorySubscriptions = sqliteTable(
   (table) => [uniqueIndex("idx_cat_sub_unique").on(table.localCategoryId, table.remoteCategoryId)],
 );
 
-// ============ remotePosts — 외부 글 캐시 ============
+// ============ remotePosts — remote post cache ============
 export const remotePosts = sqliteTable(
   "remote_posts",
   {
@@ -215,7 +215,7 @@ export const remotePosts = sqliteTable(
   ],
 );
 
-// ============ subscribers — 다른 서버가 나를 구독 ============
+// ============ subscribers — external servers subscribing to this blog ============
 export const subscribers = sqliteTable(
   "subscribers",
   {
@@ -231,7 +231,7 @@ export const subscribers = sqliteTable(
   (table) => [uniqueIndex("idx_subscribers_unique").on(table.categoryId, table.subscriberUrl)],
 );
 
-// ============ commenters — OAuth 댓글 작성자 ============
+// ============ commenters — OAuth comment authors ============
 export const commenters = sqliteTable(
   "commenters",
   {
@@ -248,7 +248,7 @@ export const commenters = sqliteTable(
   (table) => [uniqueIndex("idx_commenters_provider").on(table.provider, table.providerId)],
 );
 
-// ============ siteSettings — 사이트 설정 (key-value) ============
+// ============ siteSettings — site settings (key-value) ============
 export const siteSettings = sqliteTable("site_settings", {
   id: text("id").primaryKey(),
   key: text("key").notNull().unique(),

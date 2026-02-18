@@ -13,18 +13,18 @@ auth.post("/login", async (c) => {
   const { email, password } = body;
 
   if (!email || !password) {
-    return c.json({ error: "이메일과 비밀번호를 입력해주세요." }, 400);
+    return c.json({ error: "Email and password are required." }, 400);
   }
 
   const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.email, email)).get();
 
   if (!ownerRecord) {
-    return c.json({ error: "이메일 또는 비밀번호가 올바르지 않습니다." }, 401);
+    return c.json({ error: "Invalid email or password." }, 401);
   }
 
   const valid = verifyPassword(password, ownerRecord.passwordHash);
   if (!valid) {
-    return c.json({ error: "이메일 또는 비밀번호가 올바르지 않습니다." }, 401);
+    return c.json({ error: "Invalid email or password." }, 401);
   }
 
   const token = await createToken(ownerRecord.id);

@@ -14,7 +14,7 @@ export function DefaultAvatar({ size = 64, className }: DefaultAvatarProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("shrink-0 rounded-full", className)}
-      aria-label="기본 아바타"
+      aria-label="Default avatar"
     >
       <defs>
         <linearGradient id="avatarBg" x1="0%" y1="0%" x2="100%" y2="100%">

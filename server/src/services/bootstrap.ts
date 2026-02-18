@@ -5,7 +5,7 @@ import { hashPassword } from "../lib/password.js";
 import { eq } from "drizzle-orm";
 
 /**
- * 첫 실행 시 테이블 생성 + 관리자 계정 + 기본 설정
+ * On first run: create tables + admin account + default settings
  */
 export function bootstrap() {
   sqlite.exec(`
@@ -190,23 +190,23 @@ export function bootstrap() {
     );
   `);
 
-  // comments 테이블에 commenter_id 컬럼 추가 (마이그레이션)
+  // Add commenter_id column to comments table (migration)
   try {
     sqlite.exec(
       "ALTER TABLE comments ADD COLUMN commenter_id TEXT REFERENCES commenters(id) ON DELETE SET NULL",
     );
   } catch {
-    // 이미 존재하면 무시
+    // Ignore if already exists
   }
 
-  // comments 테이블에 password 컬럼 추가 (마이그레이션)
+  // Add password column to comments table (migration)
   try {
     sqlite.exec("ALTER TABLE comments ADD COLUMN password TEXT");
   } catch {
-    // 이미 존재하면 무시
+    // Ignore if already exists
   }
 
-  // 관리자 계정이 없으면 생성
+  // Create admin account if none exists
   const existingOwner = db.select().from(schema.owner).limit(1).all();
   if (existingOwner.length === 0) {
     const now = new Date().toISOString();
@@ -225,23 +225,23 @@ export function bootstrap() {
         siteUrl,
         displayName,
         blogTitle: `${displayName}'s Blog`,
-        blogDescription: "zlog로 만든 개인 블로그입니다.",
+        blogDescription: "A personal blog powered by zlog.",
         createdAt: now,
         updatedAt: now,
       })
       .run();
 
-    console.log(`✅ 관리자 계정 생성됨: ${email}`);
+    console.log(`✅ Admin account created: ${email}`);
   }
 
-  // 기본 사이트 설정
+  // Default site settings
   const defaultSettings: Record<string, string> = {
     posts_per_page: "10",
     lazy_load_images: "true",
     blog_title: process.env.ADMIN_DISPLAY_NAME
       ? `${process.env.ADMIN_DISPLAY_NAME}'s Blog`
       : "My zlog Blog",
-    seo_description: "zlog로 만든 개인 블로그입니다.",
+    seo_description: "A personal blog powered by zlog.",
     seo_og_image: "",
     canonical_url: process.env.SITE_URL ?? "http://localhost:3000",
     webhook_sync_interval: process.env.WEBHOOK_SYNC_INTERVAL ?? "15",
@@ -266,5 +266,5 @@ export function bootstrap() {
     }
   }
 
-  console.log("✅ 데이터베이스 부트스트랩 완료");
+  console.log("✅ Database bootstrap complete");
 }

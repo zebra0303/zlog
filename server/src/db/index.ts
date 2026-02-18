@@ -6,12 +6,12 @@ import { mkdirSync } from "fs";
 
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), "data", "zlog.db");
 
-// data 디렉토리 자동 생성
+// Auto-create data directory
 mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const sqlite: DatabaseType = new Database(DB_PATH);
 
-// WAL mode — 동시 읽기 성능 향상
+// WAL mode — improves concurrent read performance
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 
