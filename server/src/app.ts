@@ -51,8 +51,12 @@ export function createApp() {
   app.get("/site.webmanifest", (c) => {
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
     const ownerRecord = db.select().from(schema.owner).get();
-    const blogTitle = ownerRecord?.blogTitle ?? "zlog";
-    const blogDesc = ownerRecord?.blogDescription ?? "A personal blog powered by zlog";
+    const settings = getSiteSettings();
+    const blogTitle = settings.blog_title ?? ownerRecord?.blogTitle ?? "zlog";
+    const blogDesc =
+      (settings.seo_description?.trim() ? settings.seo_description : null) ??
+      ownerRecord?.blogDescription ??
+      "A personal blog powered by zlog";
 
     // Header dark mode background color → theme_color
     const themeColorRow = db
