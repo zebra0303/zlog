@@ -49,6 +49,14 @@ import type {
   PostAccessLog,
 } from "@zlog/shared";
 
+function decodeReferer(referer: string): string {
+  try {
+    return decodeURIComponent(referer);
+  } catch {
+    return referer;
+  }
+}
+
 // ============ Post Manager ============
 type PostStatus = "all" | "published" | "draft";
 
@@ -320,9 +328,14 @@ function PostManager() {
                                   <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
                                     {log.browser ?? "—"}
                                   </td>
-                                  <td className="max-w-[120px] truncate px-3 py-1.5 text-[var(--color-text-secondary)]">
+                                  <td className="px-3 py-1.5 text-[var(--color-text-secondary)]">
                                     {log.referer ? (
-                                      <span title={log.referer}>{log.referer}</span>
+                                      <div
+                                        className="max-w-[160px] truncate"
+                                        title={decodeReferer(log.referer)}
+                                      >
+                                        {decodeReferer(log.referer)}
+                                      </div>
                                     ) : (
                                       "—"
                                     )}
