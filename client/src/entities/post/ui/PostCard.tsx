@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { Calendar, Eye, Folder, Globe, ExternalLink } from "lucide-react";
+import { Calendar, Eye, Folder, Globe, ExternalLink, MessageCircle } from "lucide-react";
 import { Card, CardContent, Badge, LazyImage } from "@/shared/ui";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
@@ -71,6 +71,12 @@ export function PostCard({ post }: PostCardProps) {
               <span className="flex items-center gap-1">
                 <Eye className="h-3 w-3" />
                 {post.viewCount.toLocaleString()}
+              </span>
+            )}
+            {!post.isRemote && post.commentCount > 0 && (
+              <span className="flex items-center gap-1">
+                <MessageCircle className="h-3 w-3" />
+                {post.commentCount.toLocaleString()}
               </span>
             )}
             {post.tags.map((tag) => {

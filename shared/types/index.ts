@@ -73,6 +73,7 @@ export interface Post {
 export interface PostWithCategory extends Post {
   category: Pick<Category, "id" | "name" | "slug"> | null;
   tags: Pick<Tag, "id" | "name" | "slug">[];
+  commentCount: number;
 }
 
 // ============ Tag ============

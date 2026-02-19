@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router";
-import { Calendar, Eye, Folder, ArrowLeft, Edit, Trash2, Share2, Link2, Check } from "lucide-react";
+import {
+  Calendar,
+  Eye,
+  Folder,
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Share2,
+  Link2,
+  Check,
+  MessageCircle,
+} from "lucide-react";
 import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -187,6 +198,12 @@ export default function PostDetailPage() {
             <Eye className="h-4 w-4" />
             {post.viewCount.toLocaleString()}
           </span>
+          {post.commentCount > 0 && (
+            <span className="flex items-center gap-1">
+              <MessageCircle className="h-4 w-4" />
+              {post.commentCount.toLocaleString()}
+            </span>
+          )}
           {post.tags.map((tag) => {
             const [backPath, backQuery] = backTo.split("?");
             const tagParams = new URLSearchParams(backQuery ?? "");

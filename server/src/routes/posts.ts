@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { sqlite } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc, and, or, sql, like, inArray } from "drizzle-orm";
+import { eq, desc, and, or, sql, like, inArray, isNull } from "drizzle-orm";
 import { authMiddleware, verifyToken } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
@@ -65,6 +65,20 @@ function batchLoadCategories(categoryIds: string[]) {
     .where(inArray(schema.categories.id, categoryIds))
     .all();
   for (const r of rows) map.set(r.id, r);
+  return map;
+}
+
+/** Batch load comment counts into a postId-based Map */
+function batchLoadCommentCounts(postIds: string[]) {
+  const map = new Map<string, number>();
+  if (postIds.length === 0) return map;
+  const rows = db
+    .select({ postId: schema.comments.postId, count: sql<number>`count(*)` })
+    .from(schema.comments)
+    .where(and(inArray(schema.comments.postId, postIds), isNull(schema.comments.deletedAt)))
+    .groupBy(schema.comments.postId)
+    .all();
+  for (const r of rows) map.set(r.postId, r.count);
   return map;
 }
 
@@ -184,11 +198,13 @@ postsRoute.get("/", (c) => {
     const catIds = [...new Set(postsResult.map((p) => p.categoryId).filter(Boolean))] as string[];
     const categoriesMap = batchLoadCategories(catIds);
     const tagsMap = batchLoadTags(postIds);
+    const commentCountsMap = batchLoadCommentCounts(postIds);
 
     const items = postsResult.map((post) => ({
       ...post,
       category: post.categoryId ? (categoriesMap.get(post.categoryId) ?? null) : null,
       tags: tagsMap.get(post.id) ?? [],
+      commentCount: commentCountsMap.get(post.id) ?? 0,
       isRemote: false as const,
       remoteUri: null,
       remoteBlog: null,
@@ -285,6 +301,9 @@ postsRoute.get("/", (c) => {
   // Batch: tags (local posts only)
   const tagsMap = batchLoadTags(localIds);
 
+  // Batch: comment counts (local posts only)
+  const commentCountsMap = batchLoadCommentCounts(localIds);
+
   // Batch: remote blogs
   const remoteBlogsMap = new Map<
     string,
@@ -324,6 +343,7 @@ postsRoute.get("/", (c) => {
           ...post,
           category: post.categoryId ? (categoriesMap.get(post.categoryId) ?? null) : null,
           tags: tagsMap.get(post.id) ?? [],
+          commentCount: commentCountsMap.get(post.id) ?? 0,
           isRemote: false as const,
           remoteUri: null,
           remoteBlog: null,
@@ -341,6 +361,7 @@ postsRoute.get("/", (c) => {
         coverImage: rp.coverImage,
         status: "published" as const,
         viewCount: 0,
+        commentCount: 0,
         createdAt: rp.remoteCreatedAt,
         updatedAt: rp.remoteUpdatedAt,
         deletedAt: null,
@@ -456,7 +477,14 @@ postsRoute.get("/:param", async (c) => {
     .where(eq(schema.postTags.postId, post.id))
     .all();
 
-  return c.json({ ...post, viewCount, category, tags: tagRows });
+  const commentCount =
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.comments)
+      .where(and(eq(schema.comments.postId, post.id), isNull(schema.comments.deletedAt)))
+      .get()?.count ?? 0;
+
+  return c.json({ ...post, viewCount, category, tags: tagRows, commentCount });
 });
 
 postsRoute.post("/", authMiddleware, async (c) => {
