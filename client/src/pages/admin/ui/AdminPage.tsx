@@ -356,21 +356,10 @@ function PostManager() {
                                   <td className="px-3 py-1.5 text-[var(--color-text-secondary)]">
                                     {log.referer ? (
                                       <div
-                                        className="flex max-w-[160px] items-center gap-1"
+                                        className="max-w-[160px] truncate"
                                         title={decodeReferer(log.referer)}
                                       >
-                                        {log.country && (
-                                          <span
-                                            title={countryName(log.country)}
-                                            aria-label={countryName(log.country)}
-                                            className="shrink-0 cursor-default text-base leading-none"
-                                          >
-                                            {countryFlag(log.country)}
-                                          </span>
-                                        )}
-                                        <span className="truncate">
-                                          {decodeReferer(log.referer)}
-                                        </span>
+                                        {decodeReferer(log.referer)}
                                       </div>
                                     ) : (
                                       "—"
