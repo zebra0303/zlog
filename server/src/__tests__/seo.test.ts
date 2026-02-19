@@ -7,6 +7,9 @@ import {
   createTestPost,
   cleanDb,
 } from "./helpers.js";
+import { db } from "../db/index.js";
+import * as schema from "../db/schema.js";
+import { eq } from "drizzle-orm";
 import { sqlite } from "../db/index.js";
 
 describe("SEO Endpoints", () => {
@@ -34,6 +37,24 @@ describe("SEO Endpoints", () => {
       expect(text).toContain("Disallow: /api/");
       expect(text).toContain("Sitemap: http://localhost:3000/sitemap.xml");
     });
+
+    it("should use canonical_url from DB settings over SITE_URL env", async () => {
+      db.update(schema.siteSettings)
+        .set({ value: "https://myblog.example.com" })
+        .where(eq(schema.siteSettings.key, "canonical_url"))
+        .run();
+
+      const res = await app.request("/robots.txt");
+      const text = await res.text();
+      expect(text).toContain("Sitemap: https://myblog.example.com/sitemap.xml");
+      expect(text).not.toContain("localhost:3000");
+
+      // Restore
+      db.update(schema.siteSettings)
+        .set({ value: "http://localhost:3000" })
+        .where(eq(schema.siteSettings.key, "canonical_url"))
+        .run();
+    });
   });
 
   describe("GET /sitemap.xml", () => {
@@ -45,6 +66,25 @@ describe("SEO Endpoints", () => {
       expect(text).toContain("<urlset");
       expect(text).toContain("http://localhost:3000/");
       expect(text).toContain("http://localhost:3000/profile");
+    });
+
+    it("should use canonical_url from DB settings over SITE_URL env", async () => {
+      db.update(schema.siteSettings)
+        .set({ value: "https://myblog.example.com" })
+        .where(eq(schema.siteSettings.key, "canonical_url"))
+        .run();
+      createTestPost({ title: "Canonical Test", slug: "canonical-test", status: "published" });
+
+      const res = await app.request("/sitemap.xml");
+      const text = await res.text();
+      expect(text).toContain("https://myblog.example.com/posts/canonical-test");
+      expect(text).not.toContain("localhost:3000");
+
+      // Restore
+      db.update(schema.siteSettings)
+        .set({ value: "http://localhost:3000" })
+        .where(eq(schema.siteSettings.key, "canonical_url"))
+        .run();
     });
 
     it("should include published posts and categories", async () => {

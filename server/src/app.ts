@@ -122,7 +122,12 @@ export function createApp() {
   });
 
   app.get("/robots.txt", (c) => {
-    const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+    const settings = getSiteSettings();
+    const siteUrl = (
+      settings.canonical_url ??
+      process.env.SITE_URL ??
+      "http://localhost:3000"
+    ).replace(/\/$/, "");
     return c.text(`User-agent: *
 Allow: /
 
@@ -136,7 +141,12 @@ Sitemap: ${siteUrl}/sitemap.xml`);
   });
 
   app.get("/sitemap.xml", (c) => {
-    const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+    const settings = getSiteSettings();
+    const siteUrl = (
+      settings.canonical_url ??
+      process.env.SITE_URL ??
+      "http://localhost:3000"
+    ).replace(/\/$/, "");
     const posts = db
       .select({ slug: schema.posts.slug, updatedAt: schema.posts.updatedAt })
       .from(schema.posts)
