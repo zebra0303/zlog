@@ -179,6 +179,7 @@ export interface PostAccessLog {
   id: string;
   postId: string;
   ip: string | null;
+  country: string | null;
   referer: string | null;
   userAgent: string | null;
   os: string | null;

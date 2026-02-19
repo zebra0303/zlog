@@ -10,6 +10,7 @@ import { sendWebhookToSubscribers } from "../services/feedService.js";
 import { triggerStaleSync } from "../services/syncService.js";
 import { unlinkSync } from "node:fs";
 import path from "node:path";
+import geoip from "geoip-lite";
 
 function parseUserAgent(ua: string): { os: string; browser: string } {
   const os = ua.includes("Windows")
@@ -432,11 +433,13 @@ postsRoute.get("/:param", async (c) => {
       c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? "";
     const referer = c.req.header("X-Referrer") ?? c.req.header("Referer") ?? "";
     const { os, browser } = parseUserAgent(ua);
+    const country = ip ? (geoip.lookup(ip)?.country ?? null) : null;
     db.insert(schema.postAccessLogs)
       .values({
         id: generateId(),
         postId: post.id,
         ip: ip || null,
+        country,
         referer: referer || null,
         userAgent: ua || null,
         os,

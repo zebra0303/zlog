@@ -279,6 +279,7 @@ export const postAccessLogs = sqliteTable(
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
     ip: text("ip"),
+    country: text("country"),
     referer: text("referer"),
     userAgent: text("user_agent"),
     os: text("os"),

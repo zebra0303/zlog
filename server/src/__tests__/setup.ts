@@ -235,6 +235,7 @@ beforeAll(() => {
       id TEXT PRIMARY KEY,
       post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
       ip TEXT,
+      country TEXT,
       referer TEXT,
       user_agent TEXT,
       os TEXT,

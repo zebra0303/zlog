@@ -57,6 +57,20 @@ function decodeReferer(referer: string): string {
   }
 }
 
+function countryFlag(code: string): string {
+  return Array.from(code.toUpperCase(), (c) => String.fromCodePoint(c.charCodeAt(0) + 127397)).join(
+    "",
+  );
+}
+
+function countryName(code: string): string {
+  try {
+    return new Intl.DisplayNames([navigator.language, "en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 // ============ Post Manager ============
 type PostStatus = "all" | "published" | "draft";
 
@@ -318,8 +332,19 @@ function PostManager() {
                                     {new Date(log.createdAt).toLocaleString()}
                                   </td>
                                   <td className="px-3 py-1.5 text-[var(--color-text)]">
-                                    <div className="w-[7.5rem] truncate" title={log.ip ?? ""}>
-                                      {log.ip ?? "—"}
+                                    <div className="flex items-center gap-1">
+                                      {log.country && (
+                                        <span
+                                          title={countryName(log.country)}
+                                          aria-label={countryName(log.country)}
+                                          className="shrink-0 cursor-default text-base leading-none"
+                                        >
+                                          {countryFlag(log.country)}
+                                        </span>
+                                      )}
+                                      <div className="w-[7.5rem] truncate" title={log.ip ?? ""}>
+                                        {log.ip ?? "—"}
+                                      </div>
                                     </div>
                                   </td>
                                   <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
@@ -331,10 +356,21 @@ function PostManager() {
                                   <td className="px-3 py-1.5 text-[var(--color-text-secondary)]">
                                     {log.referer ? (
                                       <div
-                                        className="max-w-[160px] truncate"
+                                        className="flex max-w-[160px] items-center gap-1"
                                         title={decodeReferer(log.referer)}
                                       >
-                                        {decodeReferer(log.referer)}
+                                        {log.country && (
+                                          <span
+                                            title={countryName(log.country)}
+                                            aria-label={countryName(log.country)}
+                                            className="shrink-0 cursor-default text-base leading-none"
+                                          >
+                                            {countryFlag(log.country)}
+                                          </span>
+                                        )}
+                                        <span className="truncate">
+                                          {decodeReferer(log.referer)}
+                                        </span>
                                       </div>
                                     ) : (
                                       "—"

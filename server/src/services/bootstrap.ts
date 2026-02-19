@@ -201,6 +201,7 @@ export function bootstrap() {
       id TEXT PRIMARY KEY,
       post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
       ip TEXT,
+      country TEXT,
       referer TEXT,
       user_agent TEXT,
       os TEXT,
@@ -255,6 +256,13 @@ export function bootstrap() {
   // Add password column to comments table (migration)
   try {
     sqlite.exec("ALTER TABLE comments ADD COLUMN password TEXT");
+  } catch {
+    // Ignore if already exists
+  }
+
+  // Add country column to post_access_logs table (migration)
+  try {
+    sqlite.exec("ALTER TABLE post_access_logs ADD COLUMN country TEXT");
   } catch {
     // Ignore if already exists
   }
