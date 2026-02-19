@@ -318,6 +318,7 @@ export function bootstrap() {
     canonical_url: process.env.SITE_URL ?? "http://localhost:3000",
     webhook_sync_interval: process.env.WEBHOOK_SYNC_INTERVAL ?? "15",
     default_theme: "system",
+    notification_slack_webhook: "",
   };
 
   for (const [key, value] of Object.entries(defaultSettings)) {

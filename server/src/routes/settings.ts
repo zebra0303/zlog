@@ -296,6 +296,35 @@ settingsRoute.get("/settings", (c) => {
   return c.json(result);
 });
 
+settingsRoute.post("/settings/test-slack", authMiddleware, async (c) => {
+  const webhookUrl =
+    db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, "notification_slack_webhook"))
+      .get()?.value ?? "";
+
+  if (!webhookUrl) {
+    return c.json({ error: "Slack webhook URL is not configured." }, 400);
+  }
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "✅ zlog 알림 테스트 성공! 댓글 알림이 정상적으로 설정되었습니다.",
+      }),
+    });
+    if (!res.ok) {
+      return c.json({ error: `Slack responded with ${res.status}` }, 502);
+    }
+    return c.json({ ok: true });
+  } catch {
+    return c.json({ error: "Failed to reach Slack webhook URL." }, 502);
+  }
+});
+
 settingsRoute.put("/settings", authMiddleware, async (c) => {
   const body = await c.req.json<Record<string, string>>();
   const now = new Date().toISOString();

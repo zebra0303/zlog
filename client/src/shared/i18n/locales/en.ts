@@ -366,6 +366,15 @@ export const en = {
   toolbar_table: "Table",
   toolbar_callout: "Callout",
 
+  // Admin - Notifications
+  admin_notifications: "Notifications",
+  admin_slack_webhook_label: "Slack Webhook URL",
+  admin_slack_test: "Test",
+  admin_slack_test_ok: "✅ Test message sent successfully",
+  admin_slack_test_error: "❌ Failed. Please check the URL",
+  admin_slack_webhook_hint:
+    "Enter a Slack Incoming Webhook URL. Leave empty to disable notifications.",
+
   // Shared
   default_avatar_label: "Default avatar",
   zlog_logo_label: "zlog logo",

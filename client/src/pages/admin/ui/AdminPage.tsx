@@ -1930,6 +1930,8 @@ export default function AdminPage() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [testingSlack, setTestingSlack] = useState(false);
+  const [slackTestResult, setSlackTestResult] = useState<"ok" | "error" | null>(null);
 
   // Tab state — switch to Federation tab if subscribe action is present
   const tabParam = searchParams.get("tab");
@@ -2006,6 +2008,19 @@ export default function AdminPage() {
   const handleLanguageChange = (lang: string) => {
     update("default_language", lang);
     setLocale(lang as "en" | "ko");
+  };
+
+  const handleTestSlack = async () => {
+    setTestingSlack(true);
+    setSlackTestResult(null);
+    try {
+      await api.post("/settings/test-slack", {});
+      setSlackTestResult("ok");
+    } catch {
+      setSlackTestResult("error");
+    } finally {
+      setTestingSlack(false);
+    }
   };
 
   const tabs: { key: AdminTab; label: string; icon: React.ReactNode; emoji: string }[] = [
@@ -2182,6 +2197,50 @@ export default function AdminPage() {
                     <option value="disabled">{t("admin_comment_mode_disabled")}</option>
                   </select>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Notifications */}
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+                <Activity className="h-5 w-5" />
+                {t("admin_notifications")}
+              </h2>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm text-[var(--color-text-secondary)]">
+                  {t("admin_slack_webhook_label")}
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={settings.notification_slack_webhook ?? ""}
+                    onChange={(e) => {
+                      update("notification_slack_webhook", e.target.value);
+                    }}
+                    placeholder="https://hooks.slack.com/services/..."
+                    className="flex-1 font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      void handleTestSlack();
+                    }}
+                    disabled={testingSlack || !settings.notification_slack_webhook}
+                  >
+                    {testingSlack ? t("loading") : t("admin_slack_test")}
+                  </Button>
+                </div>
+                {slackTestResult === "ok" && (
+                  <p className="text-sm text-green-600">{t("admin_slack_test_ok")}</p>
+                )}
+                {slackTestResult === "error" && (
+                  <p className="text-sm text-red-500">{t("admin_slack_test_error")}</p>
+                )}
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {t("admin_slack_webhook_hint")}
+                </p>
               </div>
             </CardContent>
           </Card>

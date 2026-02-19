@@ -58,6 +58,43 @@ function getCommentMode(): string {
   return setting?.value ?? "sso_only";
 }
 
+function getSlackWebhook(): string {
+  return (
+    db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, "notification_slack_webhook"))
+      .get()?.value ?? ""
+  );
+}
+
+async function sendSlackNotification(
+  webhookUrl: string,
+  post: { title: string; slug: string },
+  comment: { authorName: string; content: string; parentId: string | null },
+): Promise<void> {
+  const canonicalUrl =
+    db.select().from(schema.siteSettings).where(eq(schema.siteSettings.key, "canonical_url")).get()
+      ?.value ?? "";
+  const postUrl = canonicalUrl ? `${canonicalUrl}/posts/${post.slug}` : "";
+  const type = comment.parentId ? "↩️ 새 답글" : "💬 새 댓글";
+  const preview =
+    comment.content.length > 200 ? comment.content.slice(0, 200) + "…" : comment.content;
+  const lines = [
+    `${type} 알림`,
+    `📝 글: ${post.title}`,
+    `👤 작성자: ${comment.authorName}`,
+    `💬 내용: ${preview}`,
+    postUrl ? `🔗 ${postUrl}` : "",
+  ].filter(Boolean);
+
+  await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: lines.join("\n") }),
+  });
+}
+
 /** Check if the user is an admin from JWT token (optional) */
 async function isAdmin(c: {
   req: { header: (name: string) => string | undefined };
@@ -242,6 +279,16 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
       updatedAt: now,
     })
     .run();
+
+  // Fire-and-forget Slack notification (post is already fetched above)
+  const webhookUrl = getSlackWebhook();
+  if (webhookUrl) {
+    void sendSlackNotification(webhookUrl, post, {
+      authorName,
+      content,
+      parentId: body.parentId ?? null,
+    }).catch(() => null);
+  }
 
   const newComment = db.select().from(schema.comments).where(eq(schema.comments.id, id)).get();
   return c.json(newComment ? stripPassword(newComment) : null, 201);

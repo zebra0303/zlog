@@ -370,6 +370,15 @@ export const ko: Record<TranslationKeys, string> = {
   toolbar_table: "표",
   toolbar_callout: "콜아웃",
 
+  // Admin - Notifications
+  admin_notifications: "알림 설정",
+  admin_slack_webhook_label: "Slack Webhook URL",
+  admin_slack_test: "테스트",
+  admin_slack_test_ok: "✅ 테스트 메시지를 전송했습니다",
+  admin_slack_test_error: "❌ 전송 실패. URL을 확인해주세요",
+  admin_slack_webhook_hint:
+    "Slack Incoming Webhook URL을 입력하세요. 비워두면 알림이 비활성화됩니다.",
+
   // Shared
   default_avatar_label: "기본 아바타",
   zlog_logo_label: "zlog 로고",
