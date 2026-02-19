@@ -139,6 +139,21 @@ describe("SEO Endpoints", () => {
       expect(text).toContain("Test Blog - Dev");
     });
 
+    it("should set atom:link self to the category feed URL", async () => {
+      const cat = createTestCategory({ name: "Science", slug: "science" });
+      createTestPost({
+        title: "Science Post",
+        slug: "sci-post",
+        categoryId: cat.id,
+        status: "published",
+      });
+
+      const res = await app.request("/category/science/rss.xml");
+      const text = await res.text();
+      expect(text).toContain('href="http://localhost:3000/category/science/rss.xml"');
+      expect(text).not.toContain('href="http://localhost:3000/rss.xml"');
+    });
+
     it("should use category description when available", async () => {
       const cat = createTestCategory({
         name: "WithDesc",

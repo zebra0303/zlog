@@ -206,6 +206,7 @@ ${urls.join("\n")}
       blogTitle,
       blogDesc,
       siteUrl,
+      `${siteUrl}/rss.xml`,
       posts.map((p) => ({ ...p, categoryName: p.categoryName ?? undefined })),
     );
     c.header("Content-Type", "application/rss+xml; charset=utf-8");
@@ -255,6 +256,7 @@ ${urls.join("\n")}
       channelTitle,
       catDesc.length > 0 ? catDesc : seoDesc,
       channelLink,
+      `${siteUrl}/category/${category.slug}/rss.xml`,
       posts.map((p) => ({ ...p, categoryName: category.name })),
     );
     c.header("Content-Type", "application/rss+xml; charset=utf-8");
@@ -318,6 +320,7 @@ function buildRssXml(
   channelTitle: string,
   channelDesc: string,
   channelLink: string,
+  selfUrl: string,
   items: {
     title: string;
     slug: string;
@@ -347,7 +350,7 @@ function buildRssXml(
     <description>${escapeXml(channelDesc)}</description>
     <language>en</language>
     <lastBuildDate>${toRfc822(new Date().toISOString())}</lastBuildDate>
-    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${selfUrl}" rel="self" type="application/rss+xml"/>
 ${rssItems.join("\n")}
   </channel>
 </rss>`;
