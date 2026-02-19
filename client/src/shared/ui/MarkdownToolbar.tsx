@@ -319,7 +319,7 @@ export function MarkdownToolbar({
             <HelpCircle className="h-4 w-4" />
           </button>
           {helpOpen && (
-            <div className="border-border bg-surface absolute top-full right-0 z-50 mt-1 w-72 rounded-lg border p-3 text-xs text-[var(--color-text)] shadow-lg">
+            <div className="border-border absolute top-full right-0 z-50 mt-1 w-72 rounded-lg border bg-[var(--color-background)] p-3 text-xs text-[var(--color-text)] shadow-lg">
               <p className="mb-2 font-semibold text-[var(--color-text)]">에디터 사용 안내</p>
               <ul className="flex flex-col gap-2 text-[var(--color-text-secondary)]">
                 <li>
