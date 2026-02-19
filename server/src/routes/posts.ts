@@ -430,7 +430,7 @@ postsRoute.get("/:param", async (c) => {
     const ua = c.req.header("User-Agent") ?? "";
     const ip =
       c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? "";
-    const referer = c.req.header("Referer") ?? "";
+    const referer = c.req.header("X-Referrer") ?? c.req.header("Referer") ?? "";
     const { os, browser } = parseUserAgent(ua);
     db.insert(schema.postAccessLogs)
       .values({

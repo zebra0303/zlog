@@ -44,8 +44,10 @@ class ApiClient {
     return headers;
   }
 
-  async get<T>(path: string): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, { headers: this.getHeaders() });
+  async get<T>(path: string, extraHeaders?: Record<string, string>): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: { ...(this.getHeaders() as Record<string, string>), ...extraHeaders },
+    });
     if (!res.ok) {
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }

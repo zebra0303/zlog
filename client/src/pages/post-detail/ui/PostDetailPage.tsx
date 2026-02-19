@@ -36,8 +36,9 @@ export default function PostDetailPage() {
   useEffect(() => {
     if (!slug) return;
     setIsLoading(true);
+    const referrer = document.referrer;
     void api
-      .get<PostWithCategory>(`/posts/${slug}`)
+      .get<PostWithCategory>(`/posts/${slug}`, referrer ? { "X-Referrer": referrer } : undefined)
       .then(async (data) => {
         setPost(data);
         setHtmlContent(await parseMarkdown(data.content));

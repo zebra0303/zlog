@@ -309,8 +309,10 @@ function PostManager() {
                                   <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text-secondary)]">
                                     {new Date(log.createdAt).toLocaleString()}
                                   </td>
-                                  <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
-                                    {log.ip ?? "—"}
+                                  <td className="px-3 py-1.5 text-[var(--color-text)]">
+                                    <div className="w-[7.5rem] truncate" title={log.ip ?? ""}>
+                                      {log.ip ?? "—"}
+                                    </div>
                                   </td>
                                   <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
                                     {log.os ?? "—"}
