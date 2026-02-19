@@ -326,7 +326,7 @@ export default function PostEditorPage() {
           )}
         </div>
       </div>
-      <div className="min-h-125">
+      <div>
         <input
           ref={toolbarFileRef}
           type="file"
@@ -356,7 +356,7 @@ export default function PostEditorPage() {
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               placeholder={t("editor_content_placeholder")}
-              className="border-border bg-surface text-text placeholder:text-text-secondary focus:ring-primary h-full min-h-125 w-full resize-none rounded-lg rounded-t-none border border-t-0 p-4 font-mono text-sm focus:ring-2 focus:outline-none"
+              className="border-border bg-surface text-text placeholder:text-text-secondary focus:ring-primary min-h-[calc(100vh-22rem)] w-full resize-y rounded-lg rounded-t-none border border-t-0 p-4 font-mono text-sm focus:ring-2 focus:outline-none"
             />
           </>
         )}

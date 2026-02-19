@@ -15,6 +15,7 @@ import {
   Minus,
   Table,
   Info,
+  HelpCircle,
 } from "lucide-react";
 import { useI18n } from "../i18n";
 
@@ -219,6 +220,9 @@ export function MarkdownToolbar({
 
   const [calloutOpen, setCalloutOpen] = useState(false);
   const calloutRef = useRef<HTMLDivElement>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpRef = useRef<HTMLDivElement>(null);
+  const helpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!calloutOpen) return;
@@ -291,6 +295,69 @@ export function MarkdownToolbar({
             ))}
           </div>
         )}
+      </div>
+      <div className="ml-auto flex items-center">
+        <div className="bg-border mx-1 h-5 w-px" role="separator" aria-hidden="true" />
+        <div
+          ref={helpRef}
+          className="relative"
+          onMouseEnter={() => {
+            if (helpTimerRef.current) clearTimeout(helpTimerRef.current);
+            setHelpOpen(true);
+          }}
+          onMouseLeave={() => {
+            helpTimerRef.current = setTimeout(() => {
+              setHelpOpen(false);
+            }, 150);
+          }}
+        >
+          <button
+            type="button"
+            aria-label="Editor help"
+            className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
+          {helpOpen && (
+            <div className="border-border bg-surface absolute top-full right-0 z-50 mt-1 w-72 rounded-lg border p-3 text-xs text-[var(--color-text)] shadow-lg">
+              <p className="mb-2 font-semibold text-[var(--color-text)]">에디터 사용 안내</p>
+              <ul className="flex flex-col gap-2 text-[var(--color-text-secondary)]">
+                <li>
+                  <span className="font-medium text-[var(--color-text)]">📎 이미지 업로드</span>
+                  <br />
+                  이미지 아이콘 클릭 또는 에디터 영역으로 드래그&amp;드롭
+                </li>
+                <li>
+                  <span className="font-medium text-[var(--color-text)]">
+                    ▶ YouTube 자동 임베드
+                  </span>
+                  <br />
+                  YouTube URL을 단독 줄에 입력하면 동영상으로 자동 변환
+                </li>
+                <li>
+                  <span className="font-medium text-[var(--color-text)]">🔗 링크</span>
+                  <br />
+                  <code className="rounded bg-[var(--color-background)] px-1">
+                    [텍스트](URL)
+                  </code>{" "}
+                  또는 텍스트 선택 후 링크 아이콘 클릭
+                </li>
+                <li>
+                  <span className="font-medium text-[var(--color-text)]">💬 콜아웃</span>
+                  <br />
+                  <code className="rounded bg-[var(--color-background)] px-1">{`> [!NOTE]`}</code>{" "}
+                  형식. NOTE · TIP · WARNING 등 지원
+                </li>
+                <li>
+                  <span className="font-medium text-[var(--color-text)]">💻 코드 블록</span>
+                  <br />
+                  <code className="rounded bg-[var(--color-background)] px-1">```js</code> 처럼
+                  언어명 입력 시 신택스 하이라이팅 지원
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

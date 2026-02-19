@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut, Home, User, LogIn } from "lucide-react";
 import { Button, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -19,6 +19,8 @@ export function Header() {
   const { getHeaderStyle, settings } = useSiteSettingsStore();
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isEditorPage = pathname.startsWith("/write");
   const handleLogout = () => {
     logout();
     void navigate("/");
@@ -97,11 +99,11 @@ export function Header() {
     <>
       <header
         ref={headerRef}
-        className={`border-border header-animated relative sticky top-0 z-60 border-b ${hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
-        style={headerStyle}
+        className={`border-border header-animated relative sticky top-0 z-60 border-b ${!isEditorPage && hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
+        style={isEditorPage ? undefined : headerStyle}
       >
         <div
-          className={`header-inner relative mx-auto flex max-w-6xl items-start justify-between gap-4 px-4 ${hasCustomHeight ? "py-4" : "min-h-16 py-3"}`}
+          className={`header-inner relative mx-auto flex max-w-6xl items-start justify-between gap-4 px-4 ${isEditorPage ? "min-h-10 py-1.5" : hasCustomHeight ? "py-4" : "min-h-16 py-3"}`}
         >
           <Link to="/" className={`flex min-w-0 items-center gap-2 ${hasCustom ? glass : ""}`}>
             {profile?.avatarUrl ? (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router";
 import { ZlogLogo } from "@/shared/ui";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
@@ -6,6 +7,8 @@ import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 const glassBase = "backdrop-blur-md bg-[var(--color-surface)]/70 rounded-xl px-4";
 
 export function Footer() {
+  const { pathname } = useLocation();
+  const isEditorPage = pathname.startsWith("/write");
   const { isDark } = useThemeStore();
   const { getFooterStyle } = useSiteSettingsStore();
   const customStyle = getFooterStyle(isDark);
@@ -55,6 +58,16 @@ export function Footer() {
           overflow: "hidden",
         }
       : undefined;
+
+  if (isEditorPage) {
+    return (
+      <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-1.5">
+          <span className="text-xs text-[var(--color-text-secondary)]">zlog</span>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <>
