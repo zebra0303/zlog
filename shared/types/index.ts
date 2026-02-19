@@ -314,4 +314,5 @@ export interface SiteSettingsMap {
   canonical_url: string;
   webhook_sync_interval: string;
   default_theme: string;
+  notification_slack_webhook: string;
 }
