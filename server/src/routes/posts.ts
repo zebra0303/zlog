@@ -11,6 +11,32 @@ import { triggerStaleSync } from "../services/syncService.js";
 import { unlinkSync } from "node:fs";
 import path from "node:path";
 
+function parseUserAgent(ua: string): { os: string; browser: string } {
+  const os = ua.includes("Windows")
+    ? "Windows"
+    : ua.includes("Mac OS X")
+      ? "macOS"
+      : ua.includes("Android")
+        ? "Android"
+        : ua.includes("iPhone") || ua.includes("iPad")
+          ? "iOS"
+          : ua.includes("Linux")
+            ? "Linux"
+            : "Unknown";
+  const browser = ua.includes("Edg/")
+    ? "Edge"
+    : ua.includes("OPR/") || ua.includes("Opera")
+      ? "Opera"
+      : ua.includes("Chrome/")
+        ? "Chrome"
+        : ua.includes("Firefox/")
+          ? "Firefox"
+          : ua.includes("Safari/")
+            ? "Safari"
+            : "Unknown";
+  return { os, browser };
+}
+
 function deleteUploadedImage(imageUrl: string) {
   if (!imageUrl.startsWith("/uploads/images/")) return;
   try {
@@ -335,6 +361,18 @@ postsRoute.get("/", (c) => {
   return c.json({ items, total, page, perPage, totalPages: Math.ceil(total / perPage) });
 });
 
+postsRoute.get("/:id/access-logs", authMiddleware, (c) => {
+  const postId = c.req.param("id");
+  const logs = db
+    .select()
+    .from(schema.postAccessLogs)
+    .where(eq(schema.postAccessLogs.postId, postId))
+    .orderBy(desc(schema.postAccessLogs.createdAt))
+    .limit(10)
+    .all();
+  return c.json(logs);
+});
+
 postsRoute.get("/:param", async (c) => {
   const param = c.req.param("param");
   // If UUID v7 pattern, look up by ID; otherwise look up by slug
@@ -366,6 +404,37 @@ postsRoute.get("/:param", async (c) => {
     db.update(schema.posts).set({ viewCount }).where(eq(schema.posts.id, post.id)).run();
     // Do not count re-views of the same post for 24 hours
     c.header("Set-Cookie", `${viewedCookie}=1; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax`);
+
+    // Log access
+    const ua = c.req.header("User-Agent") ?? "";
+    const ip =
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? "";
+    const referer = c.req.header("Referer") ?? "";
+    const { os, browser } = parseUserAgent(ua);
+    db.insert(schema.postAccessLogs)
+      .values({
+        id: generateId(),
+        postId: post.id,
+        ip: ip || null,
+        referer: referer || null,
+        userAgent: ua || null,
+        os,
+        browser,
+        createdAt: new Date().toISOString(),
+      })
+      .run();
+
+    // Prune: keep only 10 most recent logs per post
+    const recent = db
+      .select({ id: schema.postAccessLogs.id })
+      .from(schema.postAccessLogs)
+      .where(eq(schema.postAccessLogs.postId, post.id))
+      .orderBy(desc(schema.postAccessLogs.createdAt))
+      .all();
+    if (recent.length > 10) {
+      const idsToDelete = recent.slice(10).map((r) => r.id);
+      db.delete(schema.postAccessLogs).where(inArray(schema.postAccessLogs.id, idsToDelete)).run();
+    }
   }
 
   const category = post.categoryId

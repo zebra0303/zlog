@@ -270,6 +270,24 @@ export const failedLogins = sqliteTable(
   ],
 );
 
+// ============ postAccessLogs — visitor access logs per post ============
+export const postAccessLogs = sqliteTable(
+  "post_access_logs",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    ip: text("ip"),
+    referer: text("referer"),
+    userAgent: text("user_agent"),
+    os: text("os"),
+    browser: text("browser"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [index("idx_post_access_logs_post").on(table.postId)],
+);
+
 // ============ siteSettings — site settings (key-value) ============
 export const siteSettings = sqliteTable("site_settings", {
   id: text("id").primaryKey(),

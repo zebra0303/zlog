@@ -196,6 +196,18 @@ export function bootstrap() {
       value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS post_access_logs (
+      id TEXT PRIMARY KEY,
+      post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      ip TEXT,
+      referer TEXT,
+      user_agent TEXT,
+      os TEXT,
+      browser TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_post_access_logs_post ON post_access_logs(post_id);
   `);
 
   // ============ New indexes (migration) ============

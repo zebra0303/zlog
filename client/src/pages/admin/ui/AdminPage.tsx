@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Link2,
   Power,
+  Activity,
 } from "lucide-react";
 import {
   Button,
@@ -41,7 +42,12 @@ import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
 import { timeAgo } from "@/shared/lib/formatDate";
-import type { CategoryWithStats, PostWithCategory, PaginatedResponse } from "@zlog/shared";
+import type {
+  CategoryWithStats,
+  PostWithCategory,
+  PaginatedResponse,
+  PostAccessLog,
+} from "@zlog/shared";
 
 // ============ Post Manager ============
 type PostStatus = "all" | "published" | "draft";
@@ -56,7 +62,38 @@ function PostManager() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [accessLogPopover, setAccessLogPopover] = useState<string | null>(null);
+  const [accessLogs, setAccessLogs] = useState<PostAccessLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setAccessLogPopover(null);
+      }
+    };
+    if (accessLogPopover) document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [accessLogPopover]);
+
+  const handleOpenAccessLogs = async (postId: string) => {
+    if (accessLogPopover === postId) {
+      setAccessLogPopover(null);
+      return;
+    }
+    setAccessLogPopover(postId);
+    setLogsLoading(true);
+    try {
+      const data = await api.get<PostAccessLog[]>(`/posts/${postId}/access-logs`);
+      setAccessLogs(data);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
 
   const fetchPosts = useCallback((status: PostStatus, pg: number, search: string) => {
     setIsLoading(true);
@@ -174,51 +211,128 @@ function PostManager() {
           <>
             <div className="flex flex-col gap-2">
               {posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate font-medium text-[var(--color-text)]">
-                        {post.title || t("admin_post_untitled")}
-                      </span>
-                      {post.status === "draft" ? (
-                        <Badge
-                          variant="outline"
-                          className="border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
-                        >
-                          <EyeOff className="mr-1 h-3 w-3" />
-                          {t("admin_post_draft")}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <Eye className="mr-1 h-3 w-3" />
-                          {t("admin_post_published")}
-                        </Badge>
-                      )}
-                      {post.category && <Badge variant="outline">{post.category.name}</Badge>}
+                <div key={post.id} className="relative">
+                  <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate font-medium text-[var(--color-text)]">
+                          {post.title || t("admin_post_untitled")}
+                        </span>
+                        {post.status === "draft" ? (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
+                          >
+                            <EyeOff className="mr-1 h-3 w-3" />
+                            {t("admin_post_draft")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <Eye className="mr-1 h-3 w-3" />
+                            {t("admin_post_published")}
+                          </Badge>
+                        )}
+                        {post.category && <Badge variant="outline">{post.category.name}</Badge>}
+                      </div>
+                      <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                        {timeAgo(post.updatedAt)}
+                      </p>
                     </div>
-                    <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-                      {timeAgo(post.updatedAt)}
-                    </p>
+                    <div className="ml-2 flex shrink-0 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          void handleOpenAccessLogs(post.id);
+                        }}
+                        aria-label="View access logs"
+                        aria-pressed={accessLogPopover === post.id}
+                        className={
+                          accessLogPopover === post.id ? "text-[var(--color-primary)]" : ""
+                        }
+                      >
+                        <Activity className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link to={`/write/${post.id}`} aria-label={t("edit")}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(post)}
+                        disabled={deletingId === post.id}
+                        aria-label={t("delete")}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="ml-2 flex shrink-0 gap-1">
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link to={`/write/${post.id}`} aria-label={t("edit")}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(post)}
-                      disabled={deletingId === post.id}
-                      aria-label={t("delete")}
+                  {accessLogPopover === post.id && (
+                    <div
+                      ref={popoverRef}
+                      className="absolute top-full right-0 z-50 mt-1 w-full min-w-[320px] rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] shadow-lg sm:w-auto sm:min-w-[480px]"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
+                      <div className="flex items-center gap-2 rounded-t-lg border-b border-[var(--color-border)] px-3 py-2">
+                        <Activity className="h-4 w-4 text-[var(--color-primary)]" />
+                        <span className="text-sm font-medium text-[var(--color-text)]">
+                          Recent Visitors
+                        </span>
+                      </div>
+                      {logsLoading ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="h-4 w-4 animate-spin text-[var(--color-text-secondary)]" />
+                        </div>
+                      ) : accessLogs.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-xs text-[var(--color-text-secondary)]">
+                          No access logs yet.
+                        </p>
+                      ) : (
+                        <div className="max-h-64 overflow-y-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-[var(--color-border)] text-left text-[var(--color-text-secondary)]">
+                                <th className="px-3 py-1.5 font-medium">Time</th>
+                                <th className="px-3 py-1.5 font-medium">IP</th>
+                                <th className="px-3 py-1.5 font-medium">OS</th>
+                                <th className="px-3 py-1.5 font-medium">Browser</th>
+                                <th className="px-3 py-1.5 font-medium">Referer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {accessLogs.map((log) => (
+                                <tr
+                                  key={log.id}
+                                  className="border-b border-[var(--color-border)] last:border-0"
+                                >
+                                  <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text-secondary)]">
+                                    {new Date(log.createdAt).toLocaleString()}
+                                  </td>
+                                  <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
+                                    {log.ip ?? "—"}
+                                  </td>
+                                  <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
+                                    {log.os ?? "—"}
+                                  </td>
+                                  <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
+                                    {log.browser ?? "—"}
+                                  </td>
+                                  <td className="max-w-[120px] truncate px-3 py-1.5 text-[var(--color-text-secondary)]">
+                                    {log.referer ? (
+                                      <span title={log.referer}>{log.referer}</span>
+                                    ) : (
+                                      "—"
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

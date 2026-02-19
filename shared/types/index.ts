@@ -173,6 +173,18 @@ export interface SiteSetting {
   updatedAt: string;
 }
 
+// ============ PostAccessLog ============
+export interface PostAccessLog {
+  id: string;
+  postId: string;
+  ip: string | null;
+  referer: string | null;
+  userAgent: string | null;
+  os: string | null;
+  browser: string | null;
+  createdAt: string;
+}
+
 // ============ API types ============
 export interface LoginRequest {
   email: string;
