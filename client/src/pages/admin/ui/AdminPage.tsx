@@ -296,11 +296,22 @@ function PostManager() {
                       ref={popoverRef}
                       className="absolute top-full right-0 z-50 mt-1 w-full min-w-[320px] rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] shadow-lg sm:w-auto sm:min-w-[480px]"
                     >
-                      <div className="flex items-center gap-2 rounded-t-lg border-b border-[var(--color-border)] px-3 py-2">
-                        <Activity className="h-4 w-4 text-[var(--color-primary)]" />
-                        <span className="text-sm font-medium text-[var(--color-text)]">
-                          Recent Visitors
-                        </span>
+                      <div className="flex items-center justify-between gap-2 rounded-t-lg border-b border-[var(--color-border)] px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-[var(--color-primary)]" />
+                          <span className="text-sm font-medium text-[var(--color-text)]">
+                            Recent Visitors
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setAccessLogPopover(null);
+                          }}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                          aria-label="Close"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
                       {logsLoading ? (
                         <div className="flex items-center justify-center py-6">
