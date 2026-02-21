@@ -31,6 +31,12 @@
       "prettier --check"
     ]
   },
+  "overrides": {
+    "esbuild": "^0.25.0",
+    "rimraf": "^6.0.0",
+    "glob": "^13.0.0",
+    "minimatch": "^10.2.2"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
     "concurrently": "^9.1.0",
