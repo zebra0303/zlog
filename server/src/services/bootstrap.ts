@@ -272,7 +272,11 @@ export function bootstrap() {
   if (existingOwner.length === 0) {
     const now = new Date().toISOString();
     const email = process.env.ADMIN_EMAIL ?? "admin@example.com";
-    const password = process.env.ADMIN_PASSWORD ?? "changeme";
+    let password = process.env.ADMIN_PASSWORD;
+    if (!password) {
+      password = generateId();
+      console.warn(`\n⚠️  ADMIN_PASSWORD not set. Generated temporary password: ${password}\n`);
+    }
     const displayName = process.env.ADMIN_DISPLAY_NAME ?? "Blog Owner";
     const blogHandle = process.env.ADMIN_BLOG_HANDLE ?? "admin";
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";

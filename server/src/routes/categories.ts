@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, sql, asc, inArray, like } from "drizzle-orm";
+import { eq, sql, asc, inArray, like, and } from "drizzle-orm";
 import { authMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
@@ -26,7 +26,7 @@ categoriesRoute.get("/", (c) => {
         count: sql<number>`count(*)`,
       })
       .from(schema.posts)
-      .where(sql`${schema.posts.categoryId} IN ${catIds} AND ${schema.posts.status} = 'published'`)
+      .where(and(inArray(schema.posts.categoryId, catIds), eq(schema.posts.status, "published")))
       .groupBy(schema.posts.categoryId)
       .all();
     for (const r of rows) {
@@ -71,7 +71,7 @@ categoriesRoute.get("/:slug", (c) => {
   const postCountResult = db
     .select({ count: sql<number>`count(*)` })
     .from(schema.posts)
-    .where(sql`${schema.posts.categoryId} = ${cat.id} AND ${schema.posts.status} = 'published'`)
+    .where(and(eq(schema.posts.categoryId, cat.id), eq(schema.posts.status, "published")))
     .get();
 
   const followerCountResult = db
