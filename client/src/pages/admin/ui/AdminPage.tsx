@@ -1493,10 +1493,16 @@ function SubscriptionManager({
         }
       })
       .catch((err: unknown) => {
-        setAddMessage({
-          text: err instanceof Error ? err.message : t("admin_mysub_add_fetch_failed"),
-          type: "error",
-        });
+        let text = t("admin_mysub_add_fetch_failed");
+        if (err instanceof Error) {
+          if (err.message.startsWith("ERR_")) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+            text = t(err.message.toLowerCase() as any);
+          } else {
+            text = err.message;
+          }
+        }
+        setAddMessage({ text, type: "error" });
       })
       .finally(() => {
         setIsFetchingCats(false);
@@ -1531,10 +1537,16 @@ function SubscriptionManager({
         setRemoteCats(cats);
       }
     } catch (err: unknown) {
-      setAddMessage({
-        text: err instanceof Error ? err.message : t("admin_mysub_add_fetch_failed"),
-        type: "error",
-      });
+      let text = t("admin_mysub_add_fetch_failed");
+      if (err instanceof Error) {
+        if (err.message.startsWith("ERR_")) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+          text = t(err.message.toLowerCase() as any);
+        } else {
+          text = err.message;
+        }
+      }
+      setAddMessage({ text, type: "error" });
     } finally {
       setIsFetchingCats(false);
     }
@@ -1572,10 +1584,16 @@ function SubscriptionManager({
       setShowAddForm(false);
       fetchSubs();
     } catch (err: unknown) {
-      setAddMessage({
-        text: err instanceof Error ? err.message : t("admin_mysub_add_subscribe_failed"),
-        type: "error",
-      });
+      let text = t("admin_mysub_add_subscribe_failed");
+      if (err instanceof Error) {
+        if (err.message.startsWith("ERR_")) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+          text = t(err.message.toLowerCase() as any);
+        } else {
+          text = err.message;
+        }
+      }
+      setAddMessage({ text, type: "error" });
     } finally {
       setIsSubscribing(false);
     }

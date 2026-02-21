@@ -45,11 +45,11 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
   try {
     parsed = new URL(url);
   } catch {
-    throw new Error("Invalid URL format.");
+    throw new Error("ERR_INVALID_URL_FORMAT");
   }
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error("Only HTTP and HTTPS protocols are allowed.");
+    throw new Error("ERR_INVALID_PROTOCOL");
   }
 
   const hostname = parsed.hostname;
@@ -61,7 +61,7 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
     hostname === "::1" ||
     hostname === "[::1]"
   ) {
-    throw new Error("Localhost URLs are not allowed.");
+    throw new Error("ERR_LOCALHOST_FORBIDDEN");
   }
 
   // Block private IP ranges (IPv4)
@@ -72,7 +72,7 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
     hostname.startsWith("169.254.") ||
     /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
   ) {
-    throw new Error("Private IP addresses are not allowed.");
+    throw new Error("ERR_PRIVATE_IP_FORBIDDEN");
   }
 
   // Check against self
@@ -80,7 +80,7 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
     try {
       const myParsed = new URL(mySiteUrl);
       if (parsed.hostname === myParsed.hostname && parsed.port === myParsed.port) {
-        throw new Error("Cannot subscribe to your own blog.");
+        throw new Error("ERR_SELF_SUBSCRIPTION_FORBIDDEN");
       }
     } catch {
       // Ignore if mySiteUrl is malformed (shouldn't happen in configured app)
