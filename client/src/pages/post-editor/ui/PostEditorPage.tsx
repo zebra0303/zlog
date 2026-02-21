@@ -28,6 +28,7 @@ export default function PostEditorPage() {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -77,6 +78,7 @@ export default function PostEditorPage() {
       .slice(0, 5);
     setSuggestions(matches);
     setShowSuggestions(matches.length > 0);
+    setHighlightedIndex(0);
   }, [tags, allTags]);
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -84,6 +86,24 @@ export default function PostEditorPage() {
     parts[parts.length - 1] = ` ${suggestion}`;
     setTags(`${parts.join(", ")}, `);
     setShowSuggestions(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === "Tab" || e.key === "Enter") {
+      e.preventDefault();
+      const selected = suggestions[highlightedIndex];
+      if (selected) handleSuggestionClick(selected);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
   };
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -323,6 +343,7 @@ export default function PostEditorPage() {
             onChange={(e) => {
               setTags(e.target.value);
             }}
+            onKeyDown={handleKeyDown}
             onBlur={() => {
               // Delay hiding so click event can fire
               setTimeout(() => {
@@ -333,14 +354,17 @@ export default function PostEditorPage() {
             autoComplete="off"
           />
           {showSuggestions && (
-            <div className="border-border bg-surface absolute top-full left-0 z-10 mt-1 w-full rounded-lg border shadow-lg">
-              {suggestions.map((suggestion) => (
+            <div className="border-border bg-surface absolute top-full left-0 z-10 mt-1 w-full overflow-hidden rounded-lg border shadow-lg">
+              {suggestions.map((suggestion, index) => (
                 <button
                   key={suggestion}
                   type="button"
-                  className="text-text hover:bg-background/80 block w-full px-3 py-2 text-left text-sm"
+                  className={`hover:bg-background/80 block w-full px-3 py-2 text-left text-sm ${index === highlightedIndex ? "bg-primary/10 text-primary" : "text-text"}`}
                   onClick={() => {
                     handleSuggestionClick(suggestion);
+                  }}
+                  onMouseEnter={() => {
+                    setHighlightedIndex(index);
                   }}
                 >
                   {suggestion}
