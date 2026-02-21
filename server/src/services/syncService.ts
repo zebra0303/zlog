@@ -32,7 +32,7 @@ export async function syncSubscription(
   if (!remoteBlog) return 0;
 
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  const mySiteUrl = ownerRecord?.siteUrl ?? "";
+  const mySiteUrl = (ownerRecord?.siteUrl ?? "").replace(/\/+$/, "");
   try {
     validateRemoteUrl(remoteBlog.siteUrl, mySiteUrl);
   } catch (err) {

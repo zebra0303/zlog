@@ -61,7 +61,7 @@ describe("Federation & Sync Security", () => {
       expect(res.status).toBe(200);
     });
 
-    it("should return 403 when subscriber is revoked (inactive)", async () => {
+    it("should return 403 when subscriber is revoked (trailing slash normalization check)", async () => {
       const cat = createTestCategory();
       const subUrl = "https://former-friend.com";
 
@@ -69,7 +69,7 @@ describe("Federation & Sync Security", () => {
         .values({
           id: "sub-2",
           categoryId: cat.id,
-          subscriberUrl: subUrl,
+          subscriberUrl: subUrl, // No slash in DB
           callbackUrl: `${subUrl}/api/webhook`,
           isActive: false,
           createdAt: new Date().toISOString(),
@@ -77,7 +77,7 @@ describe("Federation & Sync Security", () => {
         .run();
 
       const res = await app.request(`/api/federation/categories/${cat.id}/posts`, {
-        headers: { "X-Zlog-Subscriber-Url": subUrl },
+        headers: { "X-Zlog-Subscriber-Url": `${subUrl}/` }, // Slash in header
       });
       expect(res.status).toBe(403);
       const data = (await res.json()) as { error: string };

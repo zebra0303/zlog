@@ -57,6 +57,9 @@ export function AppLayout() {
 
   // Apply body background, primary color, and CSS variable overrides from settings
   useEffect(() => {
+    // Skip if we are in admin page to allow AdminPage's local state to handle live preview
+    if (pathname.startsWith("/admin")) return;
+
     const style = getBodyStyle(isDark);
     document.body.style.background = style.background ?? "";
     document.body.style.backgroundColor = style.backgroundColor ?? "";

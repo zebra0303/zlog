@@ -779,55 +779,6 @@ function ThemeCustomizer({
   update: (k: string, v: string) => void;
 }) {
   const { t } = useI18n();
-  const { isDark } = useThemeStore();
-
-  // Live preview: apply body background, primary color, and CSS variable overrides as settings change
-  useEffect(() => {
-    const from = isDark ? settings.body_bg_color_dark : settings.body_bg_color_light;
-    const to = isDark ? settings.body_bg_gradient_to_dark : settings.body_bg_gradient_to_light;
-    const dir = isDark
-      ? settings.body_bg_gradient_direction_dark
-      : settings.body_bg_gradient_direction_light;
-
-    if (!from) {
-      document.body.style.background = "";
-      document.body.style.backgroundColor = "";
-    } else if (to) {
-      document.body.style.background = `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})`;
-      document.body.style.backgroundColor = "";
-    } else {
-      document.body.style.background = "";
-      document.body.style.backgroundColor = from;
-    }
-
-    if (settings.primary_color) {
-      document.documentElement.style.setProperty("--color-primary", settings.primary_color);
-    } else {
-      document.documentElement.style.removeProperty("--color-primary");
-    }
-
-    const surfaceColor = isDark ? settings.surface_color_dark : settings.surface_color_light;
-    if (surfaceColor) {
-      document.documentElement.style.setProperty("--color-surface", surfaceColor);
-    } else {
-      document.documentElement.style.removeProperty("--color-surface");
-    }
-
-    const textColor = isDark ? settings.text_color_dark : settings.text_color_light;
-    if (textColor) {
-      document.documentElement.style.setProperty("--color-text", textColor);
-    } else {
-      document.documentElement.style.removeProperty("--color-text");
-    }
-
-    return () => {
-      document.body.style.background = "";
-      document.body.style.backgroundColor = "";
-      document.documentElement.style.removeProperty("--color-primary");
-      document.documentElement.style.removeProperty("--color-surface");
-      document.documentElement.style.removeProperty("--color-text");
-    };
-  }, [isDark, settings]);
 
   const heightOptions = [
     { value: "auto", label: t("admin_theme_auto") },
@@ -1639,8 +1590,18 @@ function SubscriptionManager({
         type: "success",
       });
       fetchSubs();
-    } catch {
-      setSyncMessage({ id: sub.id, text: t("admin_mysub_sync_failed"), type: "error" });
+    } catch (err: unknown) {
+      let text = t("admin_mysub_sync_failed");
+      if (err instanceof Error) {
+        if (err.message.startsWith("ERR_")) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+          text = t(err.message.toLowerCase() as any);
+        } else {
+          text = err.message;
+        }
+      }
+      if (!text) text = t("admin_mysub_sync_failed");
+      setSyncMessage({ id: sub.id, text, type: "error" });
     } finally {
       setSyncingId(null);
     }
@@ -2003,6 +1964,7 @@ type AdminTab = "general" | "content" | "theme" | "federation";
 export default function AdminPage() {
   const { isAuthenticated } = useAuthStore();
   const { fetchSettings: refreshSiteSettings } = useSiteSettingsStore();
+  const { isDark } = useThemeStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -2010,6 +1972,56 @@ export default function AdminPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [testingSlack, setTestingSlack] = useState(false);
   const [slackTestResult, setSlackTestResult] = useState<"ok" | "error" | null>(null);
+
+  // Live preview: apply body background, primary color, and CSS variable overrides as settings change
+  useEffect(() => {
+    if (Object.keys(settings).length === 0) return;
+
+    const from = isDark ? settings.body_bg_color_dark : settings.body_bg_color_light;
+    const to = isDark ? settings.body_bg_gradient_to_dark : settings.body_bg_gradient_to_light;
+    const dir = isDark
+      ? settings.body_bg_gradient_direction_dark
+      : settings.body_bg_gradient_direction_light;
+
+    if (!from) {
+      document.body.style.background = "";
+      document.body.style.backgroundColor = "";
+    } else if (to) {
+      document.body.style.background = `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})`;
+      document.body.style.backgroundColor = "";
+    } else {
+      document.body.style.background = "";
+      document.body.style.backgroundColor = from;
+    }
+
+    if (settings.primary_color) {
+      document.documentElement.style.setProperty("--color-primary", settings.primary_color);
+    } else {
+      document.documentElement.style.removeProperty("--color-primary");
+    }
+
+    const surfaceColor = isDark ? settings.surface_color_dark : settings.surface_color_light;
+    if (surfaceColor) {
+      document.documentElement.style.setProperty("--color-surface", surfaceColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-surface");
+    }
+
+    const textColor = isDark ? settings.text_color_dark : settings.text_color_light;
+    if (textColor) {
+      document.documentElement.style.setProperty("--color-text", textColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-text");
+    }
+
+    return () => {
+      document.body.style.background = "";
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.removeProperty("--color-primary");
+      document.documentElement.style.removeProperty("--color-surface");
+      document.documentElement.style.removeProperty("--color-text");
+    };
+  }, [isDark, settings]);
 
   // Tab state — switch to Federation tab if subscribe action is present
   const tabParam = searchParams.get("tab");

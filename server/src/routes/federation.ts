@@ -56,7 +56,7 @@ federationRoute.get("/categories", (c) => {
 federationRoute.get("/categories/:id/posts", (c) => {
   const categoryId = c.req.param("id");
   const since = c.req.query("since");
-  const subscriberUrl = c.req.header("X-Zlog-Subscriber-Url");
+  const subscriberUrl = c.req.header("X-Zlog-Subscriber-Url")?.replace(/\/+$/, "");
 
   // Verify subscriber if header is present (Strict mode for identified pullers)
   if (subscriberUrl) {
@@ -73,6 +73,9 @@ federationRoute.get("/categories/:id/posts", (c) => {
       .get();
 
     if (!isSubscribed) {
+      console.warn(
+        `🚫 Pull sync blocked: ${subscriberUrl} is not an active subscriber for category ${categoryId}`,
+      );
       return c.json({ error: "ERR_SUBSCRIPTION_REVOKED" }, 403);
     }
   }
@@ -181,7 +184,7 @@ federationRoute.post("/subscribe", async (c) => {
     .values({
       id,
       categoryId: body.categoryId,
-      subscriberUrl: body.subscriberUrl,
+      subscriberUrl: body.subscriberUrl.replace(/\/+$/, ""),
       callbackUrl: body.callbackUrl,
       createdAt: new Date().toISOString(),
     })
@@ -369,7 +372,11 @@ federationRoute.post("/local-subscribe", async (c) => {
   }
 
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  const mySiteUrl = ownerRecord?.siteUrl ?? process.env.SITE_URL ?? "http://localhost:3000";
+  const mySiteUrl = (
+    ownerRecord?.siteUrl ??
+    process.env.SITE_URL ??
+    "http://localhost:3000"
+  ).replace(/\/+$/, "");
 
   try {
     validateRemoteUrl(body.remoteSiteUrl, mySiteUrl);
@@ -748,9 +755,34 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
   if (!remoteBlog) return c.json({ error: "Remote blog not found." }, 404);
 
   try {
+    const ownerRecord = db.select().from(schema.owner).limit(1).get();
+    const mySiteUrl = (ownerRecord?.siteUrl ?? "").replace(/\/+$/, "");
+
     // Always fetch all posts to refresh image URLs etc.
     const postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts`;
-    const res = await fetch(postsUrl, { signal: AbortSignal.timeout(15000) });
+    const res = await fetch(postsUrl, {
+      headers: {
+        "X-Zlog-Subscriber-Url": mySiteUrl,
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.status === 403) {
+      // Subscription revoked by remote blog
+      db.update(schema.categorySubscriptions)
+        .set({ isActive: false })
+        .where(eq(schema.categorySubscriptions.id, id))
+        .run();
+
+      // Mark all synced posts as unreachable
+      db.update(schema.remotePosts)
+        .set({ remoteStatus: "unreachable", fetchedAt: new Date().toISOString() })
+        .where(eq(schema.remotePosts.remoteCategoryId, sub.remoteCategoryId))
+        .run();
+
+      return c.json({ error: "ERR_SUBSCRIPTION_REVOKED" }, 403);
+    }
+
     if (!res.ok) return c.json({ error: `Remote server error: ${res.status}` }, 502);
     const posts = (await res.json()) as {
       id: string;
