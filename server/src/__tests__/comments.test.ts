@@ -297,9 +297,14 @@ describe("Comments API", () => {
       // Allow fire-and-forget to run
       await new Promise((r) => setTimeout(r, 50));
 
-      const slackCall = fetchSpy.mock.calls.find(
-        ([url]) => typeof url === "string" && url.includes("hooks.slack.com"),
-      );
+      const slackCall = fetchSpy.mock.calls.find(([url]) => {
+        try {
+          const parsed = new URL(typeof url === "string" ? url : "");
+          return parsed.hostname === "hooks.slack.com";
+        } catch {
+          return false;
+        }
+      });
       expect(slackCall).toBeDefined();
       if (!slackCall) throw new Error("Expected Slack call not found");
       const callOpts = slackCall[1] as { body: string };
@@ -327,9 +332,14 @@ describe("Comments API", () => {
 
       await new Promise((r) => setTimeout(r, 50));
 
-      const slackCall = fetchSpy.mock.calls.find(
-        ([url]) => typeof url === "string" && url.includes("hooks.slack.com"),
-      );
+      const slackCall = fetchSpy.mock.calls.find(([url]) => {
+        try {
+          const parsed = new URL(typeof url === "string" ? url : "");
+          return parsed.hostname === "hooks.slack.com";
+        } catch {
+          return false;
+        }
+      });
       expect(slackCall).toBeUndefined();
     });
 
@@ -354,9 +364,14 @@ describe("Comments API", () => {
 
       await new Promise((r) => setTimeout(r, 50));
 
-      const slackCall = fetchSpy.mock.calls.find(
-        ([url]) => typeof url === "string" && url.includes("hooks.slack.com"),
-      );
+      const slackCall = fetchSpy.mock.calls.find(([url]) => {
+        try {
+          const parsed = new URL(typeof url === "string" ? url : "");
+          return parsed.hostname === "hooks.slack.com";
+        } catch {
+          return false;
+        }
+      });
       expect(slackCall).toBeDefined();
       if (!slackCall) throw new Error("Expected Slack call not found");
       const callOpts = slackCall[1] as { body: string };

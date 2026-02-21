@@ -10,8 +10,12 @@ export function stripMarkdown(content: string): string {
   // 1. Remove code blocks (```...```) - remove content entirely as code is rarely good summary
   text = text.replace(/```[\s\S]*?```/g, "");
 
-  // 2. Remove HTML tags
-  text = text.replace(/<[^>]*>/g, "");
+  // 2. Remove HTML tags (repeatedly to handle nested tags or malformed input)
+  let prevText;
+  do {
+    prevText = text;
+    text = text.replace(/<[^>]*>/g, "");
+  } while (text !== prevText);
 
   // 3. Remove images (![alt](url)) -> keep alt text
   text = text.replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1");

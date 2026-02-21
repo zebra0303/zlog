@@ -26,12 +26,11 @@ async function renderMermaidBlocks() {
   for (const block of blocks) {
     const code = block.dataset.mermaid;
     if (!code) continue;
-    // HTML entity decode
-    const decoded = code
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"');
+
+    // Use DOMParser for safer HTML entity decoding
+    const doc = new DOMParser().parseFromString(code, "text/html");
+    const decoded = doc.documentElement.textContent;
+
     try {
       const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const { svg } = await mermaid.render(id, decoded);

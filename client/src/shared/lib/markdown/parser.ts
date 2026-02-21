@@ -81,19 +81,29 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     },
   );
 
-  processed = processed.replace(/@\[youtube\]\(([^)]+)\)/g, (_match, id: string) => {
-    const videoId = id.includes("youtube.com")
-      ? (new URL(id).searchParams.get("v") ?? id)
-      : id.includes("youtu.be")
-        ? (id.split("/").pop() ?? id)
-        : id;
+  processed = processed.replace(/@\[youtube\]\(([^)]+)\)/g, (_match, url: string) => {
+    let videoId = url;
+    try {
+      const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+      const host = parsed.hostname.toLowerCase();
+      if (host.endsWith("youtube.com") || host === "youtube.com") {
+        videoId = parsed.searchParams.get("v") ?? videoId;
+      } else if (host === "youtu.be") {
+        videoId = parsed.pathname.substring(1) || videoId;
+      }
+    } catch {
+      // If URL parsing fails, treat as raw ID
+    }
+    // Final check for safe ID format (alphanumeric, dashes, underscores only)
+    if (!/^[\w-]+$/.test(videoId)) return _match;
+
     return `<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius:8px;aspect-ratio:16/9;"></iframe>`;
   });
 
   // Auto-embed standalone YouTube URLs (plain URL on its own line)
   processed = processed.replace(
-    /^(?:[ \t]*)(?:<)?(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]+)(?:[^\s)]*?)>?[ \t]*$/gm,
-    (_match, videoId: string) => {
+    /^(?:[ \t]*)(?:<)?(?:https?:\/\/)?(?:www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]+)(?:[^\s)]*?)>?[ \t]*$/gm,
+    (_match, prefix: string, videoId: string) => {
       return `<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius:8px;aspect-ratio:16/9;"></iframe>`;
     },
   );
