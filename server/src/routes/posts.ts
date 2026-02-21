@@ -383,6 +383,11 @@ postsRoute.get("/", (c) => {
   return c.json({ items, total, page, perPage, totalPages: Math.ceil(total / perPage) });
 });
 
+postsRoute.get("/tags", (c) => {
+  const allTags = db.select({ name: schema.tags.name }).from(schema.tags).all();
+  return c.json(allTags.map((t) => t.name));
+});
+
 postsRoute.get("/:id/access-logs", authMiddleware, (c) => {
   const postId = c.req.param("id");
   const logs = db

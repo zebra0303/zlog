@@ -25,6 +25,9 @@ export default function PostEditorPage() {
   const [preview, setPreview] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("edit");
   const [categories, setCategories] = useState<CategoryWithStats[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -39,6 +42,10 @@ export default function PostEditorPage() {
   }, [isAuthenticated, navigate]);
   useEffect(() => {
     void api.get<CategoryWithStats[]>("/categories").then(setCategories);
+    void api
+      .get<string[]>("/posts/tags")
+      .then(setAllTags)
+      .catch(() => null);
   }, []);
   useEffect(() => {
     if (!id) return;
@@ -50,6 +57,34 @@ export default function PostEditorPage() {
       setTags(p.tags.map((tg) => tg.name).join(", "));
     });
   }, [id]);
+
+  useEffect(() => {
+    const parts = tags.split(",");
+    const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
+    if (!lastPart) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const existingTags = new Set(parts.slice(0, -1).map((t) => t.trim().toLowerCase()));
+    const matches = allTags
+      .filter(
+        (t) =>
+          t.toLowerCase().startsWith(lastPart) &&
+          !existingTags.has(t.toLowerCase()) &&
+          t.toLowerCase() !== lastPart,
+      )
+      .slice(0, 5);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  }, [tags, allTags]);
+
+  const handleSuggestionClick = (suggestion: string) => {
+    const parts = tags.split(",");
+    parts[parts.length - 1] = ` ${suggestion}`;
+    setTags(`${parts.join(", ")}, `);
+    setShowSuggestions(false);
+  };
   useEffect(() => {
     const timer = setTimeout(() => {
       void parseMarkdown(content).then((html) => {
@@ -281,14 +316,39 @@ export default function PostEditorPage() {
         </select>
       </div>
       <div className="flex gap-3">
-        <Input
-          placeholder={t("editor_tag_placeholder")}
-          value={tags}
-          onChange={(e) => {
-            setTags(e.target.value);
-          }}
-          className="flex-1"
-        />
+        <div className="relative flex-1">
+          <Input
+            placeholder={t("editor_tag_placeholder")}
+            value={tags}
+            onChange={(e) => {
+              setTags(e.target.value);
+            }}
+            onBlur={() => {
+              // Delay hiding so click event can fire
+              setTimeout(() => {
+                setShowSuggestions(false);
+              }, 200);
+            }}
+            className="w-full"
+            autoComplete="off"
+          />
+          {showSuggestions && (
+            <div className="border-border bg-surface absolute top-full left-0 z-10 mt-1 w-full rounded-lg border shadow-lg">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  className="text-text hover:bg-background/80 block w-full px-3 py-2 text-left text-sm"
+                  onClick={() => {
+                    handleSuggestionClick(suggestion);
+                  }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="flex flex-1 items-center gap-2">
           <Input
             placeholder={t("editor_cover_image_placeholder")}
