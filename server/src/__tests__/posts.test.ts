@@ -523,4 +523,42 @@ describe("Posts API", () => {
       expect(remote?.remoteBlog?.blogTitle).toBe("Cool Title");
     });
   });
+
+  describe("GET /api/posts/tags", () => {
+    it("should return a list of all unique tags", async () => {
+      await app.request("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: "Post 1",
+          content: "Content",
+          tags: ["apple", "banana"],
+        }),
+      });
+
+      await app.request("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: "Post 2",
+          content: "Content",
+          tags: ["banana", "cherry"],
+        }),
+      });
+
+      const res = await app.request("/api/posts/tags");
+      expect(res.status).toBe(200);
+      const tags = (await res.json()) as string[];
+      expect(tags).toHaveLength(3);
+      expect(tags).toContain("apple");
+      expect(tags).toContain("banana");
+      expect(tags).toContain("cherry");
+    });
+  });
 });

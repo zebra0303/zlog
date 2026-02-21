@@ -77,13 +77,17 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
 
   // Check against self
   if (mySiteUrl) {
+    let myParsed: URL | null = null;
     try {
-      const myParsed = new URL(mySiteUrl);
+      myParsed = new URL(mySiteUrl);
+    } catch {
+      // Ignore malformed mySiteUrl
+    }
+
+    if (myParsed) {
       if (parsed.hostname === myParsed.hostname && parsed.port === myParsed.port) {
         throw new Error("ERR_SELF_SUBSCRIPTION_FORBIDDEN");
       }
-    } catch {
-      // Ignore if mySiteUrl is malformed (shouldn't happen in configured app)
     }
   }
 }
