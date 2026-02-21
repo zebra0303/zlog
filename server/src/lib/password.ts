@@ -22,6 +22,8 @@ export function verifyPassword(password: string, stored: string): boolean {
   }
 
   // Fallback for legacy SHA-512 hashes
+  // Note: Insufficient computational effort for modern security, but kept for backward compatibility.
+  // Successful legacy logins should trigger an automatic migration to scrypt in the auth service.
   const parts = stored.split(":");
   if (parts.length !== 2) return false;
   const [salt, storedHash] = parts as [string, string];

@@ -86,10 +86,15 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     try {
       const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
       const host = parsed.hostname.toLowerCase();
-      if (host.endsWith("youtube.com") || host === "youtube.com") {
+      // Strict hostname check
+      if (host === "youtube.com" || host.endsWith(".youtube.com") || host === "www.youtube.com") {
         videoId = parsed.searchParams.get("v") ?? videoId;
       } else if (host === "youtu.be") {
         videoId = parsed.pathname.substring(1) || videoId;
+      } else if (host === "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com")) {
+        // Already a nocookie URL, extract ID from path if needed, but usually it's just the ID
+        const parts = parsed.pathname.split("/");
+        videoId = parts[parts.length - 1] ?? videoId;
       }
     } catch {
       // If URL parsing fails, treat as raw ID
@@ -101,20 +106,42 @@ export async function parseMarkdown(markdown: string): Promise<string> {
   });
 
   // Auto-embed standalone YouTube URLs (plain URL on its own line)
+  // Refined regex to ensure we only capture legitimate youtube domains
   processed = processed.replace(
-    /^(?:[ \t]*)(?:<)?(?:https?:\/\/)?(?:www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]+)(?:[^\s)]*?)>?[ \t]*$/gm,
-    (_match, prefix: string, videoId: string) => {
+    /^[ \t]*(?:<)?https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]+)(?:[^\s)]*?)>?[ \t]*$/gm,
+    (_match, videoId: string) => {
       return `<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius:8px;aspect-ratio:16/9;"></iframe>`;
     },
   );
 
-  processed = processed.replace(/@\[codepen\]\(([^)]+)\)/g, (_match, path: string) => {
-    const parts = path.split("/");
-    return `<iframe height="400" style="width:100%;border-radius:8px;" scrolling="no" src="https://codepen.io/${parts.join("/embed/")}?default-tab=result" frameborder="no" allowfullscreen></iframe>`;
+  processed = processed.replace(/@\[codepen\]\(([^)]+)\)/g, (_match, url: string) => {
+    try {
+      const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+      const host = parsed.hostname.toLowerCase();
+      if (host !== "codepen.io" && !host.endsWith(".codepen.io")) return _match;
+
+      const path = parsed.pathname.replace(/^\/|\/$/g, "");
+      const parts = path.split("/");
+      // Expected path: user/pen/id or user/embed/id
+      return `<iframe height="400" style="width:100%;border-radius:8px;" scrolling="no" src="https://codepen.io/${parts.join("/embed/")}?default-tab=result" frameborder="no" allowfullscreen></iframe>`;
+    } catch {
+      return _match;
+    }
   });
 
-  processed = processed.replace(/@\[codesandbox\]\(([^)]+)\)/g, (_match, id: string) => {
-    return `<iframe src="https://codesandbox.io/embed/${id}" style="width:100%;height:500px;border:0;border-radius:8px;overflow:hidden;" allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking" sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"></iframe>`;
+  processed = processed.replace(/@\[codesandbox\]\(([^)]+)\)/g, (_match, url: string) => {
+    try {
+      const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+      const host = parsed.hostname.toLowerCase();
+      if (host !== "codesandbox.io" && !host.endsWith(".codesandbox.io")) return _match;
+
+      const id = parsed.pathname.split("/").pop() ?? "";
+      if (!/^[\w-]+$/.test(id)) return _match;
+
+      return `<iframe src="https://codesandbox.io/embed/${id}" style="width:100%;height:500px;border:0;border-radius:8px;overflow:hidden;" allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking" sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"></iframe>`;
+    } catch {
+      return _match;
+    }
   });
 
   // Auto-format code blocks: find ```lang ... ``` patterns and format with Prettier

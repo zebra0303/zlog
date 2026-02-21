@@ -22,7 +22,7 @@ export default function PostEditorPage() {
   const [categoryId, setCategoryId] = useState("");
   const [tags, setTags] = useState("");
   const [coverImage, setCoverImage] = useState("");
-  const [preview, setPreview] = useState("");
+  const [sanitizedHtml, setSanitizedHtml] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("edit");
   const [categories, setCategories] = useState<CategoryWithStats[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -107,8 +107,9 @@ export default function PostEditorPage() {
   };
   useEffect(() => {
     const timer = setTimeout(() => {
+      // Note: parseMarkdown already uses rehype-sanitize to ensure safe HTML output
       void parseMarkdown(content).then((html) => {
-        setPreview(html);
+        setSanitizedHtml(html);
       });
     }, 150);
 
@@ -457,9 +458,9 @@ export default function PostEditorPage() {
               <CardContent className="pt-6">
                 <div
                   className="prose prose-lg dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: preview }}
+                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                 />
-                {!preview && <p className="text-text-secondary">{t("preview")}...</p>}
+                {!sanitizedHtml && <p className="text-text-secondary">{t("preview")}...</p>}
               </CardContent>
             </Card>
           </>
