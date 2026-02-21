@@ -243,6 +243,7 @@ export function MarkdownToolbar({
       role="toolbar"
       aria-label="Markdown formatting"
     >
+      {/* eslint-disable-next-line react-hooks/refs */}
       {buttons.map((group, gi) => (
         <div key={gi} className="flex items-center">
           {gi > 0 && (

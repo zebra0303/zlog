@@ -41,6 +41,7 @@ export default function RemotePostDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     void api
       .get<RemotePost>(`/federation/remote-posts/${id}`)

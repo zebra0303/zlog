@@ -157,6 +157,7 @@ export default function CategoryDetailPage() {
 
   useEffect(() => {
     if (!slug) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const params = new URLSearchParams();
     params.set("category", slug);

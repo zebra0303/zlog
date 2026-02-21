@@ -35,6 +35,7 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     if (!slug) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const referrer = document.referrer;
     void api
