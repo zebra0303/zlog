@@ -1508,6 +1508,7 @@ function SubscriptionManager({
             text = err.message;
           }
         }
+        if (!text) text = t("admin_mysub_add_fetch_failed");
         setAddMessage({ text, type: "error" });
       })
       .finally(() => {
@@ -1558,6 +1559,7 @@ function SubscriptionManager({
           text = err.message;
         }
       }
+      if (!text) text = t("admin_mysub_add_fetch_failed");
       setAddMessage({ text, type: "error" });
     } finally {
       setIsFetchingCats(false);
@@ -1605,6 +1607,7 @@ function SubscriptionManager({
           text = err.message;
         }
       }
+      if (!text) text = t("admin_mysub_add_subscribe_failed");
       setAddMessage({ text, type: "error" });
     } finally {
       setIsSubscribing(false);

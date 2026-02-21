@@ -384,4 +384,11 @@ export const ko: Record<TranslationKeys, string> = {
   zlog_logo_label: "zlog 로고",
   request_failed: "요청에 실패했습니다.",
   upload_failed: "업로드에 실패했습니다.",
+
+  // Remote URL validation errors
+  err_invalid_url_format: "URL 형식이 올바르지 않습니다.",
+  err_invalid_protocol: "http 또는 https 프로토콜만 허용됩니다.",
+  err_localhost_forbidden: "로컬 호스트(localhost) 주소는 사용할 수 없습니다.",
+  err_private_ip_forbidden: "사설 IP 대역은 사용할 수 없습니다.",
+  err_self_subscription_forbidden: "자신의 블로그는 구독할 수 없습니다.",
 };

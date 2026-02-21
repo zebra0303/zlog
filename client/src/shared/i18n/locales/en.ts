@@ -380,6 +380,13 @@ export const en = {
   zlog_logo_label: "zlog logo",
   request_failed: "Request failed.",
   upload_failed: "Upload failed.",
-} as const;
+
+  // Remote URL validation errors
+  err_invalid_url_format: "Invalid URL format.",
+  err_invalid_protocol: "Only HTTP and HTTPS protocols are allowed.",
+  err_localhost_forbidden: "Localhost URLs are not allowed.",
+  err_private_ip_forbidden: "Private IP addresses are not allowed.",
+  err_self_subscription_forbidden: "Cannot subscribe to your own blog.",
+};
 
 export type TranslationKeys = keyof typeof en;
