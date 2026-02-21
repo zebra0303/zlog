@@ -1492,8 +1492,11 @@ function SubscriptionManager({
           setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
         }
       })
-      .catch(() => {
-        setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
+      .catch((err: unknown) => {
+        setAddMessage({
+          text: err instanceof Error ? err.message : t("admin_mysub_add_fetch_failed"),
+          type: "error",
+        });
       })
       .finally(() => {
         setIsFetchingCats(false);
@@ -1527,8 +1530,11 @@ function SubscriptionManager({
       } else {
         setRemoteCats(cats);
       }
-    } catch {
-      setAddMessage({ text: t("admin_mysub_add_fetch_failed"), type: "error" });
+    } catch (err: unknown) {
+      setAddMessage({
+        text: err instanceof Error ? err.message : t("admin_mysub_add_fetch_failed"),
+        type: "error",
+      });
     } finally {
       setIsFetchingCats(false);
     }
@@ -1565,8 +1571,11 @@ function SubscriptionManager({
       setSelectedLocalCat("");
       setShowAddForm(false);
       fetchSubs();
-    } catch {
-      setAddMessage({ text: t("admin_mysub_add_subscribe_failed"), type: "error" });
+    } catch (err: unknown) {
+      setAddMessage({
+        text: err instanceof Error ? err.message : t("admin_mysub_add_subscribe_failed"),
+        type: "error",
+      });
     } finally {
       setIsSubscribing(false);
     }
