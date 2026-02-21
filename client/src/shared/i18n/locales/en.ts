@@ -387,6 +387,7 @@ export const en = {
   err_localhost_forbidden: "Localhost URLs are not allowed.",
   err_private_ip_forbidden: "Private IP addresses are not allowed.",
   err_self_subscription_forbidden: "Cannot subscribe to your own blog.",
+  err_subscription_revoked: "Subscription revoked by the remote blog. Sync stopped.",
 };
 
 export type TranslationKeys = keyof typeof en;

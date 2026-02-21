@@ -56,6 +56,26 @@ federationRoute.get("/categories", (c) => {
 federationRoute.get("/categories/:id/posts", (c) => {
   const categoryId = c.req.param("id");
   const since = c.req.query("since");
+  const subscriberUrl = c.req.header("X-Zlog-Subscriber-Url");
+
+  // Verify subscriber if header is present (Strict mode for identified pullers)
+  if (subscriberUrl) {
+    const isSubscribed = db
+      .select()
+      .from(schema.subscribers)
+      .where(
+        and(
+          eq(schema.subscribers.categoryId, categoryId),
+          eq(schema.subscribers.subscriberUrl, subscriberUrl),
+          eq(schema.subscribers.isActive, true),
+        ),
+      )
+      .get();
+
+    if (!isSubscribed) {
+      return c.json({ error: "ERR_SUBSCRIPTION_REVOKED" }, 403);
+    }
+  }
 
   const conditions = and(
     eq(schema.posts.categoryId, categoryId),

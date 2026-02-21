@@ -46,7 +46,31 @@ export async function syncSubscription(
     postsUrl += `?since=${encodeURIComponent(sub.lastSyncedAt)}`;
   }
 
-  const res = await fetch(postsUrl, { signal: AbortSignal.timeout(15000) });
+  const res = await fetch(postsUrl, {
+    headers: {
+      "X-Zlog-Subscriber-Url": mySiteUrl,
+    },
+    signal: AbortSignal.timeout(15000),
+  });
+
+  const now = new Date().toISOString();
+
+  if (res.status === 403) {
+    // Subscription revoked by remote blog
+    db.update(schema.categorySubscriptions)
+      .set({ isActive: false })
+      .where(eq(schema.categorySubscriptions.id, sub.id))
+      .run();
+
+    // Optionally mark all synced posts as unreachable
+    db.update(schema.remotePosts)
+      .set({ remoteStatus: "unreachable", fetchedAt: now })
+      .where(eq(schema.remotePosts.remoteCategoryId, sub.remoteCategoryId))
+      .run();
+
+    throw new Error("ERR_SUBSCRIPTION_REVOKED");
+  }
+
   if (!res.ok) return 0;
 
   const posts = (await res.json()) as {
@@ -61,7 +85,6 @@ export async function syncSubscription(
     updatedAt: string;
   }[];
 
-  const now = new Date().toISOString();
   let synced = 0;
 
   // Batch-load existing remote posts by URI to avoid N+1 queries

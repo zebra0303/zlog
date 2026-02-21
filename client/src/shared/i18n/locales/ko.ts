@@ -391,4 +391,5 @@ export const ko: Record<TranslationKeys, string> = {
   err_localhost_forbidden: "로컬 호스트(localhost) 주소는 사용할 수 없습니다.",
   err_private_ip_forbidden: "사설 IP 대역은 사용할 수 없습니다.",
   err_self_subscription_forbidden: "자신의 블로그는 구독할 수 없습니다.",
+  err_subscription_revoked: "원본 블로그에서 구독이 해지되어 동기화가 중단되었습니다.",
 };
