@@ -14,19 +14,12 @@ const commentsRoute = new Hono();
 function sanitizePlainText(input: string): string {
   return (
     input
-      // Remove all HTML tags
-      .replace(/<[^>]*>/g, "")
       // Replace dangerous characters not encoded as HTML entities
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#x27;")
-      // Remove javascript: / data: URI schemes
-      .replace(/javascript\s*:/gi, "")
-      .replace(/data\s*:/gi, "")
-      // Remove on* event handler patterns
-      .replace(/on\w+\s*=/gi, "")
       .trim()
   );
 }
