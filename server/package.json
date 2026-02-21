@@ -15,19 +15,19 @@
   "dependencies": {
     "@hono/node-server": "^1.13.0",
     "@zlog/shared": "*",
-    "better-sqlite3": "^11.7.0",
-    "dotenv": "^16.4.0",
-    "drizzle-orm": "^0.38.0",
+    "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.1",
     "geoip-lite": "^1.4.10",
-    "hono": "^4.7.0",
+    "hono": "^4.12.0",
     "jose": "^6.0.0",
-    "sharp": "^0.33.0",
+    "sharp": "^0.34.5",
     "uuidv7": "^1.0.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
     "@types/geoip-lite": "^1.4.4",
-    "drizzle-kit": "^0.30.0",
+    "drizzle-kit": "^0.31.9",
     "tsx": "^4.19.0",
     "vitest": "^4.0.18"
   }
