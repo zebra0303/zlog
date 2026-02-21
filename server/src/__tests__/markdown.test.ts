@@ -43,6 +43,13 @@ More text`),
     expect(stripMarkdown("> This is a quote")).toBe("This is a quote");
   });
 
+  it("should strip GitHub alerts", () => {
+    expect(
+      stripMarkdown(`> [!NOTE]
+> This is a note.`),
+    ).toBe("This is a note.");
+  });
+
   it("should normalize whitespace", () => {
     expect(
       stripMarkdown(`Line 1

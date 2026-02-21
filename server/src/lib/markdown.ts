@@ -25,7 +25,10 @@ export function stripMarkdown(content: string): string {
   // 6. Remove blockquotes (> Quote)
   text = text.replace(/^>\s+/gm, "");
 
-  // 7. Remove bold/italic (**text**, __text__, *text*, _text_)
+  // 7. Remove GitHub alerts ([!NOTE], [!TIP], etc.) - usually inside blockquotes
+  text = text.replace(/\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/gi, "");
+
+  // 8. Remove bold/italic (**text**, __text__, *text*, _text_)
   text = text.replace(/(\*\*|__)(.*?)\1/g, "$2");
   text = text.replace(/(\*|_)(.*?)\1/g, "$2");
 
