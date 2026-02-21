@@ -15,6 +15,7 @@ import oauthRoute from "./routes/oauth.js";
 import { db } from "./db/index.js";
 import * as schema from "./db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
+import { stripMarkdown } from "./lib/markdown.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
@@ -336,7 +337,7 @@ function buildRssXml(
 ): string {
   const rssItems = items.map((item) => {
     const link = `${siteUrl}/posts/${item.slug}`;
-    const desc = item.excerpt ?? item.content.replace(/[#*`>[\]!()_~-]/g, "").slice(0, 300);
+    const desc = item.excerpt ?? stripMarkdown(item.content).slice(0, 300);
     return `    <item>
       <title>${escapeXml(item.title)}</title>
       <link>${link}</link>
