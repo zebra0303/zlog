@@ -12,3 +12,6 @@ docker-data/
 .vite/
 *.tsbuildinfo
 .claude/
+.gemini
+CLAUDE.md 
+GEMINI.md
