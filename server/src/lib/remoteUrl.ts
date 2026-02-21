@@ -33,3 +33,57 @@ export function fixRemoteContentUrls(content: string, remoteSiteUrl: string): st
   );
   return fixed;
 }
+
+/**
+ * Validate a remote URL to prevent SSRF and self-referencing loops
+ * @param url The URL to validate
+ * @param mySiteUrl The URL of the current blog (to prevent self-subscription)
+ * @throws Error if the URL is invalid or unsafe
+ */
+export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("Invalid URL format.");
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Only HTTP and HTTPS protocols are allowed.");
+  }
+
+  const hostname = parsed.hostname;
+
+  // Block localhost and loopback
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "[::1]"
+  ) {
+    throw new Error("Localhost URLs are not allowed.");
+  }
+
+  // Block private IP ranges (IPv4)
+  // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+  if (
+    hostname.startsWith("10.") ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("169.254.") ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+  ) {
+    throw new Error("Private IP addresses are not allowed.");
+  }
+
+  // Check against self
+  if (mySiteUrl) {
+    try {
+      const myParsed = new URL(mySiteUrl);
+      if (parsed.hostname === myParsed.hostname && parsed.port === myParsed.port) {
+        throw new Error("Cannot subscribe to your own blog.");
+      }
+    } catch {
+      // Ignore if mySiteUrl is malformed (shouldn't happen in configured app)
+    }
+  }
+}

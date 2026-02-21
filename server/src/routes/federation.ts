@@ -4,7 +4,7 @@ import * as schema from "../db/schema.js";
 import { eq, and, desc, gt, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { fixRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
+import { fixRemoteUrl, fixRemoteContentUrls, validateRemoteUrl } from "../lib/remoteUrl.js";
 import type { WebhookEvent } from "@zlog/shared";
 
 const federationRoute = new Hono();
@@ -121,6 +121,16 @@ federationRoute.post("/subscribe", async (c) => {
   if (!body.categoryId || !body.subscriberUrl || !body.callbackUrl)
     return c.json({ error: "Required fields are missing." }, 400);
 
+  const ownerRecord = db.select().from(schema.owner).limit(1).get();
+  const mySiteUrl = ownerRecord?.siteUrl ?? "";
+
+  try {
+    validateRemoteUrl(body.subscriberUrl, mySiteUrl);
+    validateRemoteUrl(body.callbackUrl, mySiteUrl);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "Invalid URL." }, 400);
+  }
+
   const cat = db
     .select()
     .from(schema.categories)
@@ -184,6 +194,15 @@ federationRoute.post("/webhook", async (c) => {
   if (!body.event || !body.post || !body.categoryId || !body.siteUrl)
     return c.json({ error: "Invalid webhook data." }, 400);
 
+  const ownerRecord = db.select().from(schema.owner).limit(1).get();
+  const mySiteUrl = ownerRecord?.siteUrl ?? "";
+
+  try {
+    validateRemoteUrl(body.siteUrl, mySiteUrl);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "Invalid site URL." }, 400);
+  }
+
   let remoteBlog = db
     .select()
     .from(schema.remoteBlogs)
@@ -191,7 +210,9 @@ federationRoute.post("/webhook", async (c) => {
     .get();
   if (!remoteBlog) {
     try {
-      const infoRes = await fetch(`${body.siteUrl}/api/federation/info`);
+      const infoRes = await fetch(`${body.siteUrl}/api/federation/info`, {
+        signal: AbortSignal.timeout(10000),
+      });
       const info = (await infoRes.json()) as {
         displayName?: string;
         blogTitle?: string;
@@ -327,6 +348,15 @@ federationRoute.post("/local-subscribe", async (c) => {
     return c.json({ error: "Required fields are missing." }, 400);
   }
 
+  const ownerRecord = db.select().from(schema.owner).limit(1).get();
+  const mySiteUrl = ownerRecord?.siteUrl ?? process.env.SITE_URL ?? "http://localhost:3000";
+
+  try {
+    validateRemoteUrl(body.remoteSiteUrl, mySiteUrl);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "Invalid URL." }, 400);
+  }
+
   // Find local category
   const localCat = db
     .select()
@@ -443,8 +473,6 @@ federationRoute.post("/local-subscribe", async (c) => {
     .run();
 
   // Register as subscriber on remote blog (for webhook delivery — local subscription persists on failure)
-  const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  const mySiteUrl = ownerRecord?.siteUrl ?? process.env.SITE_URL ?? "http://localhost:3000";
   try {
     await fetch(`${body.remoteSiteUrl}/api/federation/subscribe`, {
       method: "POST",
@@ -617,6 +645,15 @@ federationRoute.get("/remote-posts/:id", async (c) => {
 federationRoute.get("/remote-categories", authMiddleware, async (c) => {
   const url = c.req.query("url");
   if (!url) return c.json({ error: "url parameter is required." }, 400);
+
+  const ownerRecord = db.select().from(schema.owner).limit(1).get();
+  const mySiteUrl = ownerRecord?.siteUrl ?? "";
+
+  try {
+    validateRemoteUrl(url, mySiteUrl);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "Invalid URL." }, 400);
+  }
 
   const normalized = url.replace(/\/+$/, "");
   try {

@@ -9,7 +9,7 @@ import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
-import { fixRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
+import { fixRemoteUrl, fixRemoteContentUrls, validateRemoteUrl } from "../lib/remoteUrl.js";
 
 /**
  * Pull-sync posts for a single subscription
@@ -30,6 +30,15 @@ export async function syncSubscription(
     .where(eq(schema.remoteBlogs.id, remoteCat.remoteBlogId))
     .get();
   if (!remoteBlog) return 0;
+
+  const ownerRecord = db.select().from(schema.owner).limit(1).get();
+  const mySiteUrl = ownerRecord?.siteUrl ?? "";
+  try {
+    validateRemoteUrl(remoteBlog.siteUrl, mySiteUrl);
+  } catch (err) {
+    console.warn(`⚠️ Skipping sync for unsafe URL (${remoteBlog.siteUrl}):`, err);
+    return 0;
+  }
 
   // Only fetch posts after lastSyncedAt (if available)
   let postsUrl = `${remoteBlog.siteUrl}/api/federation/categories/${remoteCat.remoteId}/posts`;
