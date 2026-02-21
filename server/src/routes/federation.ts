@@ -73,9 +73,9 @@ federationRoute.get("/categories/:id/posts", (c) => {
       .get();
 
     if (!isSubscribed) {
-      console.warn(
-        `🚫 Pull sync blocked: ${subscriberUrl} is not an active subscriber for category ${categoryId}`,
-      );
+      // console.warn(
+      //   `🚫 Pull sync blocked: ${subscriberUrl} is not an active subscriber for category ${categoryId}`,
+      // );
       return c.json({ error: "ERR_SUBSCRIPTION_REVOKED" }, 403);
     }
   }

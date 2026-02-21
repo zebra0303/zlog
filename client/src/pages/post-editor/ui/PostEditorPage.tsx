@@ -11,6 +11,35 @@ import type { PostWithCategory, CategoryWithStats, CreatePostRequest } from "@zl
 type ViewMode = "edit" | "preview";
 
 export default function PostEditorPage() {
+  const sanitizeCoverImageUrl = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+
+    // Allow relative URLs (they don't have a protocol)
+    try {
+      const url = new URL(trimmed, window.location.origin);
+      const protocol = url.protocol.toLowerCase();
+
+      if (protocol === "http:" || protocol === "https:") {
+        return trimmed;
+      }
+
+      // Optionally allow data URLs for images only
+      if (protocol === "data:" && trimmed.toLowerCase().startsWith("data:image/")) {
+        return trimmed;
+      }
+
+      // Disallow all other protocols (e.g., javascript:, vbscript:, file:, etc.)
+      return "";
+    } catch {
+      // If URL construction fails, keep the original if it looks like a relative path
+      if (trimmed.startsWith("/") || trimmed.startsWith("./") || trimmed.startsWith("../")) {
+        return trimmed;
+      }
+      return "";
+    }
+  };
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -379,7 +408,8 @@ export default function PostEditorPage() {
             placeholder={t("editor_cover_image_placeholder")}
             value={coverImage}
             onChange={(e) => {
-              setCoverImage(e.target.value);
+              const safeValue = sanitizeCoverImageUrl(e.target.value);
+              setCoverImage(safeValue);
             }}
             className="flex-1"
           />
