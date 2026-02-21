@@ -1473,7 +1473,13 @@ function SubscriptionManager({
     actionProcessed.current = true;
     setShowAddForm(true);
     let url = subscribeAction.remoteUrl;
-    if (!url.startsWith("http")) url = `https://${url}`;
+    if (!url.startsWith("http")) {
+      if (url.startsWith("localhost") || url.startsWith("127.0.0.1")) {
+        url = `http://${url}`;
+      } else {
+        url = `https://${url}`;
+      }
+    }
     url = url.replace(/\/+$/, "");
     setAddUrl(url);
     // Automatically fetch categories
@@ -1520,7 +1526,13 @@ function SubscriptionManager({
     let url = addUrl.trim();
     if (!url) return;
     // URL normalization
-    if (!url.startsWith("http")) url = `https://${url}`;
+    if (!url.startsWith("http")) {
+      if (url.startsWith("localhost") || url.startsWith("127.0.0.1")) {
+        url = `http://${url}`;
+      } else {
+        url = `https://${url}`;
+      }
+    }
     url = url.replace(/\/+$/, "");
     setAddUrl(url);
     setIsFetchingCats(true);
