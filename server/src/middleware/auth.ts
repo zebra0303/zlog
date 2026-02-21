@@ -3,21 +3,29 @@ import { jwtVerify, SignJWT } from "jose";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { randomBytes } from "crypto";
 
-const JWT_SECRET_KEY = () =>
-  new TextEncoder().encode(process.env.JWT_SECRET ?? "please-change-this");
+// Initialize secret once
+let secretStr = process.env.JWT_SECRET;
+if (!secretStr) {
+  secretStr = randomBytes(32).toString("hex");
+  console.warn(
+    "⚠️ JWT_SECRET is not set. Using a random secret (sessions will expire on restart).",
+  );
+}
+const SECRET_KEY = new TextEncoder().encode(secretStr);
 
 export async function createToken(ownerId: string): Promise<string> {
   return new SignJWT({ sub: ownerId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(JWT_SECRET_KEY());
+    .sign(SECRET_KEY);
 }
 
 export async function verifyToken(token: string): Promise<string | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET_KEY());
+    const { payload } = await jwtVerify(token, SECRET_KEY);
     return payload.sub ?? null;
   } catch {
     return null;
