@@ -20,7 +20,7 @@ export function Header() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isEditorPage = pathname.startsWith("/write");
+  const isMinimal = pathname.startsWith("/write") || pathname === "/login";
   const handleLogout = () => {
     logout();
     void navigate("/");
@@ -99,11 +99,11 @@ export function Header() {
     <>
       <header
         ref={headerRef}
-        className={`border-border header-animated relative sticky top-0 z-60 border-b ${!isEditorPage && hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
-        style={isEditorPage ? undefined : headerStyle}
+        className={`border-border header-animated relative sticky top-0 z-60 border-b ${!isMinimal && hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
+        style={isMinimal ? undefined : headerStyle}
       >
         <div
-          className={`header-inner relative mx-auto flex max-w-6xl items-start justify-between gap-4 px-4 ${isEditorPage ? "min-h-10 py-1.5" : hasCustomHeight ? "py-4" : "min-h-16 py-3"}`}
+          className={`header-inner relative mx-auto flex max-w-6xl items-start justify-between gap-4 px-4 ${isMinimal ? "min-h-10 py-1.5" : hasCustomHeight ? "py-4" : "min-h-16 py-3"}`}
         >
           <Link to="/" className={`flex min-w-0 items-center gap-2 ${hasCustom ? glass : ""}`}>
             {profile?.avatarUrl ? (

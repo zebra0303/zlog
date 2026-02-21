@@ -8,7 +8,7 @@ const glassBase = "backdrop-blur-md bg-[var(--color-surface)]/70 rounded-xl px-4
 
 export function Footer() {
   const { pathname } = useLocation();
-  const isEditorPage = pathname.startsWith("/write");
+  const isMinimal = pathname.startsWith("/write") || pathname === "/login";
   const { isDark } = useThemeStore();
   const { getFooterStyle } = useSiteSettingsStore();
   const customStyle = getFooterStyle(isDark);
@@ -59,7 +59,7 @@ export function Footer() {
         }
       : undefined;
 
-  if (isEditorPage) {
+  if (isMinimal) {
     return (
       <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-1.5">
