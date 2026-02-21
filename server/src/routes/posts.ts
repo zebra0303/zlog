@@ -6,6 +6,7 @@ import { eq, desc, and, or, sql, like, inArray, isNull } from "drizzle-orm";
 import { authMiddleware, verifyToken } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
+import { stripMarkdown } from "../lib/markdown.js";
 import { sendWebhookToSubscribers } from "../services/feedService.js";
 import { triggerStaleSync } from "../services/syncService.js";
 import { unlinkSync } from "node:fs";
@@ -520,7 +521,7 @@ postsRoute.post("/", authMiddleware, async (c) => {
   const slug = createUniqueSlug(body.title, conflicting);
   const now = new Date().toISOString();
   const id = generateId();
-  const excerpt = body.excerpt ?? body.content.replace(/[#*`>\-[\]()!]/g, "").slice(0, 200);
+  const excerpt = body.excerpt ?? stripMarkdown(body.content).slice(0, 200);
 
   db.insert(schema.posts)
     .values({
@@ -600,7 +601,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
   if (body.content !== undefined) {
     updateData.content = body.content;
     if (!body.excerpt) {
-      updateData.excerpt = body.content.replace(/[#*`>\-[\]()!]/g, "").slice(0, 200);
+      updateData.excerpt = stripMarkdown(body.content).slice(0, 200);
     }
   }
   if (body.excerpt !== undefined) updateData.excerpt = body.excerpt;
