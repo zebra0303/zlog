@@ -332,7 +332,7 @@ export const en = {
   settings_new_password: "New Password",
   settings_confirm_password: "Confirm Password",
   settings_update_account: "Update Account",
-  settings_password_mismatch: "The passwords you entered do not match.",
+  settings_password_mismatch: "The new passwords you entered do not match.",
   settings_password_same: "New password must be different from current password.",
   settings_current_password_required: "Please enter your current password.",
   settings_current_password_wrong: "The password you entered does not match your current password.",
