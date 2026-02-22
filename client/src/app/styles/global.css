@@ -78,14 +78,15 @@ body {
 }
 
 .prose table {
-  display: table; /* Reset from block if needed for full width, wrapper handles scroll */
-  width: 100%;
+  display: block; /* Allow horizontal scroll */
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: separate;
   border-spacing: 0;
   margin: 1.5em 0;
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
-  overflow: hidden;
 }
 
 .prose thead {

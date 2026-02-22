@@ -46,7 +46,10 @@ export function stripMarkdown(content: string): string {
   text = text.replace(/^[\s-]*[-+*] \s+/gm, "");
   text = text.replace(/^\s*\d+\.\s+/gm, "");
 
-  // 11. Normalize whitespace (collapse multiple spaces/newlines)
+  // 11. Remove table rows (lines starting with |)
+  text = text.replace(/^\s*\|.*$/gm, "");
+
+  // 12. Normalize whitespace (collapse multiple spaces/newlines)
   text = text.replace(/\s+/g, " ");
 
   return text.trim();
