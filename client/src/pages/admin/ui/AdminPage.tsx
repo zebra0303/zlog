@@ -342,7 +342,7 @@ function PostManager() {
                                         </span>
                                       )}
                                       <div className="w-[7.5rem] truncate" title={log.ip ?? ""}>
-                                        {log.ip ?? "—"}
+                                        {log.ip && log.ip !== "unknown" ? log.ip : "—"}
                                       </div>
                                     </div>
                                   </td>

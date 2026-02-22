@@ -33,11 +33,11 @@ analytics.post("/visit", async (c) => {
 
   const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
   const xForwardedFor = c.req.header("x-forwarded-for");
-  const ip = xForwardedFor?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? "unknown";
+  const ip = xForwardedFor?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? null;
   const userAgent = c.req.header("user-agent");
   const referer = c.req.header("referer");
   const { os, browser } = parseUserAgent(userAgent ?? "");
-  const country = ip !== "unknown" ? (geoip.lookup(ip)?.country ?? null) : null;
+  const country = ip ? (geoip.lookup(ip)?.country ?? null) : null;
 
   // 3. Upsert Daily Count & Insert Log
   db.transaction((tx) => {

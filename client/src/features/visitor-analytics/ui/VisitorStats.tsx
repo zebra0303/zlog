@@ -7,7 +7,7 @@ import { countryFlag, countryName } from "@/shared/lib/country";
 
 interface VisitorLog {
   id: string;
-  ip: string;
+  ip: string | null;
   country?: string | null;
   userAgent?: string;
   os?: string;
@@ -144,7 +144,9 @@ export function VisitorStats({ className }: VisitorStatsProps) {
                               {countryFlag(log.country)}
                             </span>
                           )}
-                          <span className="font-mono">{log.ip}</span>
+                          <span className="font-mono" title={log.ip ?? ""}>
+                            {log.ip && log.ip !== "unknown" ? log.ip : "—"}
+                          </span>
                         </div>
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
