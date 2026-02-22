@@ -2149,7 +2149,7 @@ export default function AdminPage() {
 
       {/* Mobile-only Visitor Stats */}
       <Card className="lg:hidden">
-        <CardContent className="pt-6">
+        <CardContent className="p-3">
           <VisitorStats />
         </CardContent>
       </Card>
