@@ -152,6 +152,7 @@ export default function PostEditorPage() {
       const textarea = textareaRef.current;
       if (!textarea) return;
 
+      setError(null);
       setIsUploading(true);
 
       const start = textarea.selectionStart;
@@ -216,6 +217,7 @@ export default function PostEditorPage() {
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setError(null);
     setIsCoverUploading(true);
     try {
       const fd = new FormData();
