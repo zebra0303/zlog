@@ -209,6 +209,24 @@ export function bootstrap() {
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_post_access_logs_post ON post_access_logs(post_id);
+
+    CREATE TABLE IF NOT EXISTS visitor_logs (
+      id TEXT PRIMARY KEY,
+      ip TEXT,
+      country TEXT,
+      user_agent TEXT,
+      os TEXT,
+      browser TEXT,
+      referer TEXT,
+      visited_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_visitor_logs_date ON visitor_logs(visited_at);
+
+    CREATE TABLE IF NOT EXISTS daily_visitor_counts (
+      date TEXT PRIMARY KEY,
+      count INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
   `);
 
   // ============ New indexes (migration) ============
