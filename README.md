@@ -267,6 +267,12 @@ erDiagram
 - **Open Graph & Twitter Card** meta tags
 - **SEO settings** in admin (description, OG image)
 
+### Visitor Analytics
+
+- **Real-time Dashboard**: Monitor today's unique visitors and total page views.
+- **Detailed Logs**: View recent visitor details including IP, Country, OS, Browser, and Referer.
+- **Privacy-focused**: Local storage only, no third-party trackers.
+
 ### Technical
 
 - **PWA**: installable, offline-capable with service worker
@@ -283,7 +289,7 @@ erDiagram
 
 ```mermaid
 flowchart TB
-    subgraph client [Client — React 19 + Vite 6]
+    subgraph client [Client — React 19 + Vite 7]
         direction TB
         FSD[Feature-Sliced Design]
         UI[Radix UI + Tailwind CSS v4]

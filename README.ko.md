@@ -267,6 +267,12 @@ erDiagram
 - **Open Graph & Twitter Card** 메타 태그
 - **SEO 설정** (관리자에서 설명, OG 이미지 설정)
 
+### 방문자 분석
+
+- **실시간 대시보드**: 오늘의 순 방문자 수와 총 페이지 뷰를 실시간으로 확인합니다.
+- **상세 로그**: IP, 국가, OS, 브라우저, 유입 경로(Referer)를 포함한 최근 방문자 기록을 제공합니다.
+- **프라이버시 중심**: 모든 데이터는 로컬에만 저장되며, 외부 트래커를 사용하지 않습니다.
+
 ### 기술
 
 - **PWA**: 설치 가능, 서비스 워커로 오프라인 지원
@@ -283,7 +289,7 @@ erDiagram
 
 ```mermaid
 flowchart TB
-    subgraph client [클라이언트 — React 19 + Vite 6]
+    subgraph client [클라이언트 — React 19 + Vite 7]
         direction TB
         FSD[Feature-Sliced Design]
         UI[Radix UI + Tailwind CSS v4]
