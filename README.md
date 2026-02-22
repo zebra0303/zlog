@@ -361,7 +361,7 @@ DOMAIN=yourblog.com docker compose --profile production up -d
 
 ```bash
 # Install dependencies
-npm install --legacy-peer-deps
+npm install
 
 # Development (hot reload)
 npm run dev
@@ -380,7 +380,7 @@ ZLOG is designed to run on resource-constrained devices:
 docker compose up -d
 
 # Or build manually (memory-optimized build script included)
-npm install --legacy-peer-deps
+npm install
 npm run build
 npm run start
 ```

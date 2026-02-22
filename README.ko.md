@@ -361,7 +361,7 @@ DOMAIN=yourblog.com docker compose --profile production up -d
 
 ```bash
 # 의존성 설치
-npm install --legacy-peer-deps
+npm install
 
 # 개발 모드 (핫 리로드)
 npm run dev
@@ -380,7 +380,7 @@ ZLOG는 리소스가 제한된 기기에서도 동작하도록 설계되었습�
 docker compose up -d
 
 # 또는 수동 빌드 (메모리 최적화 빌드 스크립트 포함)
-npm install --legacy-peer-deps
+npm install
 npm run build
 npm run start
 ```
