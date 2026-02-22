@@ -13,31 +13,7 @@ import { unlinkSync } from "node:fs";
 import path from "node:path";
 import geoip from "geoip-lite";
 
-function parseUserAgent(ua: string): { os: string; browser: string } {
-  const os = ua.includes("Windows")
-    ? "Windows"
-    : ua.includes("Mac OS X")
-      ? "macOS"
-      : ua.includes("Android")
-        ? "Android"
-        : ua.includes("iPhone") || ua.includes("iPad")
-          ? "iOS"
-          : ua.includes("Linux")
-            ? "Linux"
-            : "Unknown";
-  const browser = ua.includes("Edg/")
-    ? "Edge"
-    : ua.includes("OPR/") || ua.includes("Opera")
-      ? "Opera"
-      : ua.includes("Chrome/")
-        ? "Chrome"
-        : ua.includes("Firefox/")
-          ? "Firefox"
-          : ua.includes("Safari/")
-            ? "Safari"
-            : "Unknown";
-  return { os, browser };
-}
+import { parseUserAgent } from "../lib/userAgent.js";
 
 function deleteUploadedImage(imageUrl: string) {
   if (!imageUrl.startsWith("/uploads/images/")) return;

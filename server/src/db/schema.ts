@@ -289,6 +289,29 @@ export const postAccessLogs = sqliteTable(
   (table) => [index("idx_post_access_logs_post").on(table.postId)],
 );
 
+// ============ visitorLogs — detailed recent visitors (max 20 per day) ============
+export const visitorLogs = sqliteTable(
+  "visitor_logs",
+  {
+    id: text("id").primaryKey(),
+    ip: text("ip"),
+    country: text("country"),
+    userAgent: text("user_agent"),
+    os: text("os"),
+    browser: text("browser"),
+    referer: text("referer"),
+    visitedAt: text("visited_at").notNull(),
+  },
+  (table) => [index("idx_visitor_logs_date").on(table.visitedAt)],
+);
+
+// ============ dailyVisitorCounts — simple counter per day ============
+export const dailyVisitorCounts = sqliteTable("daily_visitor_counts", {
+  date: text("date").primaryKey(), // YYYY-MM-DD
+  count: integer("count").default(0).notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 // ============ siteSettings — site settings (key-value) ============
 export const siteSettings = sqliteTable("site_settings", {
   id: text("id").primaryKey(),

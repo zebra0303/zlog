@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Folder, Rss } from "lucide-react";
+import { Folder } from "lucide-react";
 import { Card, CardContent, DefaultAvatar, Badge } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
+import { VisitorStats } from "@/features/visitor-analytics/ui";
 import type { CategoryWithStats, ProfileWithStats } from "@zlog/shared";
 
 export function Sidebar() {
@@ -70,18 +71,7 @@ export function Sidebar() {
                 </span>
               </div>
             </div>
-            <div className="mt-3 flex justify-center border-t border-[var(--color-border)] pt-3">
-              <a
-                href="/rss.xml"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                title="RSS Feed"
-              >
-                <Rss className="h-4 w-4" />
-                <span>RSS</span>
-              </a>
-            </div>
+            <VisitorStats className="mt-3 border-t border-[var(--color-border)] pt-3" />
           </CardContent>
         </Card>
       )}

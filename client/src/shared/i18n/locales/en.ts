@@ -388,6 +388,12 @@ export const en = {
   err_private_ip_forbidden: "Private IP addresses are not allowed.",
   err_self_subscription_forbidden: "Cannot subscribe to your own blog.",
   err_subscription_revoked: "Subscription revoked by the remote blog. Sync stopped.",
+
+  // Visitor Analytics
+  today_visitors: "Today's Visitors",
+  recent_visitors: "Recent Visitors",
+  recent_visitors_title: "Recent Visitors (Today)",
+  no_visitors_yet: "No visitors yet.",
 };
 
 export type TranslationKeys = keyof typeof en;

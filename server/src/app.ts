@@ -12,6 +12,7 @@ import commentsRoute from "./routes/comments.js";
 import settingsRoute from "./routes/settings.js";
 import federationRoute from "./routes/federation.js";
 import oauthRoute from "./routes/oauth.js";
+import analyticsRoute from "./routes/analytics.js";
 import { db } from "./db/index.js";
 import * as schema from "./db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
@@ -121,6 +122,7 @@ export function createApp() {
   app.route("/api", settingsRoute);
   app.route("/api/federation", federationRoute);
   app.route("/api/oauth", oauthRoute);
+  app.route("/api/analytics", analyticsRoute);
 
   app.get("/api/health", (c) => {
     return c.json({ status: "ok", timestamp: new Date().toISOString() });

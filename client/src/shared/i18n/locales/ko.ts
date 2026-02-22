@@ -393,4 +393,10 @@ export const ko: Record<TranslationKeys, string> = {
   err_self_subscription_forbidden: "자신의 블로그는 구독할 수 없습니다.",
   err_subscription_revoked:
     "원격 서버에서 구독이 거부되었습니다. 발행자가 구독을 해지했거나 접근을 차단했을 수 있습니다.",
+
+  // Visitor Analytics
+  today_visitors: "오늘 방문자 수",
+  recent_visitors: "최근 방문자",
+  recent_visitors_title: "최근 방문자 (오늘)",
+  no_visitors_yet: "아직 방문자가 없습니다.",
 };

@@ -42,6 +42,7 @@ import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
 import { timeAgo } from "@/shared/lib/formatDate";
+import { VisitorStats } from "@/features/visitor-analytics/ui";
 import type {
   CategoryWithStats,
   PostWithCategory,
@@ -2158,6 +2159,13 @@ export default function AdminPage() {
           {message}
         </div>
       )}
+
+      {/* Mobile-only Visitor Stats */}
+      <Card className="lg:hidden">
+        <CardContent className="pt-6">
+          <VisitorStats />
+        </CardContent>
+      </Card>
 
       {/* Tab navigation — select on mobile, buttons on desktop */}
       <div className="sm:hidden">
