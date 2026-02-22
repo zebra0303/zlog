@@ -434,6 +434,7 @@ export default function PostEditorPage() {
             <button
               type="button"
               onClick={() => {
+                setError(null);
                 setCoverImage("");
               }}
               className="shrink-0 text-xs text-red-500 hover:underline"
