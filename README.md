@@ -6,6 +6,8 @@
 
 zlog began with a simple, exciting vision: **"What if friends or hobbyist groups with shared interests could run their own blogs while subscribing to each other to build a collective feed together?"**
 
+<img width="800" alt="image" src="https://github.com/user-attachments/assets/94306fe1-211f-476b-aca3-90927c86af58" />
+
 ### 🤝 Personal Space, Shared Community
 
 - **Co-created Networks**: While each person runs their own blog, you can connect specific categories to aggregate posts from like-minded peers right on your own dashboard.
