@@ -44,6 +44,9 @@ export default function SettingsPage() {
   const [isAboutUploading, setIsAboutUploading] = useState(false);
   const aboutTextareaRef = useRef<HTMLTextAreaElement>(null);
   const aboutToolbarFileRef = useRef<HTMLInputElement>(null);
+  const currentPasswordRef = useRef<HTMLInputElement>(null);
+  const newPasswordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
   const uploadAndInsertAboutImage = useCallback(
     async (file: File) => {
@@ -158,19 +161,33 @@ export default function SettingsPage() {
 
   const handleAccountSave = async () => {
     setAccountMessage(null);
+
     if (!currentPassword) {
-      setAccountMessage({ type: "error", text: t("settings_current_password") });
+      setAccountMessage({ type: "error", text: t("settings_current_password_required") });
+      currentPasswordRef.current?.focus();
       return;
     }
-    if (newPassword && newPassword === currentPassword) {
-      setAccountMessage({ type: "error", text: t("settings_password_same") });
+
+    if (!newPassword && confirmPassword) {
+      setAccountMessage({ type: "error", text: t("settings_new_password_required") });
+      newPasswordRef.current?.focus();
       return;
     }
+
     if (newPassword && newPassword !== confirmPassword) {
       setAccountMessage({ type: "error", text: t("settings_password_mismatch") });
+      confirmPasswordRef.current?.focus();
       return;
     }
+
+    if (newPassword && newPassword === currentPassword) {
+      setAccountMessage({ type: "error", text: t("settings_password_same") });
+      newPasswordRef.current?.focus();
+      return;
+    }
+
     if (newEmail === currentEmail && !newPassword) return;
+
     setAccountSaving(true);
     try {
       const payload: { email?: string; currentPassword: string; newPassword?: string } = {
@@ -185,9 +202,19 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
+      let errorMessage = err instanceof Error ? err.message : t("request_failed");
+
+      if (errorMessage === "Current password is incorrect.") {
+        errorMessage = t("settings_current_password_wrong");
+        currentPasswordRef.current?.focus();
+      } else if (errorMessage === "New password must be different from current password.") {
+        errorMessage = t("settings_password_same");
+        newPasswordRef.current?.focus();
+      }
+
       setAccountMessage({
         type: "error",
-        text: err instanceof Error ? err.message : t("request_failed"),
+        text: errorMessage,
       });
     } finally {
       setAccountSaving(false);
@@ -515,6 +542,7 @@ export default function SettingsPage() {
                 {t("settings_current_password")} <span className="text-red-500">*</span>
               </label>
               <Input
+                ref={currentPasswordRef}
                 type="password"
                 value={currentPassword}
                 onChange={(e) => {
@@ -529,6 +557,7 @@ export default function SettingsPage() {
                   {t("settings_new_password")}
                 </label>
                 <Input
+                  ref={newPasswordRef}
                   type="password"
                   value={newPassword}
                   onChange={(e) => {
@@ -542,6 +571,7 @@ export default function SettingsPage() {
                   {t("settings_confirm_password")}
                 </label>
                 <Input
+                  ref={confirmPasswordRef}
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => {
