@@ -186,11 +186,7 @@ export default function SettingsPage() {
       return;
     }
 
-    if (newEmail === currentEmail && !newPassword) {
-      setAccountMessage({ type: "error", text: t("settings_new_password_required") });
-      newPasswordRef.current?.focus();
-      return;
-    }
+    if (newEmail === currentEmail && !newPassword) return;
 
     setAccountSaving(true);
     try {
