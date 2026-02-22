@@ -390,7 +390,6 @@ npm run start
 | `ADMIN_EMAIL`           | 관리자 로그인 이메일        | `admin@example.com`     |
 | `ADMIN_PASSWORD`        | 관리자 로그인 비밀번호      | `changeme`              |
 | `ADMIN_DISPLAY_NAME`    | 작성자 표시 이름            | `Blog Owner`            |
-| `ADMIN_BLOG_HANDLE`     | 고유 블로그 핸들            | `admin`                 |
 | `JWT_SECRET`            | JWT 서명 비밀키             | `please-change-this`    |
 | `WEBHOOK_SYNC_INTERVAL` | Federation 동기화 주기 (분) | `15`                    |
 | `GITHUB_CLIENT_ID`      | GitHub OAuth App Client ID  | —                       |

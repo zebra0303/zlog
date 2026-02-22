@@ -383,20 +383,19 @@ npm run start
 
 ## Environment Variables
 
-| Variable               | Description                | Default                 |
-| ---------------------- | -------------------------- | ----------------------- |
-| `ADMIN_EMAIL`          | Admin login email          | `admin@example.com`     |
-| `ADMIN_PASSWORD`       | Admin login password       | `admin1234`             |
-| `SITE_URL`             | Public URL of your blog    | `http://localhost:3000` |
-| `BLOG_TITLE`           | Blog title                 | `My Blog`               |
-| `BLOG_HANDLE`          | Unique blog handle         | `admin`                 |
-| `DISPLAY_NAME`         | Author display name        | `Blog Owner`            |
-| `JWT_SECRET`           | Secret for JWT signing     | `change-me-...`         |
-| `PORT`                 | Server port                | `3000`                  |
-| `GITHUB_CLIENT_ID`     | GitHub OAuth App Client ID | —                       |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Secret    | —                       |
-| `GOOGLE_CLIENT_ID`     | Google OAuth Client ID     | —                       |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | —                       |
+| Variable                | Description                    | Default                 |
+| ----------------------- | ------------------------------ | ----------------------- |
+| `ADMIN_EMAIL`           | Admin login email              | `admin@example.com`     |
+| `ADMIN_PASSWORD`        | Admin login password           | `admin1234`             |
+| `SITE_URL`              | Public URL of your blog        | `http://localhost:3000` |
+| `ADMIN_DISPLAY_NAME`    | Author display name            | `Blog Owner`            |
+| `JWT_SECRET`            | Secret for JWT signing         | `change-me-...`         |
+| `PORT`                  | Server port                    | `3000`                  |
+| `WEBHOOK_SYNC_INTERVAL` | Federation sync interval (min) | `15`                    |
+| `GITHUB_CLIENT_ID`      | GitHub OAuth App Client ID     | —                       |
+| `GITHUB_CLIENT_SECRET`  | GitHub OAuth App Secret        | —                       |
+| `GOOGLE_CLIENT_ID`      | Google OAuth Client ID         | —                       |
+| `GOOGLE_CLIENT_SECRET`  | Google OAuth Client Secret     | —                       |
 
 ---
 
