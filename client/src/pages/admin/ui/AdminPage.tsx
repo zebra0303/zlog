@@ -745,6 +745,8 @@ interface ThemeSection {
     darkColor: string;
     lightImage?: string;
     darkImage?: string;
+    lightAlign?: string;
+    darkAlign?: string;
     lightGradientTo?: string;
     darkGradientTo?: string;
     lightGradientDir?: string;
@@ -787,6 +789,8 @@ function ThemeCustomizer({
         darkColor: "header_bg_color_dark",
         lightImage: "header_bg_image_light",
         darkImage: "header_bg_image_dark",
+        lightAlign: "header_image_alignment_light",
+        darkAlign: "header_image_alignment_dark",
       },
     },
     {
@@ -797,6 +801,8 @@ function ThemeCustomizer({
         darkColor: "footer_bg_color_dark",
         lightImage: "footer_bg_image_light",
         darkImage: "footer_bg_image_dark",
+        lightAlign: "footer_image_alignment_light",
+        darkAlign: "footer_image_alignment_dark",
       },
     },
     {
@@ -1128,6 +1134,8 @@ function ThemeCustomizer({
               darkColor,
               lightImage,
               darkImage,
+              lightAlign,
+              darkAlign,
               lightGradientTo,
               darkGradientTo,
               lightGradientDir,
@@ -1138,6 +1146,9 @@ function ThemeCustomizer({
             const showLightPreview = settings[lightColor] || (lightImage && settings[lightImage]);
             // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
             const showDarkPreview = settings[darkColor] || (darkImage && settings[darkImage]);
+
+            const lAlign = lightAlign;
+            const dAlign = darkAlign;
 
             return (
               <div
@@ -1218,6 +1229,30 @@ function ThemeCustomizer({
                           placeholder={t("admin_theme_image_placeholder")}
                         />
                       )}
+                      {lightImage && lAlign && settings[lightImage] && (
+                        <div>
+                          <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                            {t("admin_theme_alignment")}
+                          </label>
+                          <div className="flex overflow-hidden rounded-lg border border-[var(--color-border)]">
+                            {["left", "center", "right"].map((pos) => (
+                              <button
+                                key={pos}
+                                onClick={() => {
+                                  update(lAlign, pos);
+                                }}
+                                className={`flex-1 py-1 text-[10px] font-bold uppercase transition-colors ${
+                                  (settings[lAlign] ?? "left") === pos
+                                    ? "bg-[var(--color-primary)] text-white"
+                                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-background)]"
+                                }`}
+                              >
+                                {t(`admin_theme_align_${pos as "left" | "center" | "right"}`)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {lightGradientTo !== undefined &&
                         lightGradientDir !== undefined &&
                         renderGradientFields(lightGradientTo, lightGradientDir)}
@@ -1237,7 +1272,7 @@ function ThemeCustomizer({
                                       ? `url(${settings[lightImage]})`
                                       : undefined,
                                   backgroundSize: "cover",
-                                  backgroundPosition: "center",
+                                  backgroundPosition: `${(lAlign && settings[lAlign]) ?? "left"} center`,
                                 }
                           }
                         />
@@ -1294,6 +1329,30 @@ function ThemeCustomizer({
                           placeholder={t("admin_theme_image_placeholder")}
                         />
                       )}
+                      {darkImage && dAlign && settings[darkImage] && (
+                        <div>
+                          <label className="mb-1 block text-xs text-[var(--color-text-secondary)]">
+                            {t("admin_theme_alignment")}
+                          </label>
+                          <div className="flex overflow-hidden rounded-lg border border-[var(--color-border)]">
+                            {["left", "center", "right"].map((pos) => (
+                              <button
+                                key={pos}
+                                onClick={() => {
+                                  update(dAlign, pos);
+                                }}
+                                className={`flex-1 py-1 text-[10px] font-bold uppercase transition-colors ${
+                                  (settings[dAlign] ?? "left") === pos
+                                    ? "bg-[var(--color-primary)] text-white"
+                                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-background)]"
+                                }`}
+                              >
+                                {t(`admin_theme_align_${pos as "left" | "center" | "right"}`)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {darkGradientTo !== undefined &&
                         darkGradientDir !== undefined &&
                         renderGradientFields(darkGradientTo, darkGradientDir)}
@@ -1313,7 +1372,7 @@ function ThemeCustomizer({
                                       ? `url(${settings[darkImage]})`
                                       : undefined,
                                   backgroundSize: "cover",
-                                  backgroundPosition: "center",
+                                  backgroundPosition: `${(dAlign && settings[dAlign]) ?? "left"} center`,
                                 }
                           }
                         />

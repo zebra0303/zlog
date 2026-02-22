@@ -254,6 +254,10 @@ export const en = {
     "Customize the card/panel surface color and the primary text color. Leave empty to use defaults.",
   admin_theme_surface_color: "Surface Color",
   admin_theme_text_color: "Text Color",
+  admin_theme_alignment: "Alignment",
+  admin_theme_align_left: "Left",
+  admin_theme_align_center: "Center",
+  admin_theme_align_right: "Right",
 
   // Admin - Federation
   admin_fed_title: "Federation Settings",

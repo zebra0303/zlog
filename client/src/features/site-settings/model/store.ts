@@ -37,12 +37,15 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     const style: React.CSSProperties = {};
     const bgColor = isDark ? settings.header_bg_color_dark : settings.header_bg_color_light;
     const bgImage = isDark ? settings.header_bg_image_dark : settings.header_bg_image_light;
+    const alignment = isDark
+      ? settings.header_image_alignment_dark
+      : settings.header_image_alignment_light;
     const height = settings.header_height;
     if (bgColor) style.backgroundColor = bgColor;
     if (bgImage) {
       style.backgroundImage = `url(${bgImage})`;
       style.backgroundSize = "cover";
-      style.backgroundPosition = "left center";
+      style.backgroundPosition = `${alignment ?? "left"} center`;
     }
     if (height && height !== "auto") style.minHeight = height;
     return style;
@@ -53,12 +56,15 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     const style: React.CSSProperties = {};
     const bgColor = isDark ? settings.footer_bg_color_dark : settings.footer_bg_color_light;
     const bgImage = isDark ? settings.footer_bg_image_dark : settings.footer_bg_image_light;
+    const alignment = isDark
+      ? settings.footer_image_alignment_dark
+      : settings.footer_image_alignment_light;
     const height = settings.footer_height;
     if (bgColor) style.backgroundColor = bgColor;
     if (bgImage) {
       style.backgroundImage = `url(${bgImage})`;
       style.backgroundSize = "cover";
-      style.backgroundPosition = "left center";
+      style.backgroundPosition = `${alignment ?? "left"} center`;
     }
     if (height && height !== "auto") style.minHeight = height;
     return style;

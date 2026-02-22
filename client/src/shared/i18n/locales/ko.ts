@@ -258,6 +258,10 @@ export const ko: Record<TranslationKeys, string> = {
     "카드·패널 배경색과 기본 글자 색상을 설정합니다. 비워두면 기본값이 사용됩니다.",
   admin_theme_surface_color: "카드 배경색",
   admin_theme_text_color: "글자 색상",
+  admin_theme_alignment: "정렬",
+  admin_theme_align_left: "왼쪽",
+  admin_theme_align_center: "가운데",
+  admin_theme_align_right: "오른쪽",
 
   // Admin - Federation
   admin_fed_title: "Federation 설정",
