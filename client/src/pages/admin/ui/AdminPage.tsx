@@ -42,6 +42,7 @@ import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
 import { timeAgo } from "@/shared/lib/formatDate";
+import { countryFlag, countryName } from "@/shared/lib/country";
 import { VisitorStats } from "@/features/visitor-analytics/ui";
 import type {
   CategoryWithStats,
@@ -55,20 +56,6 @@ function decodeReferer(referer: string): string {
     return decodeURIComponent(referer);
   } catch {
     return referer;
-  }
-}
-
-function countryFlag(code: string): string {
-  return Array.from(code.toUpperCase(), (c) => String.fromCodePoint(c.charCodeAt(0) + 127397)).join(
-    "",
-  );
-}
-
-function countryName(code: string): string {
-  try {
-    return new Intl.DisplayNames([navigator.language, "en"], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
   }
 }
 

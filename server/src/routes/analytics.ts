@@ -7,6 +7,7 @@ import { generateId } from "../lib/uuid.js";
 import { authMiddleware, verifyToken } from "../middleware/auth.js";
 import { parseUserAgent } from "../lib/userAgent.js";
 import type { AppVariables } from "../types/env.js";
+import geoip from "geoip-lite";
 
 const analytics = new Hono<{ Variables: AppVariables }>();
 
@@ -30,12 +31,13 @@ analytics.post("/visit", async (c) => {
     }
   }
 
-  const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD (UTC)
-  const ip =
-    c.req.header("x-forwarded-for")?.split(",")[0].trim() ?? c.req.header("x-real-ip") ?? "unknown";
+  const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+  const xForwardedFor = c.req.header("x-forwarded-for");
+  const ip = xForwardedFor?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? "unknown";
   const userAgent = c.req.header("user-agent");
   const referer = c.req.header("referer");
   const { os, browser } = parseUserAgent(userAgent ?? "");
+  const country = ip !== "unknown" ? (geoip.lookup(ip)?.country ?? null) : null;
 
   // 3. Upsert Daily Count & Insert Log
   db.transaction((tx) => {
@@ -65,6 +67,7 @@ analytics.post("/visit", async (c) => {
       .values({
         id: generateId(),
         ip,
+        country,
         userAgent,
         os,
         browser,
@@ -122,7 +125,7 @@ analytics.post("/visit", async (c) => {
 
 // Get visitors (Admin only)
 analytics.get("/visitors", authMiddleware, (c) => {
-  const todayStr = new Date().toISOString().split("T")[0]; // UTC Date
+  const todayStr = new Date().toISOString().slice(0, 10); // UTC Date
   const startOfDayStr = `${todayStr}T00:00:00.000Z`;
 
   const countRecord = db

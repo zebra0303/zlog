@@ -3,10 +3,12 @@ import { Users, X } from "lucide-react";
 import { useAuthStore } from "@/features/auth/model/store";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
+import { countryFlag, countryName } from "@/shared/lib/country";
 
 interface VisitorLog {
   id: string;
   ip: string;
+  country?: string | null;
   userAgent?: string;
   os?: string;
   browser?: string;
@@ -45,7 +47,7 @@ export function VisitorStats({ className }: VisitorStatsProps) {
         .then(setStats)
         .catch(() => null);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -132,7 +134,18 @@ export function VisitorStats({ className }: VisitorStatsProps) {
                         {new Date(log.visitedAt).toLocaleTimeString()}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
-                        {log.ip}
+                        <div className="flex items-center gap-1.5">
+                          {log.country && (
+                            <span
+                              title={countryName(log.country)}
+                              aria-label={countryName(log.country)}
+                              className="text-base leading-none"
+                            >
+                              {countryFlag(log.country)}
+                            </span>
+                          )}
+                          <span className="font-mono">{log.ip}</span>
+                        </div>
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
                         {log.os ?? "—"}
