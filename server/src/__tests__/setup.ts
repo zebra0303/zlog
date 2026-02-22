@@ -40,7 +40,6 @@ process.env.SITE_URL = "http://localhost:3000";
 process.env.ADMIN_EMAIL = "admin@test.com";
 process.env.ADMIN_PASSWORD = "testpassword123";
 process.env.ADMIN_DISPLAY_NAME = "Test Admin";
-process.env.ADMIN_BLOG_HANDLE = "testadmin";
 process.env.NODE_ENV = "test";
 
 // 6. Create schema before tests

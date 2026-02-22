@@ -296,7 +296,7 @@ export function bootstrap() {
       console.warn(`\n⚠️  ADMIN_PASSWORD not set. Generated temporary password: ${password}\n`);
     }
     const displayName = process.env.ADMIN_DISPLAY_NAME ?? "Blog Owner";
-    const blogHandle = process.env.ADMIN_BLOG_HANDLE ?? "admin";
+    const blogHandle = "admin";
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
 
     db.insert(schema.owner)
