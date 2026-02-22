@@ -227,6 +227,11 @@ settingsRoute.put("/profile/account", authMiddleware, async (c) => {
     return c.json({ error: "Current password is incorrect." }, 401);
   }
 
+  // Check if new password is same as current
+  if (body.newPassword && verifyPassword(body.newPassword, ownerRecord.passwordHash)) {
+    return c.json({ error: "New password must be different from current password." }, 400);
+  }
+
   const now = new Date().toISOString();
   const updateData: Record<string, unknown> = { updatedAt: now };
 

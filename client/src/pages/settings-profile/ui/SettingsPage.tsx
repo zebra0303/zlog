@@ -162,6 +162,10 @@ export default function SettingsPage() {
       setAccountMessage({ type: "error", text: t("settings_current_password") });
       return;
     }
+    if (newPassword && newPassword === currentPassword) {
+      setAccountMessage({ type: "error", text: t("settings_password_same") });
+      return;
+    }
     if (newPassword && newPassword !== confirmPassword) {
       setAccountMessage({ type: "error", text: t("settings_password_mismatch") });
       return;

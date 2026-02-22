@@ -333,6 +333,7 @@ export const en = {
   settings_confirm_password: "Confirm Password",
   settings_update_account: "Update Account",
   settings_password_mismatch: "Passwords do not match.",
+  settings_password_same: "New password must be different from current password.",
   settings_account_updated: "Account updated.",
   settings_save: "Save Profile",
   settings_saving: "Saving...",

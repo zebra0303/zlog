@@ -337,6 +337,7 @@ export const ko: Record<TranslationKeys, string> = {
   settings_confirm_password: "비밀번호 확인",
   settings_update_account: "계정 업데이트",
   settings_password_mismatch: "비밀번호가 일치하지 않습니다.",
+  settings_password_same: "새 비밀번호는 현재 비밀번호와 다르게 설정해야 합니다.",
   settings_account_updated: "계정이 업데이트되었습니다.",
   settings_save: "프로필 저장",
   settings_saving: "저장 중...",
