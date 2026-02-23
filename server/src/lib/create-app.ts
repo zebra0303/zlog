@@ -14,6 +14,7 @@ import settingsRoute from "../routes/settings.js";
 import federationRoute from "../routes/federation.js";
 import oauthRoute from "../routes/oauth.js";
 import analyticsRoute from "../routes/analytics.js";
+import uploadRoute from "../routes/upload/index.js";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq } from "drizzle-orm";
@@ -126,6 +127,7 @@ export function createApp() {
   app.route("/api/federation", federationRoute);
   app.route("/api/oauth", oauthRoute);
   app.route("/api/analytics", analyticsRoute);
+  app.route("/api/upload", uploadRoute);
 
   app.get("/api/health", (c) => {
     return c.json({ status: "ok", timestamp: new Date().toISOString() });
