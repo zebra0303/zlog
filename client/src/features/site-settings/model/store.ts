@@ -77,9 +77,15 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     const dir = isDark
       ? settings.body_bg_gradient_direction_dark
       : settings.body_bg_gradient_direction_light;
+    const mid = isDark
+      ? settings.body_bg_gradient_midpoint_dark
+      : settings.body_bg_gradient_midpoint_light;
+
     if (!from) return {};
     if (to) {
-      return { background: `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})` };
+      return {
+        background: `linear-gradient(${dir ?? "to bottom"}, ${from} ${mid ? mid + "%" : ""}, ${to})`,
+      };
     }
     return { backgroundColor: from };
   },

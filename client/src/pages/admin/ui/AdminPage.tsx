@@ -2066,12 +2066,15 @@ export default function AdminPage() {
     const dir = isDark
       ? settings.body_bg_gradient_direction_dark
       : settings.body_bg_gradient_direction_light;
+    const mid = isDark
+      ? settings.body_bg_gradient_midpoint_dark
+      : settings.body_bg_gradient_midpoint_light;
 
     if (!from) {
       document.body.style.background = "";
       document.body.style.backgroundColor = "";
     } else if (to) {
-      document.body.style.background = `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})`;
+      document.body.style.background = `linear-gradient(${dir ?? "to bottom"}, ${from} ${mid ? mid + "%" : ""}, ${to})`;
       document.body.style.backgroundColor = "";
     } else {
       document.body.style.background = "";
