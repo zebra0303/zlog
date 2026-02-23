@@ -13,6 +13,7 @@ interface SiteSettingsState {
   hasHeaderCustomBg: (isDark: boolean) => boolean;
   hasFooterCustomBg: (isDark: boolean) => boolean;
   hasBodyCustomBg: (isDark: boolean) => boolean;
+  getCurrentFont: () => string;
 }
 
 export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
@@ -113,5 +114,9 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     const bgColor = isDark ? settings.footer_bg_color_dark : settings.footer_bg_color_light;
     const bgImage = isDark ? settings.footer_bg_image_dark : settings.footer_bg_image_light;
     return !!(bgColor ?? bgImage);
+  },
+
+  getCurrentFont: () => {
+    return get().settings.font_family ?? "system";
   },
 }));

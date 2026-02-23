@@ -2070,7 +2070,7 @@ type AdminTab = "general" | "content" | "theme" | "federation";
 
 export default function AdminPage() {
   const { isAuthenticated } = useAuthStore();
-  const { fetchSettings: refreshSiteSettings } = useSiteSettingsStore();
+  const { fetchSettings: refreshSiteSettings, getCurrentFont } = useSiteSettingsStore();
   const { isDark } = useThemeStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -2079,6 +2079,15 @@ export default function AdminPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [testingSlack, setTestingSlack] = useState(false);
   const [slackTestResult, setSlackTestResult] = useState<"ok" | "error" | null>(null);
+
+  // Restore font on unmount
+  useEffect(() => {
+    return () => {
+      // Re-apply the font from the store (last saved state) when leaving admin page
+      const currentFont = getCurrentFont();
+      applyFont(currentFont);
+    };
+  }, [getCurrentFont]);
 
   // Live preview: apply body background, primary color, and CSS variable overrides as settings change
   useEffect(() => {
