@@ -259,6 +259,7 @@ export const en = {
   admin_theme_align_left: "Left",
   admin_theme_align_center: "Center",
   admin_theme_align_right: "Right",
+  admin_theme_font: "Font",
 
   // Admin - Federation
   admin_fed_title: "Federation Settings",

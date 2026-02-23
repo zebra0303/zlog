@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { api } from "@/shared/api/client";
 import { useI18n, type Locale } from "@/shared/i18n";
+import { applyFont } from "@/shared/lib/fonts";
 
 interface SiteSettingsState {
   settings: Record<string, string>;
@@ -22,6 +23,10 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
     try {
       const data = await api.get<Record<string, string>>("/settings");
       set({ settings: data, isLoaded: true });
+      // Apply font
+      if (data.font_family) {
+        applyFont(data.font_family);
+      }
       // Apply default language from server if exists and user hasn't manually set one
       const serverLang = data.default_language as Locale | undefined;
       if (serverLang && !localStorage.getItem("zlog_locale")) {

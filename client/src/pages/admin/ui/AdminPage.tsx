@@ -44,6 +44,7 @@ import { useI18n } from "@/shared/i18n";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { countryFlag, countryName } from "@/shared/lib/country";
 import { VisitorStats } from "@/features/visitor-analytics/ui";
+import { FONT_OPTIONS, applyFont } from "@/shared/lib/fonts";
 import type {
   CategoryWithStats,
   PostWithCategory,
@@ -939,6 +940,28 @@ function ThemeCustomizer({
           {t("admin_theme_title")}
         </h2>
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("admin_theme_desc")}</p>
+
+        {/* Font Selection */}
+        <div className="mb-6 rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="mb-1 font-medium text-[var(--color-text)]">{t("admin_theme_font")}</h3>
+          <div className="flex flex-col gap-2">
+            <select
+              value={settings.font_family ?? "system"}
+              onChange={(e) => {
+                const val = e.target.value;
+                update("font_family", val);
+                applyFont(val);
+              }}
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+            >
+              {FONT_OPTIONS.map((font) => (
+                <option key={font.value} value={font.value}>
+                  {font.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {/* Primary theme color */}
         <div className="mb-6 rounded-lg border border-[var(--color-border)] p-4">
