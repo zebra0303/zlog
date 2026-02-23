@@ -35,6 +35,7 @@ export const FONT_OPTIONS = [
 
 export function applyFont(fontValue: string) {
   const font = FONT_OPTIONS.find((f) => f.value === fontValue) ?? FONT_OPTIONS[0];
+  if (!font) return; // Should never happen given FONT_OPTIONS[0] fallback
 
   // 1. Set CSS Variable for font-family
   document.documentElement.style.setProperty("--font-sans", font.family);
