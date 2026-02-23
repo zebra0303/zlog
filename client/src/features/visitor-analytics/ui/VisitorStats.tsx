@@ -94,7 +94,7 @@ export function VisitorStats({ className }: VisitorStatsProps) {
               setIsOpen(false);
             }}
           />
-          <div className="fixed top-1/2 left-1/2 z-50 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] shadow-lg md:absolute md:top-full md:right-[-1.5rem] md:left-auto md:mt-2 md:w-auto md:min-w-[500px] md:translate-x-0 md:translate-y-0">
+          <div className="absolute top-full left-1/2 z-50 mt-2 w-[90vw] max-w-sm -translate-x-1/2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] shadow-lg md:right-[-1.5rem] md:left-auto md:w-auto md:min-w-[500px] md:translate-x-0">
             <div className="flex items-center justify-between gap-2 rounded-t-lg border-b border-[var(--color-border)] px-3 py-2">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-[var(--color-primary)]" />
