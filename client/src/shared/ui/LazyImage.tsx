@@ -5,6 +5,7 @@ import { CONFIG } from "../config";
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallback?: React.ReactNode;
   objectFit?: "cover" | "contain" | "contain-mobile";
+  priority?: boolean; // LCP optimization: skip lazy loading
 }
 
 export function LazyImage({
@@ -13,16 +14,22 @@ export function LazyImage({
   className,
   fallback,
   objectFit = "cover",
+  priority = false,
+  srcSet,
+  sizes,
   ...props
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(priority); // If priority, consider in view immediately
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (priority || isInView) return; // Skip observer if priority or already triggered
+
     const el = imgRef.current;
     if (!el) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry) return;
@@ -37,21 +44,25 @@ export function LazyImage({
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [priority, isInView]);
 
   if (hasError && fallback) return <>{fallback}</>;
 
   return (
-    <div ref={imgRef} className={cn("relative overflow-hidden", className)}>
-      {!isLoaded && (
-        <div className="absolute inset-0 animate-pulse bg-linear-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20" />
-      )}
+    <div
+      ref={imgRef}
+      className={cn("relative overflow-hidden bg-gray-100 dark:bg-gray-800", className)}
+    >
       {isInView && (
         <img
           src={src}
+          srcSet={srcSet}
+          sizes={sizes}
           alt={alt}
+          fetchPriority={priority ? "high" : "auto"}
+          loading={priority ? "eager" : "lazy"}
           className={cn(
-            "h-full w-full transition-opacity duration-400",
+            "h-full w-full transition-opacity duration-500",
             objectFit === "contain"
               ? "object-contain"
               : objectFit === "contain-mobile"
