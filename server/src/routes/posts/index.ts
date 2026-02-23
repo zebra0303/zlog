@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { db, analyticsDb, sqlite } from "../../db/index.js";
 import * as schema from "../../db/schema.js";
-import { eq, desc, and, or, sql, like, inArray, isNull } from "drizzle-orm";
+import { eq, desc, and, or, sql, like, inArray, isNull, type SQL } from "drizzle-orm";
 import { authMiddleware, verifyToken } from "../../middleware/auth.js";
 import { PostListResponseSchema, CreatePostSchema } from "./schema.js";
 import { generateId } from "../../lib/uuid.js";
@@ -105,7 +105,7 @@ postsRoute.openapi(
       },
     },
   }),
-  async (c) => {
+  (c) => {
     const {
       page: pageStr,
       category: categorySlug,
@@ -156,9 +156,10 @@ postsRoute.openapi(
 
     // Path A: Local only
     if (!includeRemote) {
-      const conditions: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const conditions: SQL[] = [];
       if (status === "all") {
-        conditions.push(or(eq(schema.posts.status, "published"), eq(schema.posts.status, "draft")));
+        const cond = or(eq(schema.posts.status, "published"), eq(schema.posts.status, "draft"));
+        if (cond) conditions.push(cond);
       } else {
         conditions.push(eq(schema.posts.status, status));
       }
@@ -293,7 +294,15 @@ postsRoute.openapi(
     const tagsMap = batchLoadTags(localIds);
     const commentCountsMap = batchLoadCommentCounts(localIds);
 
-    const remoteBlogsMap = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const remoteBlogsMap = new Map<
+      string,
+      {
+        siteUrl: string;
+        displayName: string | null;
+        blogTitle: string | null;
+        avatarUrl: string | null;
+      }
+    >();
     if (remoteIds.length > 0) {
       const blogIds = [...new Set([...remotePostsMap.values()].map((rp) => rp.remoteBlogId))];
       if (blogIds.length > 0) {

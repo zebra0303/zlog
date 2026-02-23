@@ -217,6 +217,7 @@ export function handleSsr(
   const blogTitle = settings.blog_title ?? "zlog";
   const seoDesc = settings.seo_description;
   const seoImage = settings.seo_og_image;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const canonicalBase = (settings.canonical_url ?? siteUrl ?? "http://localhost:3000").replace(
     /\/$/,
     "",

@@ -203,6 +203,7 @@ Sitemap: ${siteUrl}/sitemap.xml`);
 
     app.get(
       "/reference",
+      // eslint-disable-next-line @typescript-eslint/no-deprecated, @typescript-eslint/no-unsafe-argument
       apiReference({
         spec: {
           url: "/doc",

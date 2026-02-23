@@ -23,6 +23,7 @@ export function errorHandler(err: Error, c: Context) {
         error: {
           code: "VALIDATION_ERROR",
           message: "Validation failed",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
           details: (err as any).errors,
         },
       },
