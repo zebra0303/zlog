@@ -27,7 +27,7 @@ export async function processUploadedImage(buffer: Buffer): Promise<ProcessedIma
   // - Maintain aspect ratio
   // - Quality 80%
   const metadata = await sharp(buffer).metadata();
-  const width = metadata.width ?? 0;
+  const width = metadata.width;
 
   // If image is very large, resize it
   let pipeline = sharp(buffer).webp({ quality: 80 });
@@ -43,8 +43,8 @@ export async function processUploadedImage(buffer: Buffer): Promise<ProcessedIma
 
   return {
     url: `/uploads/images/${filename}`,
-    width: finalMetadata.width ?? 0,
-    height: finalMetadata.height ?? 0,
+    width: finalMetadata.width,
+    height: finalMetadata.height,
     format: "webp",
   };
 }
