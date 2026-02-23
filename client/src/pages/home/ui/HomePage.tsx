@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { Search, X, Rss, Info, ExternalLink, ChevronDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
 import { Input, Button, Pagination, SEOHead, Skeleton } from "@/shared/ui";
@@ -127,40 +128,33 @@ export default function HomePage() {
   const currentCategory = searchParams.get("category") ?? "";
   const currentTag = searchParams.get("tag") ?? "";
   const currentSearch = searchParams.get("search") ?? "";
-  const [posts, setPosts] = useState<PaginatedResponse<PostWithCategory> | null>(null);
-  const [categories, setCategories] = useState<CategoryWithStats[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(currentSearch);
   const [showSubscribe, setShowSubscribe] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
 
+  // Queries
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.get<CategoryWithStats[]>("/categories"),
+  });
+
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ["posts", currentPage, currentCategory, currentTag, currentSearch],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      params.set("page", String(currentPage));
+      if (currentCategory) params.set("category", currentCategory);
+      if (currentTag) params.set("tag", currentTag);
+      if (currentSearch) params.set("search", currentSearch);
+      return api.get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`);
+    },
+  });
+
   const selectedCategory = currentCategory
     ? (categories.find((c) => c.slug === currentCategory) ?? null)
     : null;
-
-  useEffect(() => {
-    void api.get<CategoryWithStats[]>("/categories").then(setCategories);
-  }, []);
-
-  useEffect(() => {
-    setIsLoading(true);
-    const params = new URLSearchParams();
-    params.set("page", String(currentPage));
-    if (currentCategory) params.set("category", currentCategory);
-    if (currentTag) params.set("tag", currentTag);
-    if (currentSearch) params.set("search", currentSearch);
-    void api
-      .get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`)
-      .then((data) => {
-        setPosts(data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setIsLoading(false);
-      });
-  }, [currentPage, currentCategory, currentTag, currentSearch]);
 
   // Sync searchInput when URL search param changes externally (e.g. clearing category)
   useEffect(() => {

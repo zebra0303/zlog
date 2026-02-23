@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { Eye, Edit3, Save, ArrowLeft, ImageIcon, Upload, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Card, CardContent, SEOHead, MarkdownToolbar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -46,48 +47,64 @@ export default function PostEditorPage() {
   const listFrom = (location.state as { from?: string } | null)?.from ?? "/";
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
+  const queryClient = useQueryClient();
+
+  // Form State
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [tags, setTags] = useState("");
   const [coverImage, setCoverImage] = useState("");
+
+  // UI State
   const [sanitizedHtml, setSanitizedHtml] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("edit");
-  const [categories, setCategories] = useState<CategoryWithStats[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const toolbarFileRef = useRef<HTMLInputElement>(null);
 
+  // Queries
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.get<CategoryWithStats[]>("/categories"),
+  });
+
+  const { data: allTags = [] } = useQuery({
+    queryKey: ["tags"],
+    queryFn: () => api.get<string[]>("/posts/tags").catch(() => []),
+  });
+
+  const { data: post } = useQuery({
+    queryKey: ["post", id],
+    queryFn: () => api.get<PostWithCategory>(`/posts/${id}`),
+    enabled: !!id,
+  });
+
+  // Sync post data to form
+  useEffect(() => {
+    if (post) {
+      setTitle(post.title);
+      setContent(post.content);
+      setCategoryId(post.categoryId ?? "");
+      setCoverImage(post.coverImage ?? "");
+      setTags(post.tags.map((tg) => tg.name).join(", "));
+    }
+  }, [post]);
+
+  // Auth check
   useEffect(() => {
     if (!isAuthenticated) {
       void navigate("/login");
     }
   }, [isAuthenticated, navigate]);
-  useEffect(() => {
-    void api.get<CategoryWithStats[]>("/categories").then(setCategories);
-    void api
-      .get<string[]>("/posts/tags")
-      .then(setAllTags)
-      .catch(() => null);
-  }, []);
-  useEffect(() => {
-    if (!id) return;
-    void api.get<PostWithCategory>(`/posts/${id}`).then((p) => {
-      setTitle(p.title);
-      setContent(p.content);
-      setCategoryId(p.categoryId ?? "");
-      setCoverImage(p.coverImage ?? "");
-      setTags(p.tags.map((tg) => tg.name).join(", "));
-    });
-  }, [id]);
 
+  // Tag suggestions
   useEffect(() => {
     const parts = tags.split(",");
     const lastPart = parts[parts.length - 1]?.trim().toLowerCase();
@@ -134,14 +151,14 @@ export default function PostEditorPage() {
       setShowSuggestions(false);
     }
   };
+
+  // Markdown preview debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Note: parseMarkdown already uses rehype-sanitize to ensure safe HTML output
       void parseMarkdown(content).then((html) => {
         setSanitizedHtml(html);
       });
     }, 150);
-
     return () => {
       clearTimeout(timer);
     };
@@ -232,7 +249,39 @@ export default function PostEditorPage() {
     }
   };
 
-  const handleSave = async (s: "draft" | "published") => {
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (payload: CreatePostRequest) => api.post<{ slug: string }>("/posts", payload),
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      if (variables.status === "published" && data.slug) {
+        void navigate(`/posts/${data.slug}`, { state: { from: listFrom } });
+      } else {
+        void navigate(listFrom);
+      }
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : t("request_failed"));
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: CreatePostRequest) => api.put<{ slug: string }>(`/posts/${id}`, payload),
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      void queryClient.invalidateQueries({ queryKey: ["post", id] });
+      if (variables.status === "published" && data.slug) {
+        void navigate(`/posts/${data.slug}`, { state: { from: listFrom } });
+      } else {
+        void navigate(listFrom);
+      }
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : t("request_failed"));
+    },
+  });
+
+  const handleSave = (s: "draft" | "published") => {
     if (!title.trim() || !content.trim()) {
       setError(t("editor_title_content_required"));
       return;
@@ -241,35 +290,30 @@ export default function PostEditorPage() {
       setError(t("editor_category_required"));
       return;
     }
-    setIsSaving(true);
     setError(null);
-    try {
-      const tagList = tags
-        .split(",")
-        .map((tg) => tg.trim())
-        .filter(Boolean);
-      const payload: CreatePostRequest = {
-        title,
-        content,
-        categoryId: categoryId || undefined,
-        status: s,
-        tags: tagList.length > 0 ? tagList : undefined,
-        coverImage: coverImage || null,
-      };
-      const saved = id
-        ? await api.put<{ slug: string }>(`/posts/${id}`, payload)
-        : await api.post<{ slug: string }>("/posts", payload);
-      if (s === "published" && saved.slug) {
-        void navigate(`/posts/${saved.slug}`, { state: { from: listFrom } });
-      } else {
-        void navigate(listFrom);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("request_failed"));
-    } finally {
-      setIsSaving(false);
+
+    const tagList = tags
+      .split(",")
+      .map((tg) => tg.trim())
+      .filter(Boolean);
+
+    const payload: CreatePostRequest = {
+      title,
+      content,
+      categoryId: categoryId || undefined,
+      status: s,
+      tags: tagList.length > 0 ? tagList : undefined,
+      coverImage: coverImage || null,
+    };
+
+    if (id) {
+      updateMutation.mutate(payload);
+    } else {
+      createMutation.mutate(payload);
     }
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="flex flex-col gap-4">
@@ -290,7 +334,7 @@ export default function PostEditorPage() {
             variant="outline"
             size="sm"
             onClick={() => {
-              void handleSave("draft");
+              handleSave("draft");
             }}
             disabled={isSaving}
           >
@@ -299,7 +343,7 @@ export default function PostEditorPage() {
           <Button
             size="sm"
             onClick={() => {
-              void handleSave("published");
+              handleSave("published");
             }}
             disabled={isSaving}
           >

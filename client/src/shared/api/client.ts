@@ -1,9 +1,21 @@
+import { QueryClient } from "@tanstack/react-query";
+
 const API_BASE = "/api";
 
-class ApiClient {
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+export class ApiClient {
   private token: string | null = null;
 
-  private async getErrorMessage(res: Response, fallback: string): Promise<string> {
+  async getErrorMessage(res: Response, fallback: string): Promise<string> {
     const text = await res.text().catch(() => "");
     if (!text) return fallback;
 
@@ -45,9 +57,8 @@ class ApiClient {
   }
 
   async get<T>(path: string, extraHeaders?: Record<string, string>): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: { ...(this.getHeaders() as Record<string, string>), ...extraHeaders },
-    });
+    const headers = { ...(this.getHeaders() as Record<string, string>), ...extraHeaders };
+    const res = await fetch(`${API_BASE}${path}`, { headers });
     if (!res.ok) {
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }
@@ -55,9 +66,10 @@ class ApiClient {
   }
 
   async post<T>(path: string, body?: unknown): Promise<T> {
+    const headers = this.getHeaders("application/json");
     const res = await fetch(`${API_BASE}${path}`, {
       method: "POST",
-      headers: this.getHeaders("application/json"),
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
@@ -67,9 +79,10 @@ class ApiClient {
   }
 
   async put<T>(path: string, body?: unknown): Promise<T> {
+    const headers = this.getHeaders("application/json");
     const res = await fetch(`${API_BASE}${path}`, {
       method: "PUT",
-      headers: this.getHeaders("application/json"),
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
@@ -79,9 +92,10 @@ class ApiClient {
   }
 
   async delete<T>(path: string, body?: unknown): Promise<T> {
+    const headers = this.getHeaders(body ? "application/json" : undefined);
     const res = await fetch(`${API_BASE}${path}`, {
       method: "DELETE",
-      headers: this.getHeaders(body ? "application/json" : undefined),
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
@@ -94,7 +108,12 @@ class ApiClient {
     const headers: Record<string, string> = {};
     const token = this.getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
-    const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: formData });
+
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
     if (!res.ok) {
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
     }
