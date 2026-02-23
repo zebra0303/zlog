@@ -53,7 +53,7 @@ function buildRssXml(
     <language>en</language>
     <lastBuildDate>${toRfc822(new Date().toISOString())}</lastBuildDate>
     <atom:link href="${selfUrl}" rel="self" type="application/rss+xml"/>
-${rssItems.join("\\n")}
+${rssItems.join("\n")}
   </channel>
 </rss>`;
 }
