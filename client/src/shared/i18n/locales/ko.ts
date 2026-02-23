@@ -253,6 +253,7 @@ export const ko: Record<TranslationKeys, string> = {
   admin_theme_gradient: "그라디에이션",
   admin_theme_gradient_end_color: "끝색",
   admin_theme_gradient_direction: "방향",
+  admin_theme_gradient_midpoint: "중간점",
   admin_theme_surface_text: "카드 & 글자 색상",
   admin_theme_surface_text_desc:
     "카드·패널 배경색과 기본 글자 색상을 설정합니다. 비워두면 기본값이 사용됩니다.",

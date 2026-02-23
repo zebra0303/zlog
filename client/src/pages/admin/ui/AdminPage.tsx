@@ -1298,7 +1298,7 @@ function ThemeCustomizer({
                           style={
                             lightGradientTo && settings[lightGradientTo]
                               ? {
-                                  background: `linear-gradient(${settings[lightGradientDir ?? ""] ?? "to bottom"}, ${settings[lightColor]} ${settings[lightGradientMid] ? String(settings[lightGradientMid]) + "%" : ""}, ${settings[lightGradientTo]})`,
+                                  background: `linear-gradient(${settings[lightGradientDir ?? ""] ?? "to bottom"}, ${settings[lightColor]} ${lightGradientMid && settings[lightGradientMid] ? settings[lightGradientMid] + "%" : ""}, ${settings[lightGradientTo]})`,
                                 }
                               : {
                                   backgroundColor: settings[lightColor] ?? undefined,
@@ -1400,7 +1400,7 @@ function ThemeCustomizer({
                           style={
                             darkGradientTo && settings[darkGradientTo]
                               ? {
-                                  background: `linear-gradient(${settings[darkGradientDir ?? ""] ?? "to bottom"}, ${settings[darkColor]} ${settings[darkGradientMid] ? String(settings[darkGradientMid]) + "%" : ""}, ${settings[darkGradientTo]})`,
+                                  background: `linear-gradient(${settings[darkGradientDir ?? ""] ?? "to bottom"}, ${settings[darkColor]} ${darkGradientMid && settings[darkGradientMid] ? settings[darkGradientMid] + "%" : ""}, ${settings[darkGradientTo]})`,
                                 }
                               : {
                                   backgroundColor: settings[darkColor] ?? undefined,

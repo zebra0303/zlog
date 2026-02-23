@@ -1,21 +1,32 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "../db/schema.js";
+import * as analyticsSchema from "../db/schema/analytics.js";
 import { vi, beforeAll, afterAll } from "vitest";
 
-// 1. Create in-memory SQLite
+// 1. Create in-memory SQLite for Main DB
 const testSqlite = new Database(":memory:");
 testSqlite.pragma("journal_mode = WAL");
 testSqlite.pragma("foreign_keys = ON");
 const testDb = drizzle(testSqlite, { schema });
 
-// 2. Mock DB module
+// 2. Create in-memory SQLite for Analytics DB
+const testAnalyticsSqlite = new Database(":memory:");
+testAnalyticsSqlite.pragma("journal_mode = WAL");
+const testAnalyticsDb = drizzle(testAnalyticsSqlite, { schema: analyticsSchema });
+
+// 3. Mock DB module
 vi.mock("../db/index.js", () => ({
   db: testDb,
   sqlite: testSqlite,
+  analyticsDb: testAnalyticsDb,
+  analyticsSqlite: testAnalyticsSqlite,
+  initAnalyticsDb: () => {
+    // In-memory setup handled in beforeAll below, but we can keep empty stub if needed
+  },
 }));
 
-// 3. Mock background services
+// 4. Mock background services
 vi.mock("../services/syncService.js", () => ({
   startSyncWorker: vi.fn(),
   stopSyncWorker: vi.fn(),
@@ -28,13 +39,13 @@ vi.mock("../services/feedService.js", () => ({
   sendWebhookToSubscribers: vi.fn(),
 }));
 
-// 4. Global fetch mock (prevent external requests like webhooks)
+// 5. Global fetch mock (prevent external requests like webhooks)
 vi.stubGlobal(
   "fetch",
   vi.fn(() => Promise.resolve(new Response("{}", { status: 200 }))),
 );
 
-// 5. Test environment variables
+// 6. Test environment variables
 process.env.JWT_SECRET = "test-secret-key-for-testing";
 process.env.SITE_URL = "http://localhost:3000";
 process.env.ADMIN_EMAIL = "admin@test.com";
@@ -42,8 +53,9 @@ process.env.ADMIN_PASSWORD = "testpassword123";
 process.env.ADMIN_DISPLAY_NAME = "Test Admin";
 process.env.NODE_ENV = "test";
 
-// 6. Create schema before tests
+// 7. Create schema before tests
 beforeAll(() => {
+  // --- Main DB Schema ---
   testSqlite.exec(`
     CREATE TABLE IF NOT EXISTS commenters (
       id TEXT PRIMARY KEY,
@@ -221,7 +233,17 @@ beforeAll(() => {
       value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    
+    -- FTS Table for search tests
+    CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
+      title,
+      content='posts',
+      content_rowid='rowid'
+    );
+  `);
 
+  // --- Analytics DB Schema ---
+  testAnalyticsSqlite.exec(`
     CREATE TABLE IF NOT EXISTS failed_logins (
       id TEXT PRIMARY KEY,
       ip_address TEXT NOT NULL,
@@ -232,7 +254,7 @@ beforeAll(() => {
 
     CREATE TABLE IF NOT EXISTS post_access_logs (
       id TEXT PRIMARY KEY,
-      post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      post_id TEXT NOT NULL, -- No FK in analytics db to main db
       ip TEXT,
       country TEXT,
       referer TEXT,
@@ -242,9 +264,28 @@ beforeAll(() => {
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_post_access_logs_post ON post_access_logs(post_id);
+
+    CREATE TABLE IF NOT EXISTS visitor_logs (
+      id TEXT PRIMARY KEY,
+      ip TEXT,
+      country TEXT,
+      user_agent TEXT,
+      os TEXT,
+      browser TEXT,
+      referer TEXT,
+      visited_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_visitor_logs_date ON visitor_logs(visited_at);
+
+    CREATE TABLE IF NOT EXISTS daily_visitor_counts (
+      date TEXT PRIMARY KEY,
+      count INTEGER DEFAULT 0 NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 });
 
 afterAll(() => {
   testSqlite.close();
+  testAnalyticsSqlite.close();
 });

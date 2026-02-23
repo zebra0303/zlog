@@ -249,6 +249,7 @@ export const en = {
   admin_theme_gradient: "Gradient",
   admin_theme_gradient_end_color: "End Color",
   admin_theme_gradient_direction: "Direction",
+  admin_theme_gradient_midpoint: "Midpoint",
   admin_theme_surface_text: "Surface & Text Colors",
   admin_theme_surface_text_desc:
     "Customize the card/panel surface color and the primary text color. Leave empty to use defaults.",

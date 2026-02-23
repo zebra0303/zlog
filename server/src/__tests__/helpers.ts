@@ -1,4 +1,4 @@
-import { db, sqlite } from "../db/index.js";
+import { db, sqlite, analyticsSqlite } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { generateId } from "../lib/uuid.js";
 import { hashPassword } from "../lib/password.js";
@@ -197,8 +197,8 @@ export function createTestRemotePost(
 }
 
 export function cleanDb(): void {
+  // Clean Main DB
   sqlite.exec(`
-    DELETE FROM failed_logins;
     DELETE FROM comment_likes;
     DELETE FROM comments;
     DELETE FROM post_tags;
@@ -214,5 +214,13 @@ export function cleanDb(): void {
     DELETE FROM remote_blogs;
     DELETE FROM commenters;
     DELETE FROM owner;
+  `);
+
+  // Clean Analytics DB
+  analyticsSqlite.exec(`
+    DELETE FROM failed_logins;
+    DELETE FROM post_access_logs;
+    DELETE FROM visitor_logs;
+    DELETE FROM daily_visitor_counts;
   `);
 }

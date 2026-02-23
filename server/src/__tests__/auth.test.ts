@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { createApp } from "../app.js";
-import { db } from "../db/index.js";
+import { analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import {
   seedTestAdmin,
@@ -24,7 +24,7 @@ describe("Auth API", () => {
 
   beforeEach(() => {
     // Clear failed_logins between tests to avoid cross-test interference
-    db.delete(schema.failedLogins).run();
+    analyticsDb.delete(schema.failedLogins).run();
   });
 
   describe("POST /api/auth/login", () => {
