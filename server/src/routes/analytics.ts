@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../db/index.js";
+import { analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, desc, and, gte, lt } from "drizzle-orm";
 import { getCookie, setCookie } from "hono/cookie";
@@ -40,7 +40,7 @@ analytics.post("/visit", async (c) => {
   const country = ip ? (geoip.lookup(ip)?.country ?? null) : null;
 
   // 3. Upsert Daily Count & Insert Log
-  db.transaction((tx) => {
+  analyticsDb.transaction((tx) => {
     // Upsert Count
     const existing = tx
       .select()
@@ -128,14 +128,14 @@ analytics.get("/visitors", authMiddleware, (c) => {
   const todayStr = new Date().toISOString().slice(0, 10); // UTC Date
   const startOfDayStr = `${todayStr}T00:00:00.000Z`;
 
-  const countRecord = db
+  const countRecord = analyticsDb
     .select()
     .from(schema.dailyVisitorCounts)
     .where(eq(schema.dailyVisitorCounts.date, todayStr))
     .get();
 
   // Get recent logs (max 20)
-  const logs = db
+  const logs = analyticsDb
     .select()
     .from(schema.visitorLogs)
     .where(gte(schema.visitorLogs.visitedAt, startOfDayStr))

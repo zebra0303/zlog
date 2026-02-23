@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../db/index.js";
+import { db, analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and, gte, lt } from "drizzle-orm";
 import { verifyPassword } from "../lib/password.js";
@@ -38,11 +38,14 @@ auth.post("/login", async (c) => {
 
   // Clean up records older than 24 hours
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-  db.delete(schema.failedLogins).where(lt(schema.failedLogins.attemptedAt, oneDayAgo)).run();
+  analyticsDb
+    .delete(schema.failedLogins)
+    .where(lt(schema.failedLogins.attemptedAt, oneDayAgo))
+    .run();
 
   // Count failures in the last 15 minutes for this IP
   const fifteenMinAgo = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
-  const recentFailures = db
+  const recentFailures = analyticsDb
     .select()
     .from(schema.failedLogins)
     .where(
@@ -83,7 +86,8 @@ auth.post("/login", async (c) => {
   const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.email, email)).get();
 
   if (!ownerRecord) {
-    db.insert(schema.failedLogins)
+    analyticsDb
+      .insert(schema.failedLogins)
       .values({
         id: generateId(),
         ipAddress: ip,
@@ -96,7 +100,8 @@ auth.post("/login", async (c) => {
 
   const valid = verifyPassword(password, ownerRecord.passwordHash);
   if (!valid) {
-    db.insert(schema.failedLogins)
+    analyticsDb
+      .insert(schema.failedLogins)
       .values({
         id: generateId(),
         ipAddress: ip,
@@ -108,7 +113,7 @@ auth.post("/login", async (c) => {
   }
 
   // Successful login: clear all failure records for this IP
-  db.delete(schema.failedLogins).where(eq(schema.failedLogins.ipAddress, ip)).run();
+  analyticsDb.delete(schema.failedLogins).where(eq(schema.failedLogins.ipAddress, ip)).run();
 
   const token = await createToken(ownerRecord.id);
   const { passwordHash: _, ...ownerData } = ownerRecord;

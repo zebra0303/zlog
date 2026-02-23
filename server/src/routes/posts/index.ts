@@ -1,15 +1,28 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { db } from "../../db/index.js";
-import { sqlite } from "../../db/index.js";
+import { db, analyticsDb, sqlite } from "../../db/index.js";
 import * as schema from "../../db/schema.js";
 import { eq, desc, and, or, sql, like, inArray, isNull } from "drizzle-orm";
-import { authMiddleware } from "../../middleware/auth.js";
+import { authMiddleware, verifyToken } from "../../middleware/auth.js";
 import { PostListResponseSchema, CreatePostSchema } from "./schema.js";
 import { generateId } from "../../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../../lib/slug.js";
 import { stripMarkdown } from "../../lib/markdown.js";
 import { sendWebhookToSubscribers } from "../../services/feedService.js";
 import { triggerStaleSync } from "../../services/syncService.js";
+import { unlinkSync } from "node:fs";
+import path from "node:path";
+import geoip from "geoip-lite";
+import { parseUserAgent } from "../../lib/userAgent.js";
+
+function deleteUploadedImage(imageUrl: string) {
+  if (!imageUrl.startsWith("/uploads/images/")) return;
+  try {
+    const filePath = path.join(process.cwd(), imageUrl);
+    unlinkSync(filePath);
+  } catch {
+    /* ignore – file may already be deleted */
+  }
+}
 
 // Re-using helper functions (would ideally be shared utils)
 function batchLoadCategories(categoryIds: string[]) {
@@ -352,6 +365,125 @@ postsRoute.openapi(
 // For now, let's keep them as standard Hono routes attached to the same instance if possible,
 // or just mix them. OpenAPIHono extends Hono, so we can use .post(), .put(), etc.
 
+postsRoute.get("/tags", (c) => {
+  const allTags = db.select({ name: schema.tags.name }).from(schema.tags).all();
+  return c.json(allTags.map((t) => t.name));
+});
+
+postsRoute.get("/:id/access-logs", authMiddleware, (c) => {
+  const postId = c.req.param("id");
+  const logs = analyticsDb
+    .select()
+    .from(schema.postAccessLogs)
+    .where(eq(schema.postAccessLogs.postId, postId))
+    .orderBy(desc(schema.postAccessLogs.createdAt))
+    .limit(10)
+    .all();
+  return c.json(logs);
+});
+
+postsRoute.get("/:param", async (c) => {
+  const param = c.req.param("param");
+  // If UUID v7 pattern, look up by ID; otherwise look up by slug
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
+  const post = isUuid
+    ? db.select().from(schema.posts).where(eq(schema.posts.id, param)).get()
+    : db.select().from(schema.posts).where(eq(schema.posts.slug, param)).get();
+
+  if (!post || post.status === "deleted") {
+    return c.json({ error: "Post not found." }, 404);
+  }
+
+  // Determine whether to increment view count: exclude admins or already-viewed visitors
+  let shouldCount = true;
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const ownerId = await verifyToken(authHeader.slice(7));
+    if (ownerId) shouldCount = false;
+  }
+  const viewedCookie = `zlog_viewed_${post.id}`;
+  const cookies = c.req.header("Cookie") ?? "";
+  if (cookies.includes(viewedCookie)) {
+    shouldCount = false;
+  }
+
+  let { viewCount } = post;
+  if (shouldCount) {
+    viewCount = post.viewCount + 1;
+    // Update view count in main DB
+    db.update(schema.posts).set({ viewCount }).where(eq(schema.posts.id, post.id)).run();
+    // Do not count re-views of the same post for 24 hours
+    c.header("Set-Cookie", `${viewedCookie}=1; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax`);
+
+    // Log access in analytics DB
+    const ua = c.req.header("User-Agent") ?? "";
+    const ip =
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? "";
+    const referer = c.req.header("X-Referrer") ?? c.req.header("Referer") ?? "";
+    const { os, browser } = parseUserAgent(ua);
+    const country = ip ? (geoip.lookup(ip)?.country ?? null) : null;
+
+    analyticsDb
+      .insert(schema.postAccessLogs)
+      .values({
+        id: generateId(),
+        postId: post.id,
+        ip: ip || null,
+        country,
+        referer: referer || null,
+        userAgent: ua || null,
+        os,
+        browser,
+        createdAt: new Date().toISOString(),
+      })
+      .run();
+
+    // Prune: keep only 10 most recent logs per post
+    const recent = analyticsDb
+      .select({ id: schema.postAccessLogs.id })
+      .from(schema.postAccessLogs)
+      .where(eq(schema.postAccessLogs.postId, post.id))
+      .orderBy(desc(schema.postAccessLogs.createdAt))
+      .all();
+
+    if (recent.length > 10) {
+      const idsToDelete = recent.slice(10).map((r) => r.id);
+      analyticsDb
+        .delete(schema.postAccessLogs)
+        .where(inArray(schema.postAccessLogs.id, idsToDelete))
+        .run();
+    }
+  }
+
+  const category = post.categoryId
+    ? db
+        .select({
+          id: schema.categories.id,
+          name: schema.categories.name,
+          slug: schema.categories.slug,
+        })
+        .from(schema.categories)
+        .where(eq(schema.categories.id, post.categoryId))
+        .get()
+    : null;
+
+  const tagRows = db
+    .select({ id: schema.tags.id, name: schema.tags.name, slug: schema.tags.slug })
+    .from(schema.postTags)
+    .innerJoin(schema.tags, eq(schema.postTags.tagId, schema.tags.id))
+    .where(eq(schema.postTags.postId, post.id))
+    .all();
+
+  const commentCount =
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.comments)
+      .where(and(eq(schema.comments.postId, post.id), isNull(schema.comments.deletedAt)))
+      .get()?.count ?? 0;
+
+  return c.json({ ...post, viewCount, category, tags: tagRows, commentCount });
+});
+
 postsRoute.post("/", authMiddleware, async (c) => {
   // Legacy implementation - to be migrated to OpenAPI
   const body = await c.req.json<z.infer<typeof CreatePostSchema>>();
@@ -413,10 +545,127 @@ postsRoute.post("/", authMiddleware, async (c) => {
   return c.json(newPost, 201);
 });
 
-// Re-implement other routes briefly for continuity...
-// (Omitting full implementation for brevity, assuming similar pattern)
-// GET /:param, PUT /:id, DELETE /:id, GET /tags, GET /:id/access-logs
-// Users can copy-paste from posts_old.ts or we can provide a fully migrated file if requested.
-// For now, I'll export the route which has at least the main list endpoint migrated.
+postsRoute.put("/:id", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json<{
+    title?: string;
+    content?: string;
+    categoryId?: string;
+    status?: string;
+    tags?: string[];
+    coverImage?: string | null;
+    excerpt?: string;
+  }>();
+
+  const existing = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
+  if (!existing) {
+    return c.json({ error: "Post not found." }, 404);
+  }
+
+  const now = new Date().toISOString();
+  const updateData: Record<string, unknown> = { updatedAt: now };
+
+  if (body.title !== undefined) {
+    updateData.title = body.title;
+    if (body.title !== existing.title) {
+      const newBase = createSlug(body.title);
+      const conflicting = db
+        .select({ slug: schema.posts.slug })
+        .from(schema.posts)
+        .where(like(schema.posts.slug, `${newBase}%`))
+        .all()
+        .map((p) => p.slug)
+        .filter((s) => s !== existing.slug);
+      updateData.slug = createUniqueSlug(body.title, conflicting);
+    }
+  }
+  if (body.content !== undefined) {
+    updateData.content = body.content;
+    if (!body.excerpt) {
+      updateData.excerpt = stripMarkdown(body.content).slice(0, 200);
+    }
+  }
+  if (body.excerpt !== undefined) updateData.excerpt = body.excerpt;
+  if (body.categoryId !== undefined) updateData.categoryId = body.categoryId;
+  if (body.coverImage !== undefined) {
+    // Delete old cover image file if it's being changed or removed
+    if (existing.coverImage && existing.coverImage !== body.coverImage) {
+      deleteUploadedImage(existing.coverImage);
+    }
+    updateData.coverImage = body.coverImage;
+  }
+  if (body.status !== undefined) {
+    updateData.status = body.status;
+    if (body.status === "deleted") updateData.deletedAt = now;
+  }
+
+  db.update(schema.posts).set(updateData).where(eq(schema.posts.id, id)).run();
+
+  if (body.tags !== undefined) {
+    db.delete(schema.postTags).where(eq(schema.postTags.postId, id)).run();
+    for (const tagName of body.tags) {
+      const normalizedName = tagName.toLowerCase().trim();
+      const tagSlug = createSlug(tagName);
+      let tag = db.select().from(schema.tags).where(eq(schema.tags.slug, tagSlug)).get();
+      if (!tag) {
+        const tagId = generateId();
+        db.insert(schema.tags).values({ id: tagId, name: normalizedName, slug: tagSlug }).run();
+        tag = { id: tagId, name: normalizedName, slug: tagSlug };
+      }
+      db.insert(schema.postTags).values({ postId: id, tagId: tag.id }).run();
+    }
+  }
+
+  const updatedPost = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
+  if (updatedPost) {
+    const catId = body.categoryId ?? existing.categoryId;
+    if (catId) {
+      if (body.status && body.status !== existing.status) {
+        // Status has changed
+        if (body.status === "published") {
+          void sendWebhookToSubscribers("post.published", updatedPost, catId);
+        } else if (body.status === "deleted") {
+          void sendWebhookToSubscribers("post.deleted", updatedPost, catId);
+        } else if (body.status === "draft" && existing.status === "published") {
+          void sendWebhookToSubscribers("post.unpublished", updatedPost, catId);
+        }
+      } else if (existing.status === "published" && !body.status) {
+        // Content changed while maintaining published status (cover image, body, etc.)
+        const contentChanged =
+          (body.title !== undefined && body.title !== existing.title) ||
+          (body.content !== undefined && body.content !== existing.content) ||
+          (body.coverImage !== undefined && body.coverImage !== existing.coverImage) ||
+          (body.excerpt !== undefined && body.excerpt !== existing.excerpt) ||
+          (body.categoryId !== undefined && body.categoryId !== existing.categoryId);
+        if (contentChanged) {
+          void sendWebhookToSubscribers("post.updated", updatedPost, catId);
+        }
+      }
+    }
+  }
+
+  const result = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
+  return c.json(result);
+});
+
+postsRoute.delete("/:id", authMiddleware, (c) => {
+  const id = c.req.param("id");
+  const existing = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
+  if (!existing) {
+    return c.json({ error: "Post not found." }, 404);
+  }
+
+  const now = new Date().toISOString();
+  db.update(schema.posts)
+    .set({ status: "deleted", deletedAt: now, updatedAt: now })
+    .where(eq(schema.posts.id, id))
+    .run();
+
+  if (existing.categoryId && existing.status === "published") {
+    void sendWebhookToSubscribers("post.deleted", existing, existing.categoryId);
+  }
+
+  return c.json({ message: "Post has been deleted." });
+});
 
 export default postsRoute;

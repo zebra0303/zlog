@@ -1,4 +1,4 @@
-import { db, sqlite } from "../db/index.js";
+import { db, sqlite, initAnalyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { generateId } from "../lib/uuid.js";
 import { hashPassword } from "../lib/password.js";
@@ -8,6 +8,8 @@ import { eq } from "drizzle-orm";
  * On first run: create tables + admin account + default settings
  */
 export function bootstrap() {
+  initAnalyticsDb();
+
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS owner (
       id TEXT PRIMARY KEY,
