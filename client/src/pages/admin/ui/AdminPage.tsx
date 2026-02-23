@@ -751,6 +751,8 @@ interface ThemeSection {
     darkGradientTo?: string;
     lightGradientDir?: string;
     darkGradientDir?: string;
+    lightGradientMid?: string;
+    darkGradientMid?: string;
   };
 }
 
@@ -815,6 +817,8 @@ function ThemeCustomizer({
         darkGradientTo: "body_bg_gradient_to_dark",
         lightGradientDir: "body_bg_gradient_direction_light",
         darkGradientDir: "body_bg_gradient_direction_dark",
+        lightGradientMid: "body_bg_gradient_midpoint_light",
+        darkGradientMid: "body_bg_gradient_midpoint_dark",
       },
     },
   ];
@@ -854,7 +858,11 @@ function ThemeCustomizer({
   );
 
   // Renders end color + direction fields (toggle is in the panel header)
-  const renderGradientFields = (gradientToKey: string, gradientDirKey: string) => {
+  const renderGradientFields = (
+    gradientToKey: string,
+    gradientDirKey: string,
+    gradientMidKey?: string,
+  ) => {
     if (!settings[gradientToKey]) return null;
     return (
       <>
@@ -896,6 +904,29 @@ function ThemeCustomizer({
             ))}
           </select>
         </div>
+        {gradientMidKey && (
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-xs text-[var(--color-text-secondary)]">
+                {t("admin_theme_gradient_midpoint")}
+              </label>
+              <span className="text-xs font-medium text-[var(--color-text)]">
+                {settings[gradientMidKey] ?? "50"}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={settings[gradientMidKey] ?? "50"}
+              onChange={(e) => {
+                update(gradientMidKey, e.target.value);
+              }}
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[var(--color-border)] accent-[var(--color-primary)]"
+            />
+          </div>
+        )}
       </>
     );
   };
@@ -1140,6 +1171,8 @@ function ThemeCustomizer({
               darkGradientTo,
               lightGradientDir,
               darkGradientDir,
+              lightGradientMid,
+              darkGradientMid,
             } = section.keys;
 
             // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
@@ -1198,9 +1231,11 @@ function ThemeCustomizer({
                               if (settings[lightGradientTo]) {
                                 update(lightGradientTo, "");
                                 update(lightGradientDir, "");
+                                if (lightGradientMid) update(lightGradientMid, "");
                               } else {
                                 update(lightGradientTo, "#000000");
                                 update(lightGradientDir, "to bottom");
+                                if (lightGradientMid) update(lightGradientMid, "50");
                               }
                             }}
                             className={`relative h-5 w-9 rounded-full transition-colors ${
@@ -1255,7 +1290,7 @@ function ThemeCustomizer({
                       )}
                       {lightGradientTo !== undefined &&
                         lightGradientDir !== undefined &&
-                        renderGradientFields(lightGradientTo, lightGradientDir)}
+                        renderGradientFields(lightGradientTo, lightGradientDir, lightGradientMid)}
                       {/* Preview */}
                       {showLightPreview && (
                         <div
@@ -1263,7 +1298,7 @@ function ThemeCustomizer({
                           style={
                             lightGradientTo && settings[lightGradientTo]
                               ? {
-                                  background: `linear-gradient(${settings[lightGradientDir ?? ""] ?? "to bottom"}, ${settings[lightColor]}, ${settings[lightGradientTo]})`,
+                                  background: `linear-gradient(${settings[lightGradientDir ?? ""] ?? "to bottom"}, ${settings[lightColor]} ${settings[lightGradientMid] ? String(settings[lightGradientMid]) + "%" : ""}, ${settings[lightGradientTo]})`,
                                 }
                               : {
                                   backgroundColor: settings[lightColor] ?? undefined,
@@ -1298,9 +1333,11 @@ function ThemeCustomizer({
                               if (settings[darkGradientTo]) {
                                 update(darkGradientTo, "");
                                 update(darkGradientDir, "");
+                                if (darkGradientMid) update(darkGradientMid, "");
                               } else {
                                 update(darkGradientTo, "#ffffff");
                                 update(darkGradientDir, "to bottom");
+                                if (darkGradientMid) update(darkGradientMid, "50");
                               }
                             }}
                             className={`relative h-5 w-9 rounded-full transition-colors ${
@@ -1355,7 +1392,7 @@ function ThemeCustomizer({
                       )}
                       {darkGradientTo !== undefined &&
                         darkGradientDir !== undefined &&
-                        renderGradientFields(darkGradientTo, darkGradientDir)}
+                        renderGradientFields(darkGradientTo, darkGradientDir, darkGradientMid)}
                       {/* Preview */}
                       {showDarkPreview && (
                         <div
@@ -1363,7 +1400,7 @@ function ThemeCustomizer({
                           style={
                             darkGradientTo && settings[darkGradientTo]
                               ? {
-                                  background: `linear-gradient(${settings[darkGradientDir ?? ""] ?? "to bottom"}, ${settings[darkColor]}, ${settings[darkGradientTo]})`,
+                                  background: `linear-gradient(${settings[darkGradientDir ?? ""] ?? "to bottom"}, ${settings[darkColor]} ${settings[darkGradientMid] ? String(settings[darkGradientMid]) + "%" : ""}, ${settings[darkGradientTo]})`,
                                 }
                               : {
                                   backgroundColor: settings[darkColor] ?? undefined,
