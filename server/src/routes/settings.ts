@@ -259,34 +259,6 @@ settingsRoute.put("/profile/account", authMiddleware, async (c) => {
   return c.json({ ...ownerData, message: "Account information has been updated." });
 });
 
-// ============ General image upload ============
-settingsRoute.post("/upload/image", authMiddleware, async (c) => {
-  const formData = await c.req.formData();
-  const file = formData.get("image") as File | null;
-  if (!file) return c.json({ error: "Please select an image file." }, 400);
-
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (!allowedTypes.includes(file.type))
-    return c.json({ error: "Only JPEG, PNG, WebP, and GIF formats are supported." }, 400);
-  if (file.size > 10 * 1024 * 1024)
-    return c.json({ error: "File size must not exceed 10MB." }, 400);
-
-  const uploadsDir = path.join(process.cwd(), "uploads", "images");
-  mkdirSync(uploadsDir, { recursive: true });
-
-  const uuid = generateId();
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  // Maintain original aspect ratio, max 1920px, convert to WebP
-  await sharp(buffer)
-    .resize(1920, 1920, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 85 })
-    .toFile(path.join(uploadsDir, `${uuid}.webp`));
-
-  const url = `/uploads/images/${uuid}.webp`;
-  return c.json({ url });
-});
-
 settingsRoute.get("/settings", (c) => {
   const settings = db.select().from(schema.siteSettings).all();
   const result: Record<string, string> = {};

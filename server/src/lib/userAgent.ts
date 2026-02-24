@@ -1,12 +1,12 @@
 export function parseUserAgent(ua: string): { os: string; browser: string } {
   const os = ua.includes("Windows")
     ? "Windows"
-    : ua.includes("Mac OS X")
-      ? "macOS"
-      : ua.includes("Android")
-        ? "Android"
-        : ua.includes("iPhone") || ua.includes("iPad")
-          ? "iOS"
+    : ua.includes("iPhone") || ua.includes("iPad")
+      ? "iOS"
+      : ua.includes("Mac OS X")
+        ? "macOS"
+        : ua.includes("Android")
+          ? "Android"
           : ua.includes("Linux")
             ? "Linux"
             : "Unknown";
