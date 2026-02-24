@@ -273,7 +273,15 @@ erDiagram
 
 - **Real-time Dashboard**: Monitor today's unique visitors and total page views.
 - **Detailed Logs**: View recent visitor details including IP, Country, OS, Browser, and Referer.
+- **Federation Views**: Securely track view counts when your posts are read on subscribed remote blogs without compromising reader privacy.
 - **Privacy-focused**: Local storage only, no third-party trackers.
+
+### Notifications
+
+- **Slack Integration**: Receive real-time notifications via Slack webhook.
+- **Comment Alerts**: Get notified when someone leaves a new comment or reply on your posts.
+- **Federation Alerts**: Instantly know when another blog subscribes to your categories.
+- **i18n Support**: Notification messages automatically adapt to your blog's default language.
 
 ### Technical
 
