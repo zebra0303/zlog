@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import { db } from "../db/index.js";
+import { db, analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
+import * as analyticsSchema from "../db/schema/analytics.js";
 import { eq, and, desc, gt, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -134,6 +135,79 @@ federationRoute.get("/posts/:id", (c) => {
     updatedAt: post.updatedAt,
     author: ownerRecord?.displayName ?? "",
   });
+});
+
+federationRoute.post("/posts/:id/view", async (c) => {
+  const postId = c.req.param("id");
+  const body = await c.req.json<{ visitorId?: string; subscriberUrl?: string }>().catch(() => null);
+
+  if (!body?.visitorId || !body.subscriberUrl) {
+    return c.json({ error: "Missing required fields." }, 400);
+  }
+
+  const subscriberUrl = body.subscriberUrl.replace(/\/+$/, "");
+
+  const post = db.select().from(schema.posts).where(eq(schema.posts.id, postId)).get();
+  if (post?.status !== "published" || !post.categoryId) {
+    return c.json({ error: "Post not found." }, 404);
+  }
+
+  // Verify subscriber
+  const isSubscribed = db
+    .select()
+    .from(schema.subscribers)
+    .where(
+      and(
+        eq(schema.subscribers.categoryId, post.categoryId),
+        eq(schema.subscribers.subscriberUrl, subscriberUrl),
+        eq(schema.subscribers.isActive, true),
+      ),
+    )
+    .get();
+
+  if (!isSubscribed) {
+    return c.json({ error: "Unauthorized subscriber." }, 403);
+  }
+
+  const now = new Date();
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+
+  // Prevent duplicate within 24h for the same visitor
+  // Use ip: "federation", referer: subscriberUrl, userAgent: visitorId
+  const existingLog = analyticsDb
+    .select()
+    .from(analyticsSchema.postAccessLogs)
+    .where(
+      and(
+        eq(analyticsSchema.postAccessLogs.postId, postId),
+        eq(analyticsSchema.postAccessLogs.ip, "federation"),
+        eq(analyticsSchema.postAccessLogs.referer, subscriberUrl),
+        eq(analyticsSchema.postAccessLogs.userAgent, body.visitorId),
+        gt(analyticsSchema.postAccessLogs.createdAt, dayAgo),
+      ),
+    )
+    .get();
+
+  if (!existingLog) {
+    db.update(schema.posts)
+      .set({ viewCount: post.viewCount + 1 })
+      .where(eq(schema.posts.id, postId))
+      .run();
+
+    analyticsDb
+      .insert(analyticsSchema.postAccessLogs)
+      .values({
+        id: generateId(),
+        postId,
+        ip: "federation",
+        referer: subscriberUrl,
+        userAgent: body.visitorId,
+        createdAt: now.toISOString(),
+      })
+      .run();
+  }
+
+  return c.json({ success: true });
 });
 
 federationRoute.post("/subscribe", async (c) => {

@@ -7,6 +7,8 @@ import { formatDate } from "@/shared/lib/formatDate";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useI18n } from "@/shared/i18n";
 
+import { getVisitorId } from "@/shared/lib/visitorId";
+
 interface RemotePost {
   id: string;
   remoteUri: string;
@@ -55,6 +57,22 @@ export default function RemotePostDetailPage() {
         setPost(data);
         setHtmlContent(await parseMarkdown(data.content));
         setIsLoading(false);
+
+        // Record visit to the original blog
+        if (data.remoteUri && data.remoteBlog) {
+          const uriParts = data.remoteUri.split("/posts/");
+          const originalPostId = uriParts.length > 1 ? uriParts[uriParts.length - 1] : null;
+          if (originalPostId) {
+            void fetch(`${data.remoteBlog.siteUrl}/api/federation/posts/${originalPostId}/view`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                visitorId: getVisitorId(),
+                subscriberUrl: window.location.origin,
+              }),
+            }).catch(() => null); // Silently fail if original blog is down or doesn't support this
+          }
+        }
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "Failed to load remote post");

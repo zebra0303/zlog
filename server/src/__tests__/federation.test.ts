@@ -1,13 +1,15 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { createApp } from "../app.js";
-import { db } from "../db/index.js";
+import { db, analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
+import * as analyticsSchema from "../db/schema/analytics.js";
 import {
   seedTestAdmin,
   seedDefaultSettings,
   createTestCategory,
   createTestRemoteBlog,
   createTestRemotePost,
+  createTestPost,
   cleanDb,
 } from "./helpers.js";
 import { eq } from "drizzle-orm";
@@ -141,6 +143,109 @@ describe("Federation & Sync Security", () => {
       expect(body.text).toContain("🤝 새 Federation 구독자 알림");
       expect(body.text).toContain(cat.name);
       expect(body.text).toContain("https://subscriber.com");
+    });
+  });
+
+  describe("Provider Side: Post View Count Tracking", () => {
+    it("should increment view count and log visit for active subscriber", async () => {
+      const cat = createTestCategory();
+      const post = createTestPost({ categoryId: cat.id, status: "published" });
+
+      const subUrl = "https://reader-blog.com";
+      db.insert(schema.subscribers)
+        .values({
+          id: "sub-view-1",
+          categoryId: cat.id,
+          subscriberUrl: subUrl,
+          callbackUrl: `${subUrl}/webhook`,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+        })
+        .run();
+
+      const res = await app.request(`/api/federation/posts/${post.id}/view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId: "visitor-uuid-123",
+          subscriberUrl: subUrl,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { success: boolean };
+      expect(data.success).toBe(true);
+
+      const updatedPost = db.select().from(schema.posts).where(eq(schema.posts.id, post.id)).get();
+      expect(updatedPost?.viewCount).toBe(1);
+
+      const logs = analyticsDb
+        .select()
+        .from(analyticsSchema.postAccessLogs)
+        .where(eq(analyticsSchema.postAccessLogs.postId, post.id))
+        .all();
+      expect(logs).toHaveLength(1);
+      expect(logs[0]?.referer).toBe(subUrl);
+      expect(logs[0]?.userAgent).toBe("visitor-uuid-123");
+    });
+
+    it("should prevent duplicate view count increments within 24h", async () => {
+      const cat = createTestCategory();
+      const post = createTestPost({ categoryId: cat.id, status: "published" });
+
+      const subUrl = "https://reader-blog.com";
+      db.insert(schema.subscribers)
+        .values({
+          id: "sub-view-2",
+          categoryId: cat.id,
+          subscriberUrl: subUrl,
+          callbackUrl: `${subUrl}/webhook`,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+        })
+        .run();
+
+      // First view
+      await app.request(`/api/federation/posts/${post.id}/view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId: "visitor-uuid-dup", subscriberUrl: subUrl }),
+      });
+
+      // Second view (duplicate)
+      const res2 = await app.request(`/api/federation/posts/${post.id}/view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId: "visitor-uuid-dup", subscriberUrl: subUrl }),
+      });
+
+      expect(res2.status).toBe(200);
+
+      const updatedPost = db.select().from(schema.posts).where(eq(schema.posts.id, post.id)).get();
+      expect(updatedPost?.viewCount).toBe(1); // Still 1
+
+      const logs = analyticsDb
+        .select()
+        .from(analyticsSchema.postAccessLogs)
+        .where(eq(analyticsSchema.postAccessLogs.postId, post.id))
+        .all();
+      expect(logs).toHaveLength(1); // Still 1
+    });
+
+    it("should return 403 for unauthorized subscriber", async () => {
+      const cat = createTestCategory();
+      const post = createTestPost({ categoryId: cat.id, status: "published" });
+
+      const res = await app.request(`/api/federation/posts/${post.id}/view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId: "visitor-uuid-456",
+          subscriberUrl: "https://unknown-blog.com",
+        }),
+      });
+
+      expect(res.status).toBe(403);
     });
   });
 
