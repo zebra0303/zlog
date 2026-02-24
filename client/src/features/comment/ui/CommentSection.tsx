@@ -141,7 +141,7 @@ export function CommentSection({ postId }: { postId: string }) {
         </div>
       ) : showSsoLogin && hasProviders ? (
         <div
-          className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4"
+          className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
           data-print-hide
         >
           <p className="mb-3 text-sm text-[var(--color-text-secondary)]">
@@ -195,7 +195,7 @@ export function CommentSection({ postId }: { postId: string }) {
         />
       ) : showSsoLogin && !hasProviders ? (
         <div
-          className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-4 text-center"
+          className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center"
           data-print-hide
         >
           <p className="text-sm text-[var(--color-text-secondary)]">

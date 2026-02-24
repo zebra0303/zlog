@@ -284,7 +284,7 @@ function PostManager() {
                   {accessLogPopover === post.id && (
                     <div
                       ref={popoverRef}
-                      className="absolute top-full right-0 z-50 mt-1 w-full min-w-[320px] rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] shadow-lg sm:w-auto sm:min-w-[480px]"
+                      className="absolute top-full right-0 z-50 mt-1 w-full min-w-[320px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg sm:w-auto sm:min-w-[480px]"
                     >
                       <div className="flex items-center justify-between gap-2 rounded-t-lg border-b border-[var(--color-border)] px-3 py-2">
                         <div className="flex items-center gap-2">
@@ -501,7 +501,7 @@ function CategoryManager() {
         )}
 
         {isAdding && (
-          <div className="mb-4 rounded-lg border border-[var(--color-primary)] bg-[var(--color-background)] p-4">
+          <div className="mb-4 rounded-lg border border-[var(--color-primary)] bg-[var(--color-surface)] p-4">
             <h3 className="mb-3 text-sm font-medium text-[var(--color-text)]">
               {t("admin_cat_new")}
             </h3>
