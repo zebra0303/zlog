@@ -25,6 +25,7 @@ import {
   Link2,
   Power,
   Activity,
+  ChevronDown,
 } from "lucide-react";
 import {
   Button,
@@ -2279,20 +2280,18 @@ export default function AdminPage() {
       )}
 
       {/* Mobile-only Visitor Stats */}
-      <Card className="lg:hidden">
-        <CardContent className="p-3">
-          <VisitorStats />
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm lg:hidden">
+        <VisitorStats />
+      </div>
 
       {/* Tab navigation — select on mobile, buttons on desktop */}
-      <div className="sm:hidden">
+      <div className="relative sm:hidden">
         <select
           value={activeTab}
           onChange={(e) => {
             handleTabChange(e.target.value as AdminTab);
           }}
-          className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text)]"
+          className="w-full appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 pr-8 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
         >
           {tabs.map((tab) => (
             <option key={tab.key} value={tab.key}>
@@ -2300,6 +2299,9 @@ export default function AdminPage() {
             </option>
           ))}
         </select>
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--color-text-secondary)]">
+          <ChevronDown className="h-4 w-4" />
+        </div>
       </div>
       <div className="hidden gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 sm:flex">
         {tabs.map((tab) => (
