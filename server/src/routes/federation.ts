@@ -184,10 +184,18 @@ federationRoute.post("/subscribe", async (c) => {
       .run();
 
     if (webhookUrl) {
+      const lang =
+        db
+          .select()
+          .from(schema.siteSettings)
+          .where(eq(schema.siteSettings.key, "default_language"))
+          .get()?.value ?? "ko";
+      const isEn = lang === "en";
+
       const lines = [
-        `🤝 Federation 구독 재활성화 알림`,
-        `📂 카테고리: ${cat.name}`,
-        `🌐 구독자 URL: ${body.subscriberUrl}`,
+        isEn ? `🤝 Federation Subscription Reactivated` : `🤝 Federation 구독 재활성화 알림`,
+        isEn ? `📂 Category: ${cat.name}` : `📂 카테고리: ${cat.name}`,
+        isEn ? `🌐 Subscriber URL: ${body.subscriberUrl}` : `🌐 구독자 URL: ${body.subscriberUrl}`,
       ];
       fetch(webhookUrl, {
         method: "POST",
@@ -211,10 +219,18 @@ federationRoute.post("/subscribe", async (c) => {
     .run();
 
   if (webhookUrl) {
+    const lang =
+      db
+        .select()
+        .from(schema.siteSettings)
+        .where(eq(schema.siteSettings.key, "default_language"))
+        .get()?.value ?? "ko";
+    const isEn = lang === "en";
+
     const lines = [
-      `🤝 새 Federation 구독자 알림`,
-      `📂 카테고리: ${cat.name}`,
-      `🌐 구독자 URL: ${body.subscriberUrl}`,
+      isEn ? `🤝 New Federation Subscriber` : `🤝 새 Federation 구독자 알림`,
+      isEn ? `📂 Category: ${cat.name}` : `📂 카테고리: ${cat.name}`,
+      isEn ? `🌐 Subscriber URL: ${body.subscriberUrl}` : `🌐 구독자 URL: ${body.subscriberUrl}`,
     ];
     fetch(webhookUrl, {
       method: "POST",
@@ -540,11 +556,21 @@ federationRoute.post("/local-subscribe", async (c) => {
     .get()?.value;
 
   if (webhookUrl) {
+    const lang =
+      db
+        .select()
+        .from(schema.siteSettings)
+        .where(eq(schema.siteSettings.key, "default_language"))
+        .get()?.value ?? "ko";
+    const isEn = lang === "en";
+
     const lines = [
-      `🚀 외부 Federation 구독 시작 알림`,
-      `🌐 외부 블로그: ${body.remoteSiteUrl}`,
-      `📂 외부 카테고리: ${body.remoteCategoryName ?? body.remoteCategoryId}`,
-      `📁 내 카테고리 매핑: ${localCat.name}`,
+      isEn ? `🚀 External Federation Subscription Started` : `🚀 외부 Federation 구독 시작 알림`,
+      isEn ? `🌐 External Blog: ${body.remoteSiteUrl}` : `🌐 외부 블로그: ${body.remoteSiteUrl}`,
+      isEn
+        ? `📂 External Category: ${body.remoteCategoryName ?? body.remoteCategoryId}`
+        : `📂 외부 카테고리: ${body.remoteCategoryName ?? body.remoteCategoryId}`,
+      isEn ? `📁 My Category Mapping: ${localCat.name}` : `📁 내 카테고리 매핑: ${localCat.name}`,
     ];
     fetch(webhookUrl, {
       method: "POST",

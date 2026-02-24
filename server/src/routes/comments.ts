@@ -61,23 +61,42 @@ function getSlackWebhook(): string {
   );
 }
 
+function getDefaultLanguage(): string {
+  return (
+    db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, "default_language"))
+      .get()?.value ?? "ko"
+  );
+}
+
 async function sendSlackNotification(
   webhookUrl: string,
   post: { title: string; slug: string },
   comment: { authorName: string; content: string; parentId: string | null },
 ): Promise<void> {
+  const lang = getDefaultLanguage();
+  const isEn = lang === "en";
+
   const canonicalUrl =
     db.select().from(schema.siteSettings).where(eq(schema.siteSettings.key, "canonical_url")).get()
       ?.value ?? "";
   const postUrl = canonicalUrl ? `${canonicalUrl}/posts/${post.slug}` : "";
-  const type = comment.parentId ? "↩️ 새 답글" : "💬 새 댓글";
+  const type = comment.parentId
+    ? isEn
+      ? "↩️ New Reply"
+      : "↩️ 새 답글"
+    : isEn
+      ? "💬 New Comment"
+      : "💬 새 댓글";
   const preview =
     comment.content.length > 200 ? comment.content.slice(0, 200) + "…" : comment.content;
   const lines = [
-    `${type} 알림`,
-    `📝 글: ${post.title}`,
-    `👤 작성자: ${comment.authorName}`,
-    `💬 내용: ${preview}`,
+    isEn ? `${type} Notification` : `${type} 알림`,
+    isEn ? `📝 Post: ${post.title}` : `📝 글: ${post.title}`,
+    isEn ? `👤 Author: ${comment.authorName}` : `👤 작성자: ${comment.authorName}`,
+    isEn ? `💬 Content: ${preview}` : `💬 내용: ${preview}`,
     postUrl ? `🔗 ${postUrl}` : "",
   ].filter(Boolean);
 
