@@ -245,7 +245,7 @@ export default function PostDetailPage() {
           />
         </CardContent>
       </Card>
-      <div className="mt-8">
+      <div className="mt-8" data-print-hide>
         <CommentSection postId={post.id} />
       </div>
     </article>

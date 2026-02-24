@@ -104,12 +104,14 @@ export default function RemotePostDetailPage() {
   return (
     <article className="min-w-0 overflow-x-hidden">
       <SEOHead title={post.title} description={post.excerpt ?? undefined} />
-      <Button variant="ghost" size="sm" className="mb-4" asChild>
-        <Link to={backTo}>
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          {t("post_go_list")}
-        </Link>
-      </Button>
+      <div data-print-hide>
+        <Button variant="ghost" size="sm" className="mb-4" asChild>
+          <Link to={backTo}>
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            {t("post_go_list")}
+          </Link>
+        </Button>
+      </div>
       {post.coverImage && (
         <img src={post.coverImage} alt={post.title} className="mb-6 h-auto w-full rounded-xl" />
       )}
@@ -133,6 +135,7 @@ export default function RemotePostDetailPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 inline-flex items-center gap-1 text-sm text-[var(--color-primary)] hover:underline"
+                data-print-hide
               >
                 <ExternalLink className="h-3 w-3" />
                 {t("post_view_original")}
@@ -147,6 +150,7 @@ export default function RemotePostDetailPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="order-1 flex shrink-0 items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-colors hover:bg-[var(--color-background)] sm:order-2 sm:max-w-[220px]"
+              data-print-hide
             >
               {post.remoteBlog.avatarUrl ? (
                 <img
