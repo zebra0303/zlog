@@ -11,18 +11,6 @@ function applyTheme(isDark: boolean) {
   document.documentElement.classList.toggle("dark", isDark);
 }
 
-// Global print listeners to force light mode when printing
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeprint", () => {
-    document.documentElement.classList.remove("dark");
-  });
-  window.addEventListener("afterprint", () => {
-    if (useThemeStore.getState().isDark) {
-      document.documentElement.classList.add("dark");
-    }
-  });
-}
-
 export const useThemeStore = create<ThemeState>((set, get) => ({
   isDark: false,
   toggle: () => {

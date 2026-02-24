@@ -591,10 +591,39 @@ pre code.hljs {
 
 /* ============ Print styles ============ */
 @media print {
+  :root,
+  .dark {
+    --color-background: #ffffff !important;
+    --color-surface: #ffffff !important;
+    --color-text: #000000 !important;
+    --color-text-secondary: #374151 !important;
+    --color-border: #e5e7eb !important;
+  }
+
+  .dark .prose,
+  .prose {
+    --tw-prose-body: #000000 !important;
+    --tw-prose-headings: #000000 !important;
+    --tw-prose-lead: #374151 !important;
+    --tw-prose-links: #000000 !important;
+    --tw-prose-bold: #000000 !important;
+    --tw-prose-counters: #374151 !important;
+    --tw-prose-bullets: #374151 !important;
+    --tw-prose-hr: #e5e7eb !important;
+    --tw-prose-quotes: #000000 !important;
+    --tw-prose-quote-borders: #e5e7eb !important;
+    --tw-prose-captions: #374151 !important;
+    --tw-prose-code: #000000 !important;
+    --tw-prose-pre-code: #000000 !important;
+    --tw-prose-pre-bg: #f3f4f6 !important;
+    --tw-prose-th-borders: #e5e7eb !important;
+    --tw-prose-td-borders: #e5e7eb !important;
+  }
+
   /* Force light colors */
   body {
-    background: #fff !important;
-    color: #000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 
   /* Hide navigation, sidebar, footer, and interactive elements */
