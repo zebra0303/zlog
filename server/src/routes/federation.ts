@@ -549,36 +549,6 @@ federationRoute.post("/local-subscribe", async (c) => {
     })
     .run();
 
-  const webhookUrl = db
-    .select()
-    .from(schema.siteSettings)
-    .where(eq(schema.siteSettings.key, "notification_slack_webhook"))
-    .get()?.value;
-
-  if (webhookUrl) {
-    const lang =
-      db
-        .select()
-        .from(schema.siteSettings)
-        .where(eq(schema.siteSettings.key, "default_language"))
-        .get()?.value ?? "ko";
-    const isEn = lang === "en";
-
-    const lines = [
-      isEn ? `🚀 External Federation Subscription Started` : `🚀 외부 Federation 구독 시작 알림`,
-      isEn ? `🌐 External Blog: ${body.remoteSiteUrl}` : `🌐 외부 블로그: ${body.remoteSiteUrl}`,
-      isEn
-        ? `📂 External Category: ${body.remoteCategoryName ?? body.remoteCategoryId}`
-        : `📂 외부 카테고리: ${body.remoteCategoryName ?? body.remoteCategoryId}`,
-      isEn ? `📁 My Category Mapping: ${localCat.name}` : `📁 내 카테고리 매핑: ${localCat.name}`,
-    ];
-    fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: lines.join("\n") }),
-    }).catch(() => null);
-  }
-
   // Register as subscriber on remote blog (for webhook delivery — local subscription persists on failure)
   try {
     await fetch(`${body.remoteSiteUrl}/api/federation/subscribe`, {
