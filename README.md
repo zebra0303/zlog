@@ -254,6 +254,7 @@ erDiagram
 - **Custom header & footer**: background color, background image, adjustable height
 - **Responsive design**: mobile-optimized with auto-shrinking header on scroll
 - **Glassmorphism** effects on header/footer
+- **Print-Ready**: highly optimized CSS for printing, gracefully hiding interactive elements and forcing clean black-and-white layouts even in dark mode.
 
 ### Internationalization
 
