@@ -5,6 +5,7 @@ import { eq, and, sql, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { verifyToken } from "../middleware/auth.js";
+import { getT } from "../lib/i18n/index.js";
 
 const commentsRoute = new Hono();
 
@@ -77,26 +78,22 @@ async function sendSlackNotification(
   comment: { authorName: string; content: string; parentId: string | null },
 ): Promise<void> {
   const lang = getDefaultLanguage();
-  const isEn = lang === "en";
+  const t = getT(lang);
 
   const canonicalUrl =
     db.select().from(schema.siteSettings).where(eq(schema.siteSettings.key, "canonical_url")).get()
       ?.value ?? "";
   const postUrl = canonicalUrl ? `${canonicalUrl}/posts/${post.slug}` : "";
-  const type = comment.parentId
-    ? isEn
-      ? "↩️ New Reply"
-      : "↩️ 새 답글"
-    : isEn
-      ? "💬 New Comment"
-      : "💬 새 댓글";
+
+  const typeKey = comment.parentId ? "slack_new_reply" : "slack_new_comment";
   const preview =
     comment.content.length > 200 ? comment.content.slice(0, 200) + "…" : comment.content;
+
   const lines = [
-    isEn ? `${type} Notification` : `${type} 알림`,
-    isEn ? `📝 Post: ${post.title}` : `📝 글: ${post.title}`,
-    isEn ? `👤 Author: ${comment.authorName}` : `👤 작성자: ${comment.authorName}`,
-    isEn ? `💬 Content: ${preview}` : `💬 내용: ${preview}`,
+    t(typeKey),
+    t("slack_post", { title: post.title }),
+    t("slack_author", { authorName: comment.authorName }),
+    t("slack_content", { content: preview }),
     postUrl ? `🔗 ${postUrl}` : "",
   ].filter(Boolean);
 

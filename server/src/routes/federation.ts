@@ -5,6 +5,7 @@ import { eq, and, desc, gt, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { fixRemoteUrl, fixRemoteContentUrls, validateRemoteUrl } from "../lib/remoteUrl.js";
+import { getT } from "../lib/i18n/index.js";
 import type { WebhookEvent } from "@zlog/shared";
 
 const federationRoute = new Hono();
@@ -190,12 +191,12 @@ federationRoute.post("/subscribe", async (c) => {
           .from(schema.siteSettings)
           .where(eq(schema.siteSettings.key, "default_language"))
           .get()?.value ?? "ko";
-      const isEn = lang === "en";
+      const t = getT(lang);
 
       const lines = [
-        isEn ? `🤝 Federation Subscription Reactivated` : `🤝 Federation 구독 재활성화 알림`,
-        isEn ? `📂 Category: ${cat.name}` : `📂 카테고리: ${cat.name}`,
-        isEn ? `🌐 Subscriber URL: ${body.subscriberUrl}` : `🌐 구독자 URL: ${body.subscriberUrl}`,
+        t("slack_federation_reactivated"),
+        t("slack_category", { categoryName: cat.name }),
+        t("slack_subscriber_url", { url: body.subscriberUrl }),
       ];
       fetch(webhookUrl, {
         method: "POST",
@@ -225,12 +226,12 @@ federationRoute.post("/subscribe", async (c) => {
         .from(schema.siteSettings)
         .where(eq(schema.siteSettings.key, "default_language"))
         .get()?.value ?? "ko";
-    const isEn = lang === "en";
+    const t = getT(lang);
 
     const lines = [
-      isEn ? `🤝 New Federation Subscriber` : `🤝 새 Federation 구독자 알림`,
-      isEn ? `📂 Category: ${cat.name}` : `📂 카테고리: ${cat.name}`,
-      isEn ? `🌐 Subscriber URL: ${body.subscriberUrl}` : `🌐 구독자 URL: ${body.subscriberUrl}`,
+      t("slack_new_federation_subscriber"),
+      t("slack_category", { categoryName: cat.name }),
+      t("slack_subscriber_url", { url: body.subscriberUrl }),
     ];
     fetch(webhookUrl, {
       method: "POST",
