@@ -85,6 +85,65 @@ describe("Federation & Sync Security", () => {
     });
   });
 
+  describe("Provider Side: Slack Notification", () => {
+    let fetchSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      fetchSpy = vi.fn().mockResolvedValue(new Response("ok", { status: 200 }));
+      vi.stubGlobal("fetch", fetchSpy);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("should send a slack notification when someone subscribes", async () => {
+      const cat = createTestCategory();
+      db.insert(schema.siteSettings)
+        .values({
+          id: "slack-webhook",
+          key: "notification_slack_webhook",
+          value: "https://hooks.slack.com/services/test",
+          updatedAt: new Date().toISOString(),
+        })
+        .onConflictDoUpdate({
+          target: schema.siteSettings.key,
+          set: { value: "https://hooks.slack.com/services/test" },
+        })
+        .run();
+
+      const res = await app.request("/api/federation/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: cat.id,
+          subscriberUrl: "https://subscriber.com",
+          callbackUrl: "https://subscriber.com/webhook",
+        }),
+      });
+
+      expect(res.status).toBe(201);
+
+      await new Promise((r) => setTimeout(r, 50));
+
+      const slackCall = fetchSpy.mock.calls.find(([url]) => {
+        try {
+          const parsed = new URL(typeof url === "string" ? url : "");
+          return parsed.hostname === "hooks.slack.com";
+        } catch {
+          return false;
+        }
+      });
+      expect(slackCall).toBeDefined();
+      if (!slackCall) throw new Error("Expected Slack call not found");
+      const callOpts = slackCall[1] as { body: string };
+      const body = JSON.parse(callOpts.body) as { text: string };
+      expect(body.text).toContain("🤝 새 Federation 구독자 알림");
+      expect(body.text).toContain(cat.name);
+      expect(body.text).toContain("https://subscriber.com");
+    });
+  });
+
   describe("Pull Side: Sync Revocation Handling", () => {
     it("should deactivate local subscription and mark posts unreachable on 403 response", async () => {
       const localCat = createTestCategory();

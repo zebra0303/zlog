@@ -161,6 +161,12 @@ federationRoute.post("/subscribe", async (c) => {
     .get();
   if (!cat) return c.json({ error: "Category not found." }, 404);
 
+  const webhookUrl = db
+    .select()
+    .from(schema.siteSettings)
+    .where(eq(schema.siteSettings.key, "notification_slack_webhook"))
+    .get()?.value;
+
   const existing = db
     .select()
     .from(schema.subscribers)
@@ -176,6 +182,20 @@ federationRoute.post("/subscribe", async (c) => {
       .set({ isActive: true, callbackUrl: body.callbackUrl })
       .where(eq(schema.subscribers.id, existing.id))
       .run();
+
+    if (webhookUrl) {
+      const lines = [
+        `🤝 Federation 구독 재활성화 알림`,
+        `📂 카테고리: ${cat.name}`,
+        `🌐 구독자 URL: ${body.subscriberUrl}`,
+      ];
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: lines.join("\n") }),
+      }).catch(() => null);
+    }
+
     return c.json({ message: "Subscription has been reactivated.", id: existing.id });
   }
 
@@ -189,6 +209,20 @@ federationRoute.post("/subscribe", async (c) => {
       createdAt: new Date().toISOString(),
     })
     .run();
+
+  if (webhookUrl) {
+    const lines = [
+      `🤝 새 Federation 구독자 알림`,
+      `📂 카테고리: ${cat.name}`,
+      `🌐 구독자 URL: ${body.subscriberUrl}`,
+    ];
+    fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: lines.join("\n") }),
+    }).catch(() => null);
+  }
+
   return c.json({ message: "Subscription has been registered.", id }, 201);
 });
 
@@ -498,6 +532,26 @@ federationRoute.post("/local-subscribe", async (c) => {
       createdAt: new Date().toISOString(),
     })
     .run();
+
+  const webhookUrl = db
+    .select()
+    .from(schema.siteSettings)
+    .where(eq(schema.siteSettings.key, "notification_slack_webhook"))
+    .get()?.value;
+
+  if (webhookUrl) {
+    const lines = [
+      `🚀 외부 Federation 구독 시작 알림`,
+      `🌐 외부 블로그: ${body.remoteSiteUrl}`,
+      `📂 외부 카테고리: ${body.remoteCategoryName ?? body.remoteCategoryId}`,
+      `📁 내 카테고리 매핑: ${localCat.name}`,
+    ];
+    fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: lines.join("\n") }),
+    }).catch(() => null);
+  }
 
   // Register as subscriber on remote blog (for webhook delivery — local subscription persists on failure)
   try {
