@@ -86,6 +86,15 @@ export function bootstrap() {
     );
     CREATE INDEX IF NOT EXISTS idx_post_tags_tag ON post_tags(tag_id);
 
+    CREATE TABLE IF NOT EXISTS post_likes (
+      id TEXT PRIMARY KEY,
+      post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      visitor_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE(post_id, visitor_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_post_likes_visitor ON post_likes(visitor_id);
+
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
       post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
