@@ -245,12 +245,22 @@ erDiagram
 - **Configurable modes**: SSO Only, Allow All (SSO + Anonymous), Anonymous Only, Disabled
 - **OAuth login**: GitHub and Google for authenticated commenting
 - **Anonymous comments** with password for edit/delete
-- **Admin moderation**: delete any comment with confirmation
+- **Advanced Pagination**: Root-based pagination with "Load More" for high performance
+- **Federation Comments**: View comments from remote blogs in real-time via server-side proxy
+- **Rich Display**: Support for line breaks and automatic truncation ("Show more") for long comments
+- **Admin moderation**: delete any comment with confirmation; auto-hiding deleted threads without active replies
 - **XSS protection**: plain text only, server-side sanitization
+
+### Engagement
+
+- **Post Likes**: Anonymous "Heart" button for readers to show appreciation
+- **Real-time Updates**: Live sync of like and comment counts without page refresh
+- **In-list Metrics**: Like counts visible in the post list for popular content
 
 ### Appearance
 
 - **Light / Dark theme** toggle with system preference detection
+- **Core Web Vitals**: Optimized LCP with priority image loading for the first post
 - **Custom header & footer**: background color, background image, adjustable height
 - **Responsive design**: mobile-optimized with auto-shrinking header on scroll
 - **Glassmorphism** effects on header/footer
@@ -400,19 +410,20 @@ npm run start
 
 ## Environment Variables
 
-| Variable                | Description                    | Default                 |
-| ----------------------- | ------------------------------ | ----------------------- |
-| `ADMIN_EMAIL`           | Admin login email              | `admin@example.com`     |
-| `ADMIN_PASSWORD`        | Admin login password           | `admin1234`             |
-| `SITE_URL`              | Public URL of your blog        | `http://localhost:3000` |
-| `ADMIN_DISPLAY_NAME`    | Author display name            | `Blog Owner`            |
-| `JWT_SECRET`            | Secret for JWT signing         | `change-me-...`         |
-| `PORT`                  | Server port                    | `3000`                  |
-| `WEBHOOK_SYNC_INTERVAL` | Federation sync interval (min) | `15`                    |
-| `GITHUB_CLIENT_ID`      | GitHub OAuth App Client ID     | —                       |
-| `GITHUB_CLIENT_SECRET`  | GitHub OAuth App Secret        | —                       |
-| `GOOGLE_CLIENT_ID`      | Google OAuth Client ID         | —                       |
-| `GOOGLE_CLIENT_SECRET`  | Google OAuth Client Secret     | —                       |
+| Variable                 | Description                    | Default                 |
+| ------------------------ | ------------------------------ | ----------------------- |
+| `ADMIN_EMAIL`            | Admin login email              | `admin@example.com`     |
+| `ADMIN_PASSWORD`         | Admin login password           | `admin1234`             |
+| `SITE_URL`               | Public URL of your blog        | `http://localhost:3000` |
+| `ADMIN_DISPLAY_NAME`     | Author display name            | `Blog Owner`            |
+| `JWT_SECRET`             | Secret for JWT signing         | `change-me-...`         |
+| `PORT`                   | Server port                    | `3000`                  |
+| `WEBHOOK_SYNC_INTERVAL`  | Federation sync interval (min) | `15`                    |
+| `ALLOW_LOCAL_FEDERATION` | Allow localhost/private IPs    | `false`                 |
+| `GITHUB_CLIENT_ID`       | GitHub OAuth App Client ID     | —                       |
+| `GITHUB_CLIENT_SECRET`   | GitHub OAuth App Secret        | —                       |
+| `GOOGLE_CLIENT_ID`       | Google OAuth Client ID         | —                       |
+| `GOOGLE_CLIENT_SECRET`   | Google OAuth Client Secret     | —                       |
 
 ---
 

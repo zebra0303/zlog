@@ -245,12 +245,22 @@ erDiagram
 - **설정 가능한 모드**: SSO 전용, 전체 허용 (SSO + 익명), 익명 전용, 비활성화
 - **OAuth 로그인**: GitHub, Google을 통한 인증 댓글
 - **익명 댓글**: 비밀번호로 수정/삭제 가능
-- **관리자 중재**: 확인 후 모든 댓글 삭제 가능
+- **고급 페이징**: 대댓글 구조를 유지하는 최상위 댓글 기준 페이징 및 "더보기" UI
+- **연합 댓글 조회**: 원격 블로그의 댓글을 서버 프록시를 통해 실시간으로 조회
+- **풍부한 표현**: 줄바꿈 지원 및 긴 댓글 자동 축약("더 보기" 기능)
+- **관리자 중재**: 모든 댓글 삭제 가능; 유효한 답글이 없는 삭제된 댓글은 자동 숨김
 - **XSS 방지**: 텍스트만 허용, 서버 측 정제
+
+### 사용자 참여 및 반응
+
+- **게시글 좋아요**: 독자들이 익명으로 공감을 표시할 수 있는 "하트" 버튼
+- **실시간 업데이트**: 페이지 새로고침 없이 좋아요 및 댓글 수가 즉시 반영
+- **목록 지표 표시**: 인기 있는 글은 목록에서도 좋아요 수를 한눈에 확인 가능
 
 ### 외관
 
 - **라이트 / 다크 테마** 전환 + 시스템 설정 감지
+- **웹 성능 최적화(Core Web Vitals)**: 첫 번째 이미지 우선 로딩 및 지연 로딩을 통한 LCP 개선
 - **헤더 & 푸터 커스터마이징**: 배경색, 배경 이미지, 높이 조절
 - **반응형 디자인**: 모바일 최적화 + 스크롤 시 헤더 자동 축소
 - **글래스모피즘** 효과 (헤더/푸터)
@@ -400,19 +410,20 @@ npm run start
 
 ## 환경 변수
 
-| 변수                    | 설명                        | 기본값                  |
-| ----------------------- | --------------------------- | ----------------------- |
-| `PORT`                  | 서버 포트                   | `3000`                  |
-| `SITE_URL`              | 블로그 공개 URL             | `http://localhost:3000` |
-| `ADMIN_EMAIL`           | 관리자 로그인 이메일        | `admin@example.com`     |
-| `ADMIN_PASSWORD`        | 관리자 로그인 비밀번호      | `changeme`              |
-| `ADMIN_DISPLAY_NAME`    | 작성자 표시 이름            | `Blog Owner`            |
-| `JWT_SECRET`            | JWT 서명 비밀키             | `please-change-this`    |
-| `WEBHOOK_SYNC_INTERVAL` | Federation 동기화 주기 (분) | `15`                    |
-| `GITHUB_CLIENT_ID`      | GitHub OAuth App Client ID  | —                       |
-| `GITHUB_CLIENT_SECRET`  | GitHub OAuth App Secret     | —                       |
-| `GOOGLE_CLIENT_ID`      | Google OAuth Client ID      | —                       |
-| `GOOGLE_CLIENT_SECRET`  | Google OAuth Client Secret  | —                       |
+| 변수                     | 설명                        | 기본값                  |
+| ------------------------ | --------------------------- | ----------------------- |
+| `PORT`                   | 서버 포트                   | `3000`                  |
+| `SITE_URL`               | 블로그 공개 URL             | `http://localhost:3000` |
+| `ADMIN_EMAIL`            | 관리자 로그인 이메일        | `admin@example.com`     |
+| `ADMIN_PASSWORD`         | 관리자 로그인 비밀번호      | `changeme`              |
+| `ADMIN_DISPLAY_NAME`     | 작성자 표시 이름            | `Blog Owner`            |
+| `JWT_SECRET`             | JWT 서명 비밀키             | `please-change-this`    |
+| `WEBHOOK_SYNC_INTERVAL`  | Federation 동기화 주기 (분) | `15`                    |
+| `ALLOW_LOCAL_FEDERATION` | 로컬/사설 IP 연합 허용 여부 | `false`                 |
+| `GITHUB_CLIENT_ID`       | GitHub OAuth App Client ID  | —                       |
+| `GITHUB_CLIENT_SECRET`   | GitHub OAuth App Secret     | —                       |
+| `GOOGLE_CLIENT_ID`       | Google OAuth Client ID      | —                       |
+| `GOOGLE_CLIENT_SECRET`   | Google OAuth Client Secret  | —                       |
 
 ---
 
