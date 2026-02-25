@@ -54,6 +54,19 @@ function batchLoadCommentCounts(postIds: string[]) {
   return map;
 }
 
+function batchLoadLikeCounts(postIds: string[]) {
+  const map = new Map<string, number>();
+  if (postIds.length === 0) return map;
+  const rows = db
+    .select({ postId: schema.postLikes.postId, count: sql<number>`count(*)` })
+    .from(schema.postLikes)
+    .where(inArray(schema.postLikes.postId, postIds))
+    .groupBy(schema.postLikes.postId)
+    .all();
+  for (const r of rows) map.set(r.postId, r.count);
+  return map;
+}
+
 function batchLoadTags(postIds: string[]) {
   const map = new Map<string, { id: string; name: string; slug: string }[]>();
   if (postIds.length === 0) return map;
@@ -293,6 +306,7 @@ postsRoute.openapi(
     const categoriesMap = batchLoadCategories(allCatIds);
     const tagsMap = batchLoadTags(localIds);
     const commentCountsMap = batchLoadCommentCounts(localIds);
+    const likeCountsMap = batchLoadLikeCounts(localIds);
 
     const remoteBlogsMap = new Map<
       string,
@@ -332,6 +346,7 @@ postsRoute.openapi(
             category: post.categoryId ? (categoriesMap.get(post.categoryId) ?? null) : null,
             tags: tagsMap.get(post.id) ?? [],
             commentCount: commentCountsMap.get(post.id) ?? 0,
+            likeCount: likeCountsMap.get(post.id) ?? 0,
             isRemote: false,
             remoteUri: null,
             remoteBlog: null,
@@ -350,6 +365,7 @@ postsRoute.openapi(
           status: "published" as const,
           viewCount: 0,
           commentCount: 0,
+          likeCount: 0,
           createdAt: rp.remoteCreatedAt,
           updatedAt: rp.remoteUpdatedAt,
           deletedAt: null,
