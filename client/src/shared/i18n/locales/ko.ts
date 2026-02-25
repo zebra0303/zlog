@@ -62,6 +62,7 @@ export const ko: Record<TranslationKeys, string> = {
   post_delete_failed: "삭제에 실패했습니다.",
   post_updated: "수정됨",
   post_view_original: "원본 글 보기",
+  post_like_admin_forbidden: "관리자는 본인 글에 좋아요를 누를 수 없습니다.",
   share: "공유",
   share_copy_link: "링크 복사",
   share_copied: "복사됨!",

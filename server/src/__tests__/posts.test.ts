@@ -607,6 +607,19 @@ describe("Posts API", () => {
       expect(postData.likeCount).toBe(0);
     });
 
+    it("should return 403 when administrator tries to like", async () => {
+      const post = createTestPost();
+      const res = await app.request(`/api/posts/${post.id}/like`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ visitorId: "admin-visitor" }),
+      });
+      expect(res.status).toBe(403);
+    });
+
     it("should return 400 without visitorId", async () => {
       const post = createTestPost();
       const res = await app.request(`/api/posts/${post.id}/like`, {

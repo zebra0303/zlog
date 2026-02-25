@@ -540,6 +540,20 @@ postsRoute.post("/:id/like", async (c) => {
   const postId = c.req.param("id");
   const body = await c.req.json<{ visitorId: string }>();
 
+  // Prevent admin from liking
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+    try {
+      const payload = await verifyToken(token);
+      if (payload) {
+        return c.json({ error: "Administrators cannot like posts." }, 403);
+      }
+    } catch {
+      // Invalid token, ignore and treat as visitor
+    }
+  }
+
   if (!body.visitorId) {
     return c.json({ error: "visitorId is required." }, 400);
   }

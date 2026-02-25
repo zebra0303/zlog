@@ -293,14 +293,17 @@ export default function PostDetailPage() {
           <div className="mt-8 flex justify-center border-t border-[var(--color-border)] pt-6">
             <button
               onClick={handleLike}
-              disabled={isLikeSubmitting}
-              className={`group flex items-center gap-2 rounded-full border-2 px-4 py-1.5 transition-all active:scale-95 ${
-                isLiked
-                  ? "border-[var(--color-accent)] text-[var(--color-accent)] shadow-sm"
-                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              disabled={isLikeSubmitting || isAuthenticated}
+              title={isAuthenticated ? t("post_like_admin_forbidden") : ""}
+              className={`group flex items-center gap-2 rounded-full border-2 px-4 py-1.5 transition-all ${
+                isAuthenticated
+                  ? "cursor-not-allowed border-[var(--color-border)] opacity-50"
+                  : isLiked
+                    ? "border-[var(--color-accent)] text-[var(--color-accent)] shadow-sm active:scale-95"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] active:scale-95"
               }`}
               style={
-                isLiked
+                !isAuthenticated && isLiked
                   ? { backgroundColor: "color-mix(in srgb, var(--color-accent), transparent 92%)" }
                   : {}
               }

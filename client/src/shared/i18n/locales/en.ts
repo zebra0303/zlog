@@ -60,6 +60,7 @@ export const en = {
   post_delete_failed: "Failed to delete the post.",
   post_updated: "Updated",
   post_view_original: "View original post",
+  post_like_admin_forbidden: "Administrators cannot like their own posts.",
   share: "Share",
   share_copy_link: "Copy link",
   share_copied: "Copied!",
