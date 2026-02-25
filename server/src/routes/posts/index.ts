@@ -490,7 +490,64 @@ postsRoute.get("/:param", async (c) => {
       .where(and(eq(schema.comments.postId, post.id), isNull(schema.comments.deletedAt)))
       .get()?.count ?? 0;
 
-  return c.json({ ...post, viewCount, category, tags: tagRows, commentCount });
+  // Liked info
+  const visitorId = c.req.query("visitorId") ?? "";
+  const likeCount =
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.postLikes)
+      .where(eq(schema.postLikes.postId, post.id))
+      .get()?.count ?? 0;
+
+  let isLikedByMe = false;
+  if (visitorId) {
+    const existing = db
+      .select()
+      .from(schema.postLikes)
+      .where(and(eq(schema.postLikes.postId, post.id), eq(schema.postLikes.visitorId, visitorId)))
+      .get();
+    isLikedByMe = !!existing;
+  }
+
+  return c.json({
+    ...post,
+    viewCount,
+    category,
+    tags: tagRows,
+    commentCount,
+    likeCount,
+    isLikedByMe,
+  });
+});
+
+postsRoute.post("/:id/like", async (c) => {
+  const postId = c.req.param("id");
+  const body = await c.req.json<{ visitorId: string }>();
+
+  if (!body.visitorId) {
+    return c.json({ error: "visitorId is required." }, 400);
+  }
+
+  const existing = db
+    .select()
+    .from(schema.postLikes)
+    .where(and(eq(schema.postLikes.postId, postId), eq(schema.postLikes.visitorId, body.visitorId)))
+    .get();
+
+  if (existing) {
+    db.delete(schema.postLikes).where(eq(schema.postLikes.id, existing.id)).run();
+    return c.json({ liked: false });
+  } else {
+    db.insert(schema.postLikes)
+      .values({
+        id: generateId(),
+        postId,
+        visitorId: body.visitorId,
+        createdAt: new Date().toISOString(),
+      })
+      .run();
+    return c.json({ liked: true });
+  }
 });
 
 postsRoute.post("/", authMiddleware, async (c) => {

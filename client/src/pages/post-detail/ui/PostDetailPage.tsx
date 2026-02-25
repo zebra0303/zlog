@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useLocation } from "react-router";
 import {
   Calendar,
@@ -11,10 +11,12 @@ import {
   Link2,
   Check,
   MessageCircle,
+  Heart,
 } from "lucide-react";
 import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
+import { getVisitorId } from "@/shared/lib/visitorId";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
 import { CommentSection } from "@/features/comment/ui/CommentSection";
@@ -28,20 +30,29 @@ export default function PostDetailPage() {
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
   const [post, setPost] = useState<PostWithCategory | null>(null);
+  const [localCommentCount, setLocalCommentCount] = useState(0);
+  const [localLikeCount, setLocalLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const referrer = document.referrer;
     void api
-      .get<PostWithCategory>(`/posts/${slug}`, referrer ? { "X-Referrer": referrer } : undefined)
+      .get<PostWithCategory>(
+        `/posts/${slug}?visitorId=${getVisitorId()}`,
+        referrer ? { "X-Referrer": referrer } : undefined,
+      )
       .then(async (data) => {
         setPost(data);
+        setLocalCommentCount(data.commentCount);
+        setLocalLikeCount(data.likeCount);
+        setIsLiked(!!data.isLikedByMe);
         setHtmlContent(await parseMarkdown(data.content));
         setIsLoading(false);
       })
@@ -49,7 +60,7 @@ export default function PostDetailPage() {
         setError(err instanceof Error ? err.message : "Failed to load post");
         setIsLoading(false);
       });
-  }, [slug]);
+  }, [slug, t]);
 
   const handleDelete = async () => {
     if (!post || !confirm(t("post_confirm_delete"))) return;
@@ -58,6 +69,33 @@ export default function PostDetailPage() {
       window.location.href = "/";
     } catch {
       alert(t("post_delete_failed"));
+    }
+  };
+
+  const handleCommentCountChange = useCallback((delta: number) => {
+    setLocalCommentCount((prev) => Math.max(0, prev + delta));
+  }, []);
+
+  const handleLike = async () => {
+    if (!post || isLikeSubmitting) return;
+    setIsLikeSubmitting(true);
+
+    // Optimistic update
+    const prevLiked = isLiked;
+    setIsLiked(!prevLiked);
+    setLocalLikeCount((prev) => (prevLiked ? prev - 1 : prev + 1));
+
+    try {
+      const res = await api.post<{ liked: boolean }>(`/posts/${post.id}/like`, {
+        visitorId: getVisitorId(),
+      });
+      setIsLiked(res.liked);
+    } catch {
+      // Revert on error
+      setIsLiked(prevLiked);
+      setLocalLikeCount((prev) => (prevLiked ? prev + 1 : prev - 1));
+    } finally {
+      setIsLikeSubmitting(false);
     }
   };
 
@@ -200,10 +238,18 @@ export default function PostDetailPage() {
             <Eye className="h-4 w-4" />
             {post.viewCount.toLocaleString()}
           </span>
-          {post.commentCount > 0 && (
+          {localCommentCount > 0 && (
             <span className="flex items-center gap-1">
               <MessageCircle className="h-4 w-4" />
-              {post.commentCount.toLocaleString()}
+              {localCommentCount.toLocaleString()}
+            </span>
+          )}
+          {localLikeCount > 0 && (
+            <span className="flex items-center gap-1">
+              <Heart
+                className={`h-4 w-4 ${isLiked ? "fill-[var(--color-accent)] text-[var(--color-accent)]" : ""}`}
+              />
+              {localLikeCount.toLocaleString()}
             </span>
           )}
           {post.tags.map((tag) => {
@@ -243,10 +289,30 @@ export default function PostDetailPage() {
             className="prose dark:prose-invert md:prose-lg max-w-none"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
+
+          <div className="mt-8 flex justify-center border-t border-[var(--color-border)] pt-6">
+            <button
+              onClick={handleLike}
+              disabled={isLikeSubmitting}
+              className={`group flex items-center gap-2 rounded-full border-2 px-4 py-1.5 transition-all active:scale-95 ${
+                isLiked
+                  ? "border-[var(--color-accent)] text-[var(--color-accent)] shadow-sm"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              }`}
+              style={
+                isLiked
+                  ? { backgroundColor: "color-mix(in srgb, var(--color-accent), transparent 92%)" }
+                  : {}
+              }
+            >
+              <Heart className={`h-5 w-5 transition-colors ${isLiked ? "fill-current" : ""}`} />
+              <span className="text-sm font-bold">{localLikeCount.toLocaleString()}</span>
+            </button>
+          </div>
         </CardContent>
       </Card>
       <div className="mt-8" data-print-hide>
-        <CommentSection postId={post.id} />
+        <CommentSection postId={post.id} onCountChange={handleCommentCountChange} />
       </div>
     </article>
   );

@@ -147,6 +147,8 @@ export const ko: Record<TranslationKeys, string> = {
   // Comments
   comment_title: "댓글",
   comment_no_comments: "아직 댓글이 없습니다.",
+  comment_show_more: "더 보기",
+  comment_show_less: "접기",
   comment_placeholder: "댓글을 입력하세요...",
   comment_name_placeholder: "이름",
   comment_email_placeholder: "이메일",
@@ -216,6 +218,7 @@ export const ko: Record<TranslationKeys, string> = {
   admin_display_title: "표시 설정",
   admin_display_per_page: "페이지당 게시글 수",
   admin_display_lazy_load: "이미지 Lazy Loading",
+  admin_comment_per_page: "페이지당 댓글 수",
   admin_comment_mode: "댓글 모드",
   admin_comment_mode_sso: "SSO 로그인만 허용",
   admin_comment_mode_all: "모두 허용 (SSO + 익명)",

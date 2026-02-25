@@ -15,6 +15,7 @@ import {
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
+import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
 import type { CategoryWithStats, PostWithCategory, PaginatedResponse } from "@zlog/shared";
 
@@ -145,6 +146,7 @@ export default function CategoryDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSubscribe, setShowSubscribe] = useState(false);
   const { isAuthenticated } = useAuthStore();
+  const { lazy_load_images } = useSiteSettingsStore((s) => s.settings);
   const { t } = useI18n();
 
   useEffect(() => {
@@ -271,8 +273,12 @@ export default function CategoryDetailPage() {
       ) : posts && posts.items.length > 0 ? (
         <>
           <div className="flex flex-col gap-4">
-            {posts.items.map((p) => (
-              <PostCard key={p.id} post={p} />
+            {posts.items.map((p, index) => (
+              <PostCard
+                key={p.id}
+                post={p}
+                priority={lazy_load_images === "false" || index === 0}
+              />
             ))}
           </div>
           <div className="mt-8">

@@ -74,6 +74,8 @@ export interface PostWithCategory extends Post {
   category: Pick<Category, "id" | "name" | "slug"> | null;
   tags: Pick<Tag, "id" | "name" | "slug">[];
   commentCount: number;
+  likeCount: number;
+  isLikedByMe?: boolean;
 }
 
 // ============ Tag ============
@@ -308,6 +310,7 @@ export interface UpdateSocialLinksRequest {
 export interface SiteSettingsMap {
   posts_per_page: string;
   lazy_load_images: string;
+  comments_per_page: string;
   blog_title: string;
   seo_description: string;
   seo_og_image: string;

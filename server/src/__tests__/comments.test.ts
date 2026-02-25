@@ -37,8 +37,8 @@ describe("Comments API", () => {
       const post = createTestPost();
       const res = await app.request(`/api/posts/${post.id}/comments`);
       expect(res.status).toBe(200);
-      const data = (await res.json()) as unknown[];
-      expect(data).toEqual([]);
+      const data = (await res.json()) as { items: unknown[] };
+      expect(data.items).toEqual([]);
     });
 
     it("should return comment tree structure", async () => {
@@ -47,9 +47,9 @@ describe("Comments API", () => {
       createTestComment(post.id, { authorName: "Reply", parentId: parent.id });
 
       const res = await app.request(`/api/posts/${post.id}/comments`);
-      const data = (await res.json()) as { authorName: string; replies: unknown[] }[];
-      expect(data).toHaveLength(1);
-      const first = data[0];
+      const data = (await res.json()) as { items: { authorName: string; replies: unknown[] }[] };
+      expect(data.items).toHaveLength(1);
+      const first = data.items[0];
       expect(first).toBeDefined();
       expect(first?.authorName).toBe("Parent");
       expect(first?.replies).toHaveLength(1);

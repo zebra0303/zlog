@@ -7,7 +7,12 @@ import { useI18n } from "@/shared/i18n";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useAuthStore } from "@/features/auth/model/store";
 import { getVisitorId } from "@/shared/lib/visitorId";
-import type { CommentWithReplies } from "@zlog/shared";
+import type { CommentWithReplies, PaginatedResponse } from "@zlog/shared";
+
+function hasVisibleComments(comment: CommentWithReplies): boolean {
+  if (!comment.deletedAt) return true;
+  return comment.replies.some(hasVisibleComments);
+}
 
 interface CommenterInfo {
   commenterId: string;
@@ -42,9 +47,17 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-export function CommentSection({ postId }: { postId: string }) {
+export function CommentSection({
+  postId,
+  onCountChange,
+}: {
+  postId: string;
+  onCountChange?: (delta: number) => void;
+}) {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [providers, setProviders] = useState<{ github: boolean; google: boolean }>({
     github: false,
     google: false,
@@ -54,20 +67,33 @@ export function CommentSection({ postId }: { postId: string }) {
   const commentMode = useSiteSettingsStore((s) => s.settings.comment_mode) ?? "sso_only";
   const isAdmin = useAuthStore((s) => s.isAuthenticated);
 
-  const fetchComments = useCallback(() => {
-    void api
-      .get<CommentWithReplies[]>(`/posts/${postId}/comments?visitorId=${getVisitorId()}`)
-      .then((data) => {
-        setComments(data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setIsLoading(false);
-      });
-  }, [postId]);
+  const fetchComments = useCallback(
+    (currentPage = 1, isRefresh = false) => {
+      void api
+        .get<PaginatedResponse<CommentWithReplies> | CommentWithReplies[]>(
+          `/posts/${postId}/comments?visitorId=${getVisitorId()}&page=${currentPage}`,
+        )
+        .then((data) => {
+          if (Array.isArray(data)) {
+            // Backward compatibility
+            setComments(data);
+            setHasMore(false);
+          } else {
+            setComments((prev) => (isRefresh ? data.items : [...prev, ...data.items]));
+            setHasMore(data.page < data.totalPages);
+            setPage(data.page);
+          }
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
+    },
+    [postId],
+  );
 
   useEffect(() => {
-    fetchComments();
+    fetchComments(1, true);
   }, [fetchComments]);
   useEffect(() => {
     void api
@@ -182,16 +208,22 @@ export function CommentSection({ postId }: { postId: string }) {
       {showSsoLogin && commenter ? (
         <CommentForm
           postId={postId}
-          onSuccess={fetchComments}
+          onSuccess={() => {
+            fetchComments(1, true);
+          }}
           commenter={commenter}
           allowAnonymous={false}
+          onCountChange={onCountChange}
         />
       ) : allowAnonymous ? (
         <CommentForm
           postId={postId}
-          onSuccess={fetchComments}
+          onSuccess={() => {
+            fetchComments(1, true);
+          }}
           commenter={null}
           allowAnonymous={true}
+          onCountChange={onCountChange}
         />
       ) : showSsoLogin && !hasProviders ? (
         <div
@@ -205,23 +237,39 @@ export function CommentSection({ postId }: { postId: string }) {
       ) : null}
 
       <div className="mt-6 flex flex-col gap-4">
-        {comments.map((c) => (
+        {comments.filter(hasVisibleComments).map((c) => (
           <CommentThread
             key={c.id}
             comment={c}
             postId={postId}
-            onRefresh={fetchComments}
+            onRefresh={() => {
+              fetchComments(1, true);
+            }}
             depth={0}
             commenter={commenter}
             allowAnonymous={allowAnonymous}
             isAdmin={isAdmin}
+            onCountChange={onCountChange}
           />
         ))}
       </div>
-      {!isLoading && comments.length === 0 && (
+      {!isLoading && comments.filter(hasVisibleComments).length === 0 && (
         <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">
           {t("comment_no_comments")}
         </p>
+      )}
+      {hasMore && (
+        <div className="mt-6 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => {
+              fetchComments(page + 1, false);
+            }}
+            disabled={isLoading}
+          >
+            {isLoading ? "..." : t("comment_load_more") || "더보기"}
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -234,6 +282,7 @@ function CommentForm({
   onCancel,
   commenter,
   allowAnonymous,
+  onCountChange,
 }: {
   postId: string;
   parentId?: string;
@@ -241,6 +290,7 @@ function CommentForm({
   onCancel?: () => void;
   commenter: CommenterInfo | null;
   allowAnonymous: boolean;
+  onCountChange?: (delta: number) => void;
 }) {
   const [content, setContent] = useState("");
   const [anonName, setAnonName] = useState("");
@@ -311,6 +361,7 @@ function CommentForm({
         setAnonEmail("");
         setAnonPassword("");
       }
+      onCountChange?.(1);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("comment_write_failed"));
@@ -396,6 +447,49 @@ function CommentForm({
   );
 }
 
+function CommentContent({ content, isDeleted }: { content: string; isDeleted: boolean }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { t } = useI18n();
+  const maxLength = 300;
+  const maxLines = 5;
+
+  const lines = content.split("\n");
+  const needsExpansion = content.length > maxLength || lines.length > maxLines;
+
+  let displayContent = content;
+  if (needsExpansion && !isExpanded) {
+    if (lines.length > maxLines) {
+      displayContent = lines.slice(0, maxLines).join("\n");
+      if (displayContent.length > maxLength) {
+        displayContent = displayContent.slice(0, maxLength);
+      }
+    } else {
+      displayContent = content.slice(0, maxLength);
+    }
+  }
+
+  return (
+    <div className="mt-1">
+      <p
+        className={`text-sm break-words whitespace-pre-wrap ${isDeleted ? "text-[var(--color-text-secondary)] italic" : "text-[var(--color-text)]"}`}
+      >
+        {displayContent}
+        {needsExpansion && !isExpanded && "..."}
+      </p>
+      {needsExpansion && (
+        <button
+          onClick={() => {
+            setIsExpanded(!isExpanded);
+          }}
+          className="mt-1 text-xs text-[var(--color-primary)] hover:underline focus:outline-none"
+        >
+          {isExpanded ? t("comment_show_less") || "접기" : t("comment_show_more") || "더 보기"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function CommentThread({
   comment,
   postId,
@@ -404,6 +498,7 @@ function CommentThread({
   commenter,
   allowAnonymous,
   isAdmin,
+  onCountChange,
 }: {
   comment: CommentWithReplies;
   postId: string;
@@ -412,6 +507,7 @@ function CommentThread({
   commenter: CommenterInfo | null;
   allowAnonymous: boolean;
   isAdmin: boolean;
+  onCountChange?: (delta: number) => void;
 }) {
   const [showReply, setShowReply] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -475,6 +571,7 @@ function CommentThread({
 
     try {
       await api.delete(`/comments/${comment.id}`, payload);
+      onCountChange?.(-1);
       onRefresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : t("comment_edit_wrong_password"));
@@ -575,11 +672,7 @@ function CommentThread({
               </div>
             </div>
           ) : (
-            <p
-              className={`mt-1 text-sm ${isDeleted ? "text-[var(--color-text-secondary)] italic" : "text-[var(--color-text)]"}`}
-            >
-              {comment.content}
-            </p>
+            <CommentContent content={comment.content} isDeleted={isDeleted} />
           )}
 
           {!isDeleted && !isEditing && (
@@ -665,14 +758,15 @@ function CommentThread({
                 }}
                 commenter={commenter}
                 allowAnonymous={allowAnonymous}
+                onCountChange={onCountChange}
               />
             </div>
           )}
         </div>
       </div>
-      {comment.replies.length > 0 && (
+      {comment.replies.filter(hasVisibleComments).length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
-          {comment.replies.map((r) => (
+          {comment.replies.filter(hasVisibleComments).map((r) => (
             <CommentThread
               key={r.id}
               comment={r}
@@ -682,6 +776,7 @@ function CommentThread({
               commenter={commenter}
               allowAnonymous={allowAnonymous}
               isAdmin={isAdmin}
+              onCountChange={onCountChange}
             />
           ))}
         </div>

@@ -143,6 +143,8 @@ export const en = {
   // Comments
   comment_title: "Comments",
   comment_no_comments: "No comments yet.",
+  comment_show_more: "Show more",
+  comment_show_less: "Show less",
   comment_placeholder: "Write a comment...",
   comment_name_placeholder: "Name",
   comment_email_placeholder: "Email",
@@ -212,6 +214,7 @@ export const en = {
   admin_display_title: "Display Settings",
   admin_display_per_page: "Posts per page",
   admin_display_lazy_load: "Image Lazy Loading",
+  admin_comment_per_page: "Comments per page",
   admin_comment_mode: "Comment Mode",
   admin_comment_mode_sso: "SSO Login Only",
   admin_comment_mode_all: "Allow All (SSO + Anonymous)",

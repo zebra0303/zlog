@@ -66,3 +66,20 @@ export const postTags = sqliteTable(
     index("idx_post_tags_tag").on(table.tagId),
   ],
 );
+
+// ============ post_likes ============
+export const postLikes = sqliteTable(
+  "post_likes",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    visitorId: text("visitor_id").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_post_likes_unique").on(table.postId, table.visitorId),
+    index("idx_post_likes_visitor").on(table.visitorId),
+  ],
+);

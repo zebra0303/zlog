@@ -7,6 +7,7 @@ import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
 import { Input, Button, Pagination, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
+import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
 import type { PostWithCategory, CategoryWithStats, PaginatedResponse } from "@zlog/shared";
 
@@ -132,6 +133,7 @@ export default function HomePage() {
   const [showSubscribe, setShowSubscribe] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isAuthenticated } = useAuthStore();
+  const { lazy_load_images } = useSiteSettingsStore((s) => s.settings);
   const { t } = useI18n();
 
   // Queries
@@ -348,8 +350,12 @@ export default function HomePage() {
       ) : posts && posts.items.length > 0 ? (
         <>
           <div className="flex flex-col gap-4">
-            {posts.items.map((post) => (
-              <PostCard key={post.id} post={post} />
+            {posts.items.map((post, index) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                priority={lazy_load_images === "false" || index === 0}
+              />
             ))}
           </div>
           <div className="mt-8">

@@ -6,6 +6,7 @@ import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useI18n } from "@/shared/i18n";
+import { RemoteCommentList } from "./RemoteCommentList";
 
 import { getVisitorId } from "@/shared/lib/visitorId";
 
@@ -187,6 +188,8 @@ export default function RemotePostDetailPage() {
           />
         </CardContent>
       </Card>
+
+      <RemoteCommentList remotePostId={post.id} />
     </article>
   );
 }

@@ -793,6 +793,50 @@ federationRoute.get("/remote-posts/:id", async (c) => {
   });
 });
 
+// ============ Proxy: fetch remote comments ============
+federationRoute.get("/remote-posts/:id/comments", async (c) => {
+  const id = c.req.param("id");
+  const pageStr = c.req.query("page");
+  const rp = db.select().from(schema.remotePosts).where(eq(schema.remotePosts.id, id)).get();
+  if (!rp) return c.json({ error: "Post not found." }, 404);
+
+  const remoteBlog = db
+    .select()
+    .from(schema.remoteBlogs)
+    .where(eq(schema.remoteBlogs.id, rp.remoteBlogId))
+    .get();
+
+  if (!remoteBlog || !rp.remoteUri) {
+    return c.json({ error: "Remote blog information missing." }, 404);
+  }
+
+  // remoteUri format: "https://blog.example.com/posts/{postId}"
+  const uriParts = rp.remoteUri.split("/posts/");
+  const remotePostId = uriParts.length > 1 ? uriParts[uriParts.length - 1] : null;
+
+  if (!remotePostId) {
+    return c.json({ error: "Invalid remote URI." }, 400);
+  }
+
+  try {
+    const url = new URL(`${remoteBlog.siteUrl}/api/posts/${remotePostId}/comments`);
+    if (pageStr) url.searchParams.set("page", pageStr);
+
+    const res = await fetch(url.toString(), {
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!res.ok) {
+      return c.json({ error: `Remote server returned ${res.status}` }, 502);
+    }
+
+    const comments = await res.json();
+    return c.json(comments);
+  } catch {
+    return c.json({ error: "Failed to fetch remote comments." }, 502);
+  }
+});
+
 // ============ Admin: proxy fetch remote blog categories ============
 federationRoute.get("/remote-categories", authMiddleware, async (c) => {
   const url = c.req.query("url");

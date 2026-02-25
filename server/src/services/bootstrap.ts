@@ -342,6 +342,7 @@ export function bootstrap() {
   const defaultSettings: Record<string, string> = {
     posts_per_page: "10",
     lazy_load_images: "true",
+    comments_per_page: "50",
     blog_title: process.env.ADMIN_DISPLAY_NAME
       ? `${process.env.ADMIN_DISPLAY_NAME}'s Blog`
       : "My zlog Blog",

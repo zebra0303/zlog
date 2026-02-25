@@ -2358,24 +2358,6 @@ export default function AdminPage() {
                 {t("admin_display_title")}
               </h2>
               <div className="flex flex-col gap-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                    {t("admin_display_per_page")}
-                  </label>
-                  <select
-                    value={settings.posts_per_page ?? "10"}
-                    onChange={(e) => {
-                      update("posts_per_page", e.target.value);
-                    }}
-                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-                  >
-                    {[3, 5, 10, 15, 20, 30].map((n) => (
-                      <option key={n} value={String(n)}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-[var(--color-text)]">
@@ -2397,6 +2379,42 @@ export default function AdminPage() {
                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${settings.lazy_load_images === "true" ? "left-[22px]" : "left-0.5"}`}
                     />
                   </button>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_display_per_page")}
+                  </label>
+                  <select
+                    value={settings.posts_per_page ?? "10"}
+                    onChange={(e) => {
+                      update("posts_per_page", e.target.value);
+                    }}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                  >
+                    {[3, 5, 10, 15, 20, 30].map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
+                    {t("admin_comment_per_page")}
+                  </label>
+                  <select
+                    value={settings.comments_per_page ?? "50"}
+                    onChange={(e) => {
+                      update("comments_per_page", e.target.value);
+                    }}
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                  >
+                    {[10, 20, 50, 100].map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">

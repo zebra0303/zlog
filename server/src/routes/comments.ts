@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray, isNull, asc, desc } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { verifyToken } from "../middleware/auth.js";
@@ -146,12 +146,76 @@ function buildCommentTree(
 commentsRoute.get("/posts/:postId/comments", (c) => {
   const postId = c.req.param("postId");
   const visitorId = c.req.query("visitorId") ?? "";
+  const pageStr = c.req.query("page");
+  const page = pageStr ? Math.max(1, parseInt(pageStr, 10)) : 1;
 
-  const allComments = db
+  const perPageSetting = db
+    .select()
+    .from(schema.siteSettings)
+    .where(eq(schema.siteSettings.key, "comments_per_page"))
+    .get();
+  const perPage = parseInt(perPageSetting?.value ?? "50", 10) || 50;
+
+  // 1. Get total root comments
+  const countResult = db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.comments)
+    .where(and(eq(schema.comments.postId, postId), isNull(schema.comments.parentId)))
+    .get();
+  const total = countResult?.count ?? 0;
+  const totalPages = Math.ceil(total / perPage);
+
+  // 2. Fetch root comments for the current page
+  const rootComments = db
     .select()
     .from(schema.comments)
-    .where(eq(schema.comments.postId, postId))
+    .where(and(eq(schema.comments.postId, postId), isNull(schema.comments.parentId)))
+    .orderBy(desc(schema.comments.createdAt))
+    .limit(perPage)
+    .offset((page - 1) * perPage)
     .all();
+
+  const allComments = [...rootComments];
+
+  // 3. Fetch descendants level by level
+  if (rootComments.length > 0) {
+    const rootIds = rootComments.map((c) => c.id);
+    const level1 = db
+      .select()
+      .from(schema.comments)
+      .where(and(eq(schema.comments.postId, postId), inArray(schema.comments.parentId, rootIds)))
+      .orderBy(asc(schema.comments.createdAt))
+      .all();
+
+    if (level1.length > 0) {
+      allComments.push(...level1);
+      const level1Ids = level1.map((c) => c.id);
+      const level2 = db
+        .select()
+        .from(schema.comments)
+        .where(
+          and(eq(schema.comments.postId, postId), inArray(schema.comments.parentId, level1Ids)),
+        )
+        .orderBy(asc(schema.comments.createdAt))
+        .all();
+
+      if (level2.length > 0) {
+        allComments.push(...level2);
+        const level2Ids = level2.map((c) => c.id);
+        const level3 = db
+          .select()
+          .from(schema.comments)
+          .where(
+            and(eq(schema.comments.postId, postId), inArray(schema.comments.parentId, level2Ids)),
+          )
+          .orderBy(asc(schema.comments.createdAt))
+          .all();
+        if (level3.length > 0) {
+          allComments.push(...level3);
+        }
+      }
+    }
+  }
 
   const commentIds = allComments.map((c) => c.id);
 
@@ -193,7 +257,14 @@ commentsRoute.get("/posts/:postId/comments", (c) => {
   }));
 
   const tree = buildCommentTree(commentsWithLikes);
-  return c.json(tree);
+
+  return c.json({
+    items: tree,
+    total,
+    page,
+    perPage,
+    totalPages,
+  });
 });
 
 // ==================== POST create comment ====================

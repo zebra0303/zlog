@@ -16,9 +16,10 @@ interface PostCardProps {
       avatarUrl: string | null;
     } | null;
   };
+  priority?: boolean;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, priority = false }: PostCardProps) {
   const linkTo = post.isRemote ? `/remote-posts/${post.id}` : `/posts/${post.slug}`;
   const location = useLocation();
   const { t } = useI18n();
@@ -27,13 +28,18 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
-      <Link to={linkTo} state={{ from: location.pathname + location.search }}>
+      <Link
+        to={linkTo}
+        state={{ from: location.pathname + location.search }}
+        className="block rounded-t-lg focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)] focus-visible:outline-none"
+      >
         {post.coverImage && (
           <LazyImage
             src={post.coverImage}
             alt={post.title}
             className="h-auto w-full"
             objectFit="contain"
+            priority={priority}
           />
         )}
         <CardContent className={post.coverImage ? "pt-4" : "pt-6"}>
