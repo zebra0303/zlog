@@ -53,29 +53,32 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
   }
 
   const hostname = parsed.hostname;
+  const allowLocal = process.env.ALLOW_LOCAL_FEDERATION === "true";
 
-  // Block localhost and loopback
-  if (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "::1" ||
-    hostname === "[::1]"
-  ) {
-    throw new Error("ERR_LOCALHOST_FORBIDDEN");
+  if (!allowLocal) {
+    // Block localhost and loopback
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      hostname === "[::1]"
+    ) {
+      throw new Error("ERR_LOCALHOST_FORBIDDEN");
+    }
+
+    // Block private IP ranges (IPv4)
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    if (
+      hostname.startsWith("10.") ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("169.254.") ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+    ) {
+      throw new Error("ERR_PRIVATE_IP_FORBIDDEN");
+    }
   }
 
-  // Block private IP ranges (IPv4)
-  // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-  if (
-    hostname.startsWith("10.") ||
-    hostname.startsWith("192.168.") ||
-    hostname.startsWith("169.254.") ||
-    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-  ) {
-    throw new Error("ERR_PRIVATE_IP_FORBIDDEN");
-  }
-
-  // Check against self
+  // Check against self (loop prevention)
   if (mySiteUrl) {
     let myParsed: URL | null = null;
     try {
