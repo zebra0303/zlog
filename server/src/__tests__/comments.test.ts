@@ -54,6 +54,57 @@ describe("Comments API", () => {
       expect(first?.authorName).toBe("Parent");
       expect(first?.replies).toHaveLength(1);
     });
+
+    it("should return paginated root comments in descending order", async () => {
+      const post = createTestPost();
+      // Create 3 root comments with different times
+      for (let i = 1; i <= 3; i++) {
+        db.insert(schema.comments)
+          .values({
+            id: `c-${i}`,
+            postId: post.id,
+            authorName: `User ${i}`,
+            authorEmail: `user${i}@test.com`,
+            content: `Content ${i}`,
+            createdAt: new Date(2025, 0, i).toISOString(),
+            updatedAt: new Date(2025, 0, i).toISOString(),
+          })
+          .run();
+      }
+
+      // Set comments_per_page to 2
+      db.insert(schema.siteSettings)
+        .values({
+          id: "cpp-setting",
+          key: "comments_per_page",
+          value: "2",
+          updatedAt: new Date().toISOString(),
+        })
+        .onConflictDoUpdate({
+          target: schema.siteSettings.key,
+          set: { value: "2" },
+        })
+        .run();
+
+      // Page 1 should have 2 newest comments (User 3, User 2)
+      const res = await app.request(`/api/posts/${post.id}/comments?page=1`);
+      const data = (await res.json()) as {
+        items: { authorName: string }[];
+        total: number;
+        totalPages: number;
+      };
+      expect(data.total).toBe(3);
+      expect(data.totalPages).toBe(2);
+      expect(data.items).toHaveLength(2);
+      expect(data.items[0]?.authorName).toBe("User 3");
+      expect(data.items[1]?.authorName).toBe("User 2");
+
+      // Reset setting
+      db.update(schema.siteSettings)
+        .set({ value: "50" })
+        .where(eq(schema.siteSettings.key, "comments_per_page"))
+        .run();
+    });
   });
 
   describe("POST /api/posts/:postId/comments", () => {

@@ -561,4 +561,60 @@ describe("Posts API", () => {
       expect(tags).toContain("cherry");
     });
   });
+
+  describe("POST /api/posts/:id/like", () => {
+    it("should toggle like on", async () => {
+      const post = createTestPost();
+      const res = await app.request(`/api/posts/${post.id}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId: "post-visitor-1" }),
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { liked: boolean };
+      expect(data.liked).toBe(true);
+
+      // Verify likeCount in GET
+      const getRes = await app.request(`/api/posts/${post.id}`);
+      const postData = (await getRes.json()) as { likeCount: number };
+      expect(postData.likeCount).toBe(1);
+    });
+
+    it("should toggle like off", async () => {
+      const post = createTestPost();
+      const vid = "post-visitor-2";
+
+      // Toggle ON
+      await app.request(`/api/posts/${post.id}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId: vid }),
+      });
+
+      // Toggle OFF
+      const res = await app.request(`/api/posts/${post.id}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId: vid }),
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { liked: boolean };
+      expect(data.liked).toBe(false);
+
+      // Verify likeCount is 0
+      const getRes = await app.request(`/api/posts/${post.id}`);
+      const postData = (await getRes.json()) as { likeCount: number };
+      expect(postData.likeCount).toBe(0);
+    });
+
+    it("should return 400 without visitorId", async () => {
+      const post = createTestPost();
+      const res = await app.request(`/api/posts/${post.id}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      expect(res.status).toBe(400);
+    });
+  });
 });

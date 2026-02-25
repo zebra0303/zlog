@@ -147,6 +147,7 @@ export const ko: Record<TranslationKeys, string> = {
   // Comments
   comment_title: "댓글",
   comment_no_comments: "아직 댓글이 없습니다.",
+  comment_load_more: "더보기",
   comment_show_more: "더 보기",
   comment_show_less: "접기",
   comment_placeholder: "댓글을 입력하세요...",

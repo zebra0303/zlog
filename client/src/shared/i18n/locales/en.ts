@@ -143,6 +143,7 @@ export const en = {
   // Comments
   comment_title: "Comments",
   comment_no_comments: "No comments yet.",
+  comment_load_more: "Load more",
   comment_show_more: "Show more",
   comment_show_less: "Show less",
   comment_placeholder: "Write a comment...",

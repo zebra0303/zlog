@@ -312,4 +312,48 @@ describe("Federation & Sync Security", () => {
       expect(updatedPost?.remoteStatus).toBe("unreachable");
     });
   });
+
+  describe("Proxy: Remote Comments", () => {
+    it("should fetch comments from remote blog", async () => {
+      const cat = createTestCategory();
+      const rb = createTestRemoteBlog({ siteUrl: "https://remote-blog.com" });
+      const post = createTestRemotePost(rb.id, cat.id, {
+        remoteUri: "https://remote-blog.com/posts/original-123",
+      });
+
+      // Mock fetch
+      const mockComments = { items: [{ id: "rc-1", content: "Remote Comment" }] };
+      const fetchSpy = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(mockComments), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+      vi.stubGlobal("fetch", fetchSpy);
+
+      const res = await app.request(`/api/federation/remote-posts/${post.id}/comments?page=2`);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual(mockComments);
+
+      // Verify fetch call
+      expect(fetchSpy).toHaveBeenCalled();
+      const firstCall = fetchSpy.mock.calls[0];
+      if (!firstCall) throw new Error("fetchSpy was not called");
+      const callUrl = firstCall[0] as string;
+      expect(callUrl).toContain("https://remote-blog.com/api/posts/original-123/comments");
+      expect(callUrl).toContain("page=2");
+    });
+
+    it("should return 502 when remote blog fetch fails", async () => {
+      const cat = createTestCategory();
+      const rb = createTestRemoteBlog();
+      const post = createTestRemotePost(rb.id, cat.id);
+
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("error", { status: 500 })));
+
+      const res = await app.request(`/api/federation/remote-posts/${post.id}/comments`);
+      expect(res.status).toBe(502);
+    });
+  });
 });
