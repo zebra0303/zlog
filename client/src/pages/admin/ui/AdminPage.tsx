@@ -270,18 +270,17 @@ function PostManager() {
                           <Edit className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           void handleDelete(post);
                         }}
                         disabled={deletingId === post.id}
                         aria-label={t("delete")}
+                        className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                   {accessLogPopover === post.id && (
@@ -647,17 +646,16 @@ function CategoryManager() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           void handleDelete(cat.id, cat.name);
                         }}
                         aria-label={t("delete")}
+                        className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1944,17 +1942,16 @@ function SubscriptionManager({
                         className={`h-4 w-4 ${sub.isActive ? "text-green-500" : "text-[var(--color-text-secondary)]"}`}
                       />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         void handleDelete(sub);
                       }}
                       aria-label={t("delete")}
+                      className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2057,18 +2054,17 @@ function SubscriberManager() {
                     )}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     void handleDelete(sub);
                   }}
                   disabled={deletingId === sub.id}
                   aria-label={t("delete")}
+                  className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
-                </Button>
+                </button>
               </div>
             ))}
           </div>

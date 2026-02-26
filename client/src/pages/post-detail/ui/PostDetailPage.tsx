@@ -49,11 +49,13 @@ export default function PostDetailPage() {
         referrer ? { "X-Referrer": referrer } : undefined,
       )
       .then(async (data) => {
+        const html = await parseMarkdown(data.content);
+        // Batch updates to reduce re-renders
         setPost(data);
         setLocalCommentCount(data.commentCount);
         setLocalLikeCount(data.likeCount);
         setIsLiked(!!data.isLikedByMe);
-        setHtmlContent(await parseMarkdown(data.content));
+        setHtmlContent(html);
         setIsLoading(false);
       })
       .catch((err: unknown) => {
@@ -62,7 +64,7 @@ export default function PostDetailPage() {
       });
   }, [slug, t]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!post || !confirm(t("post_confirm_delete"))) return;
     try {
       await api.delete(`/posts/${post.id}`);
@@ -70,7 +72,7 @@ export default function PostDetailPage() {
     } catch {
       alert(t("post_delete_failed"));
     }
-  };
+  }, [post, t]);
 
   const handleCommentCountChange = useCallback((delta: number) => {
     setLocalCommentCount((prev) => Math.max(0, prev + delta));
@@ -276,17 +278,16 @@ export default function PostDetailPage() {
                 {t("post_edit")}
               </Link>
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 void handleDelete();
               }}
+              className="inline-flex h-8 items-center justify-center gap-2 rounded-lg bg-red-500 px-3 text-xs font-medium whitespace-nowrap text-white transition-colors hover:bg-red-600 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
             >
               <Trash2 className="mr-1 h-4 w-4" />
               {t("post_delete")}
-            </Button>
+            </button>
           </div>
         )}
       </div>
