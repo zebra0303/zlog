@@ -86,9 +86,9 @@ function PostManager() {
         setAccessLogPopover(null);
       }
     };
-    if (accessLogPopover) document.addEventListener("click", handleClickOutside);
+    if (accessLogPopover) document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [accessLogPopover]);
 
@@ -270,17 +270,15 @@ function PostManager() {
                           <Edit className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleDelete(post);
-                        }}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(post)}
                         disabled={deletingId === post.id}
                         aria-label={t("delete")}
-                        className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   {accessLogPopover === post.id && (
@@ -646,16 +644,14 @@ function CategoryManager() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleDelete(cat.id, cat.name);
-                        }}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(cat.id, cat.name)}
                         aria-label={t("delete")}
-                        className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -1942,16 +1938,14 @@ function SubscriptionManager({
                         className={`h-4 w-4 ${sub.isActive ? "text-green-500" : "text-[var(--color-text-secondary)]"}`}
                       />
                     </Button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleDelete(sub);
-                      }}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(sub)}
                       aria-label={t("delete")}
-                      className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -2054,17 +2048,15 @@ function SubscriberManager() {
                     )}
                   </p>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void handleDelete(sub);
-                  }}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(sub)}
                   disabled={deletingId === sub.id}
                   aria-label={t("delete")}
-                  className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
