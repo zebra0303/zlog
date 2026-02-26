@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, or, isNull } from "drizzle-orm";
 import { stripMarkdown } from "../lib/markdown.js";
 
 // Helper to escape XML
@@ -73,7 +73,12 @@ export function getRssFeed(siteUrl: string, settings: Record<string, string>) {
     })
     .from(schema.posts)
     .leftJoin(schema.categories, eq(schema.posts.categoryId, schema.categories.id))
-    .where(eq(schema.posts.status, "published"))
+    .where(
+      and(
+        eq(schema.posts.status, "published"),
+        or(isNull(schema.posts.categoryId), eq(schema.categories.isPublic, true)),
+      ),
+    )
     .orderBy(desc(schema.posts.createdAt))
     .limit(20)
     .all();
@@ -102,7 +107,7 @@ export function getCategoryRssFeed(
     .where(eq(schema.categories.slug, slug))
     .get();
 
-  if (!category) return null;
+  if (!category?.isPublic) return null;
 
   const posts = db
     .select({

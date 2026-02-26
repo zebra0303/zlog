@@ -2,16 +2,21 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, sql, asc, inArray, like, and } from "drizzle-orm";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { createSlug, createUniqueSlug } from "../lib/slug.js";
+import type { AppVariables } from "../types/env.js";
 
-const categoriesRoute = new Hono();
+const categoriesRoute = new Hono<{ Variables: AppVariables }>();
 
-categoriesRoute.get("/", (c) => {
+categoriesRoute.get("/", optionalAuthMiddleware, (c) => {
+  const ownerId = c.get("ownerId");
+  const isAdmin = !!ownerId;
+
   const cats = db
     .select()
     .from(schema.categories)
+    .where(isAdmin ? undefined : eq(schema.categories.isPublic, true))
     .orderBy(asc(schema.categories.sortOrder), asc(schema.categories.name))
     .all();
 
@@ -60,9 +65,21 @@ categoriesRoute.get("/", (c) => {
   return c.json(result);
 });
 
-categoriesRoute.get("/:slug", (c) => {
+categoriesRoute.get("/:slug", optionalAuthMiddleware, (c) => {
   const slug = c.req.param("slug");
-  const cat = db.select().from(schema.categories).where(eq(schema.categories.slug, slug)).get();
+  const ownerId = c.get("ownerId");
+  const isAdmin = !!ownerId;
+
+  const cat = db
+    .select()
+    .from(schema.categories)
+    .where(
+      and(
+        eq(schema.categories.slug, slug),
+        isAdmin ? undefined : eq(schema.categories.isPublic, true),
+      ),
+    )
+    .get();
 
   if (!cat) {
     return c.json({ error: "Category not found." }, 404);

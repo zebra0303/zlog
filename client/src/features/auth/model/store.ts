@@ -23,6 +23,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     api.setToken(null);
     set({ owner: null, isAuthenticated: false });
+    // Force a full page reload to clear any sensitive data (like secret posts/categories) from memory
+    window.location.href = "/";
   },
   checkAuth: async () => {
     const token = api.getToken();

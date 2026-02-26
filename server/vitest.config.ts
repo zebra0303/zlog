@@ -8,6 +8,9 @@ export default defineConfig({
     include: ["src/__tests__/**/*.test.ts"],
     setupFiles: ["src/__tests__/setup.ts"],
     testTimeout: 10000,
+    env: {
+      ALLOW_LOCAL_FEDERATION: "false",
+    },
   },
   resolve: {
     alias: {

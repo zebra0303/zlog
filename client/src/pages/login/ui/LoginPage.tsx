@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { LogIn } from "lucide-react";
 import { Button, Input, Card, CardContent, CardHeader, SEOHead, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -11,7 +11,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuthStore();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useI18n();
 
@@ -22,7 +21,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       const redirect = searchParams.get("redirect");
-      void navigate(redirect ?? "/");
+      // Force a full page reload so caches (categories, posts) are refreshed
+      window.location.href = redirect ?? "/";
     } catch (err) {
       setError(err instanceof Error ? err.message : t("request_failed"));
     } finally {

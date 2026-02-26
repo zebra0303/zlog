@@ -234,7 +234,7 @@ federationRoute.post("/subscribe", async (c) => {
     .from(schema.categories)
     .where(eq(schema.categories.id, body.categoryId))
     .get();
-  if (!cat) return c.json({ error: "Category not found." }, 404);
+  if (!cat?.isPublic) return c.json({ error: "Category not found." }, 404);
 
   const webhookUrl = db
     .select()

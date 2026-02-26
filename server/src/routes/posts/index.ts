@@ -118,7 +118,7 @@ postsRoute.openapi(
       },
     },
   }),
-  (c) => {
+  async (c) => {
     const {
       page: pageStr,
       category: categorySlug,
@@ -136,6 +136,18 @@ postsRoute.openapi(
     const perPage = Number(perPageSetting?.value) || 10;
     const offset = (page - 1) * perPage;
 
+    // Check if user is admin
+    let isAdmin = false;
+    const authHeader = c.req.header("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const payload = await verifyToken(authHeader.substring(7));
+        if (payload) isAdmin = true;
+      } catch {
+        // ignore
+      }
+    }
+
     // Convert category slug to ID
     let categoryId: string | null = null;
     if (categorySlug) {
@@ -144,6 +156,10 @@ postsRoute.openapi(
         .from(schema.categories)
         .where(eq(schema.categories.slug, categorySlug))
         .get();
+      // If not admin and category is not public, return empty or 404. Here we just return empty.
+      if (cat && !isAdmin && !cat.isPublic) {
+        return c.json({ items: [], total: 0, page, perPage, totalPages: 0 });
+      }
       categoryId = cat?.id ?? null;
     }
 
@@ -166,6 +182,18 @@ postsRoute.openapi(
     }
 
     const includeRemote = status === "published" && !tagSlug;
+
+    // Build the public category subquery condition
+    const publicCatCond = or(
+      isNull(schema.posts.categoryId),
+      inArray(
+        schema.posts.categoryId,
+        db
+          .select({ id: schema.categories.id })
+          .from(schema.categories)
+          .where(eq(schema.categories.isPublic, true)),
+      ),
+    );
 
     // Path A: Local only
     if (!includeRemote) {
@@ -191,6 +219,9 @@ postsRoute.openapi(
         }
       }
       if (tagPostIds) conditions.push(inArray(schema.posts.id, tagPostIds));
+      if (!isAdmin) {
+        if (publicCatCond) conditions.push(publicCatCond);
+      }
       const whereClause = and(...conditions);
 
       const total =
@@ -247,6 +278,15 @@ postsRoute.openapi(
       params.push(`%${search}%`);
       remoteWhereParts.push("title LIKE ?");
       params.push(`%${search}%`);
+    }
+
+    if (!isAdmin) {
+      localWhereParts.push(
+        "(category_id IS NULL OR category_id IN (SELECT id FROM categories WHERE is_public = 1))",
+      );
+      remoteWhereParts.push(
+        "(local_category_id IS NULL OR local_category_id IN (SELECT id FROM categories WHERE is_public = 1))",
+      );
     }
 
     const localWhere = localWhereParts.join(" AND ");
@@ -421,11 +461,28 @@ postsRoute.get("/:param", async (c) => {
 
   // Determine whether to increment view count: exclude admins or already-viewed visitors
   let shouldCount = true;
+  let isAdmin = false;
   const authHeader = c.req.header("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const ownerId = await verifyToken(authHeader.slice(7));
-    if (ownerId) shouldCount = false;
+    if (ownerId) {
+      shouldCount = false;
+      isAdmin = true;
+    }
   }
+
+  // If not admin and post has a category, ensure it is public
+  if (!isAdmin && post.categoryId) {
+    const cat = db
+      .select()
+      .from(schema.categories)
+      .where(eq(schema.categories.id, post.categoryId))
+      .get();
+    if (cat && !cat.isPublic) {
+      return c.json({ error: "Post not found." }, 404);
+    }
+  }
+
   const viewedCookie = `zlog_viewed_${post.id}`;
   const cookies = c.req.header("Cookie") ?? "";
   if (cookies.includes(viewedCookie)) {

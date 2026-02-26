@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, or, isNull, and } from "drizzle-orm";
 
 function escapeHtml(str: string): string {
   return str
@@ -67,7 +67,7 @@ function toAbsoluteUrl(url: string | undefined, base: string): string | undefine
 }
 
 function buildCategoryMeta(
-  cat: { name: string; slug: string; description: string | null },
+  cat: { name: string; slug: string; description: string | null; isPublic: boolean },
   blogTitle: string,
   seoDesc: string | undefined,
   seoImage: string | undefined,
@@ -114,11 +114,20 @@ function buildPageMeta(
     if (post?.status === "published") {
       const category = post.categoryId
         ? db
-            .select({ name: schema.categories.name, slug: schema.categories.slug })
+            .select({
+              name: schema.categories.name,
+              slug: schema.categories.slug,
+              isPublic: schema.categories.isPublic,
+            })
             .from(schema.categories)
             .where(eq(schema.categories.id, post.categoryId))
             .get()
         : null;
+
+      if (category && !category.isPublic) {
+        return defaultMeta;
+      }
+
       const tagRows = db
         .select({ name: schema.tags.name })
         .from(schema.postTags)
@@ -163,7 +172,7 @@ function buildPageMeta(
       .from(schema.categories)
       .where(eq(schema.categories.slug, catMatch[1]))
       .get();
-    if (cat) return buildCategoryMeta(cat, blogTitle, seoDesc, seoImage, canonicalBase);
+    if (cat?.isPublic) return buildCategoryMeta(cat, blogTitle, seoDesc, seoImage, canonicalBase);
     return defaultMeta;
   }
 
@@ -174,7 +183,7 @@ function buildPageMeta(
       .from(schema.categories)
       .where(eq(schema.categories.slug, queryCat))
       .get();
-    if (cat) return buildCategoryMeta(cat, blogTitle, seoDesc, seoImage, canonicalBase);
+    if (cat?.isPublic) return buildCategoryMeta(cat, blogTitle, seoDesc, seoImage, canonicalBase);
     return { ...defaultMeta, canonicalUrl: canonicalBase };
   }
 
@@ -231,11 +240,22 @@ export function getSitemap(siteUrl: string) {
   const posts = db
     .select({ slug: schema.posts.slug, updatedAt: schema.posts.updatedAt })
     .from(schema.posts)
-    .where(eq(schema.posts.status, "published"))
+    .leftJoin(schema.categories, eq(schema.posts.categoryId, schema.categories.id))
+    .where(
+      and(
+        eq(schema.posts.status, "published"),
+        or(isNull(schema.posts.categoryId), eq(schema.categories.isPublic, true)),
+      ),
+    )
     .orderBy(desc(schema.posts.createdAt))
     .limit(49000)
     .all();
-  const categories = db.select({ slug: schema.categories.slug }).from(schema.categories).all();
+
+  const categories = db
+    .select({ slug: schema.categories.slug })
+    .from(schema.categories)
+    .where(eq(schema.categories.isPublic, true))
+    .all();
 
   const urls = [
     `<url><loc>${siteUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,

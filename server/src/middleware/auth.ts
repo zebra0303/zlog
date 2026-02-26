@@ -53,3 +53,19 @@ export async function authMiddleware(c: Context, next: Next) {
   c.set("ownerId", ownerId);
   await next();
 }
+
+export async function optionalAuthMiddleware(c: Context, next: Next) {
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const ownerId = await verifyToken(token);
+    if (ownerId) {
+      const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
+      if (ownerRecord) {
+        c.set("owner", ownerRecord);
+        c.set("ownerId", ownerId);
+      }
+    }
+  }
+  await next();
+}
