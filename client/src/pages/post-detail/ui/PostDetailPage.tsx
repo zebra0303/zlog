@@ -276,7 +276,14 @@ export default function PostDetailPage() {
                 {t("post_edit")}
               </Link>
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleDelete}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleDelete();
+              }}
+            >
               <Trash2 className="mr-1 h-4 w-4" />
               {t("post_delete")}
             </Button>

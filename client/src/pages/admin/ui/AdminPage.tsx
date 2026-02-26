@@ -86,9 +86,9 @@ function PostManager() {
         setAccessLogPopover(null);
       }
     };
-    if (accessLogPopover) document.addEventListener("mousedown", handleClickOutside);
+    if (accessLogPopover) document.addEventListener("click", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [accessLogPopover]);
 
@@ -273,7 +273,10 @@ function PostManager() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(post)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDelete(post);
+                        }}
                         disabled={deletingId === post.id}
                         aria-label={t("delete")}
                       >
@@ -647,7 +650,10 @@ function CategoryManager() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(cat.id, cat.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDelete(cat.id, cat.name);
+                        }}
                         aria-label={t("delete")}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
@@ -1941,7 +1947,10 @@ function SubscriptionManager({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(sub)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleDelete(sub);
+                      }}
                       aria-label={t("delete")}
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
@@ -2051,7 +2060,10 @@ function SubscriberManager() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(sub)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleDelete(sub);
+                  }}
                   disabled={deletingId === sub.id}
                   aria-label={t("delete")}
                 >

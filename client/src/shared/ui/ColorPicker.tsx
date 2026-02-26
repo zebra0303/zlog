@@ -24,9 +24,9 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
 
   useEffect(() => {
     if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
       return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("click", handleClickOutside);
       };
     }
   }, [open, handleClickOutside]);
