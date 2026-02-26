@@ -25,6 +25,14 @@ describe("createSlug", () => {
   it("should handle mixed Korean and English", () => {
     expect(createSlug("My 블로그 Post")).toBe("my-블로그-post");
   });
+
+  it("should handle Hangul consonants and vowels", () => {
+    expect(createSlug("ㅎㅎㅎ ㅋㅋㅋ")).toBe("ㅎㅎㅎ-ㅋㅋㅋ");
+  });
+
+  it("should provide a fallback for purely special characters/emojis", () => {
+    expect(createSlug("!!! 👽👽👽")).toBe("post");
+  });
 });
 
 describe("createUniqueSlug", () => {
