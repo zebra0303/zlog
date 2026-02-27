@@ -230,6 +230,7 @@ export function MarkdownToolbar({
   // Table size picker state
   const [tableOpen, setTableOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
+  const tablePopoverRef = useRef<HTMLDivElement>(null);
   const [tableHover, setTableHover] = useState({ rows: 0, cols: 0 });
   const [tableInput, setTableInput] = useState({ rows: 3, cols: 3 });
   const [isTouchDevice] = useState(() => typeof window !== "undefined" && "ontouchstart" in window);
@@ -260,6 +261,32 @@ export function MarkdownToolbar({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, [tableOpen]);
+
+  // Dynamically position table popover to stay within viewport
+  useEffect(() => {
+    if (!tableOpen) return;
+    const popover = tablePopoverRef.current;
+    const wrapper = tableRef.current;
+    if (!popover || !wrapper) return;
+    // Reset position before measuring
+    popover.style.left = "0px";
+    popover.style.right = "auto";
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const padding = 8; // minimum gap from screen edge
+    // Calculate ideal left: align popover start with wrapper start
+    let left = 0;
+    // If popover overflows right edge, shift left
+    if (wrapperRect.left + popoverRect.width > viewportWidth - padding) {
+      left = viewportWidth - padding - popoverRect.width - wrapperRect.left;
+    }
+    // If popover overflows left edge after adjustment, clamp to left edge
+    if (wrapperRect.left + left < padding) {
+      left = padding - wrapperRect.left;
+    }
+    popover.style.left = `${left}px`;
   }, [tableOpen]);
 
   // Keyboard navigation for grid picker
@@ -351,7 +378,8 @@ export function MarkdownToolbar({
         </button>
         {tableOpen && (
           <div
-            className="border-border bg-surface absolute top-full right-0 z-50 mt-1 rounded-lg border p-2 shadow-lg"
+            ref={tablePopoverRef}
+            className="border-border bg-surface absolute top-full z-50 mt-1 rounded-lg border p-2 shadow-lg"
             role="dialog"
             aria-label={t("toolbar_table_grid")}
           >
