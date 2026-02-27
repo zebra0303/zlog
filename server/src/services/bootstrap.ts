@@ -208,6 +208,14 @@ export function bootstrap() {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS post_templates (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS post_access_logs (
       id TEXT PRIMARY KEY,
       post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
