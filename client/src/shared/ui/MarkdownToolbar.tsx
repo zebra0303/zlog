@@ -351,7 +351,7 @@ export function MarkdownToolbar({
         </button>
         {tableOpen && (
           <div
-            className="border-border bg-surface absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg"
+            className="border-border bg-surface absolute top-full right-0 z-50 mt-1 rounded-lg border p-2 shadow-lg"
             role="dialog"
             aria-label={t("toolbar_table_grid")}
           >
