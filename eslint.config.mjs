@@ -12,6 +12,7 @@ export default tseslint.config(
       "**/*.js",
       "**/*.mjs",
       "client/vite.config.ts",
+      "client/vitest.config.ts",
       "server/drizzle.config.ts",
       "server/vitest.config.ts",
     ],

@@ -232,6 +232,7 @@ erDiagram
 ### Writing & Editing
 
 - **Markdown Editor** with live preview (edit / split / preview modes)
+- **Post Templates**: Save and reuse markdown templates for consistent writing workflows
 - **Image paste & drag-and-drop** — automatically uploaded and inserted
 - **Cover image** support with upload
 - **Custom embeds**: YouTube, CodePen, CodeSandbox
@@ -239,6 +240,7 @@ erDiagram
 - **Language label & copy button** on code blocks
 - **Mermaid diagram** rendering with click-to-zoom
 - **Draft / Publish** workflow with post management in admin
+- **Responsive editor**: mobile-optimized layout with stacked title/category/tags rows
 
 ### Comments
 
@@ -260,6 +262,7 @@ erDiagram
 ### Appearance
 
 - **Light / Dark theme** toggle with system preference detection
+- **Semantic theme tokens**: CSS variable-based color system (primary, destructive, success) with full dark mode support
 - **Core Web Vitals**: Optimized LCP with priority image loading for the first post
 - **Custom header & footer**: background color, background image, adjustable height
 - **Responsive design**: mobile-optimized with auto-shrinking header on scroll
@@ -303,6 +306,7 @@ erDiagram
 - **RESTful API** with Hono framework
 - **Background sync worker**: automatic periodic federation sync with GC optimization
 - **Server-proxied federation**: all cross-origin calls are server-to-server (no CORS dependency)
+- **Testing**: Vitest + Testing Library for both server API and client UI components
 
 ---
 
@@ -439,8 +443,10 @@ zlog/
 │       ├── features/ # Auth, comments, theme
 │       ├── entities/ # PostCard, CategoryBadge
 │       └── shared/   # UI components, API client, i18n, utilities
+│           └── ui/__tests__/ # Component unit tests (Vitest + Testing Library)
 ├── server/           # Backend (Hono)
 │   └── src/
+│       ├── __tests__/ # API integration tests (Vitest)
 │       ├── db/       # Schema, migrations
 │       ├── routes/   # API routes
 │       ├── middleware/# Auth, error handlers

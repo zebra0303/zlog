@@ -20,7 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky || true",
-    "test": "npm run test -w server"
+    "test": "npm run test -w server && npm run test -w client"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
