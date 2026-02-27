@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { FileText, Plus, Pencil, Trash2, X, Save, Loader2 } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, X, Save, Loader2, Edit3, Eye } from "lucide-react";
 import { Button, Input, Textarea, Card, CardContent, MarkdownToolbar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
+import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import type { PostTemplate } from "@zlog/shared";
 
 export function TemplateManager() {
@@ -18,6 +19,12 @@ export function TemplateManager() {
 
   const newTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Preview mode states for new/edit template editors
+  const [newPreviewMode, setNewPreviewMode] = useState(false);
+  const [newPreviewHtml, setNewPreviewHtml] = useState("");
+  const [editPreviewMode, setEditPreviewMode] = useState(false);
+  const [editPreviewHtml, setEditPreviewHtml] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
@@ -59,6 +66,7 @@ export function TemplateManager() {
       setNewName("");
       setNewContent("");
       setIsAdding(false);
+      setNewPreviewMode(false);
       fetchTemplates();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("admin_template_create_failed"));
@@ -140,6 +148,7 @@ export function TemplateManager() {
               <button
                 onClick={() => {
                   setIsAdding(false);
+                  setNewPreviewMode(false);
                 }}
                 className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
               >
@@ -154,21 +163,64 @@ export function TemplateManager() {
                   setNewName(e.target.value);
                 }}
               />
-              <MarkdownToolbar
-                textareaRef={newTextareaRef}
-                value={newContent}
-                onChange={setNewContent}
-              />
-              <Textarea
-                ref={newTextareaRef}
-                placeholder={t("admin_template_content_placeholder")}
-                value={newContent}
-                onChange={(e) => {
-                  setNewContent(e.target.value);
-                }}
-                rows={10}
-                className="rounded-t-none border-t-0 font-mono text-sm"
-              />
+              {/* Edit/Preview toggle */}
+              <div>
+                <div className="mb-1 flex justify-end">
+                  <div className="flex rounded-lg border border-[var(--color-border)]">
+                    <button
+                      onClick={() => {
+                        setNewPreviewMode(false);
+                      }}
+                      className={`flex items-center gap-1 px-3 py-1 text-xs ${!newPreviewMode ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"} rounded-l-lg`}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                      {t("settings_about_edit")}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setNewPreviewHtml(await parseMarkdown(newContent));
+                        setNewPreviewMode(true);
+                      }}
+                      className={`flex items-center gap-1 px-3 py-1 text-xs ${newPreviewMode ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"} rounded-r-lg`}
+                    >
+                      <Eye className="h-3 w-3" />
+                      {t("settings_about_preview")}
+                    </button>
+                  </div>
+                </div>
+                {newPreviewMode ? (
+                  <div className="min-h-[240px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                    {newPreviewHtml ? (
+                      <div
+                        className="prose dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: newPreviewHtml }}
+                      />
+                    ) : (
+                      <p className="text-sm text-[var(--color-text-secondary)]">
+                        {t("settings_about_empty")}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <MarkdownToolbar
+                      textareaRef={newTextareaRef}
+                      value={newContent}
+                      onChange={setNewContent}
+                    />
+                    <Textarea
+                      ref={newTextareaRef}
+                      placeholder={t("admin_template_content_placeholder")}
+                      value={newContent}
+                      onChange={(e) => {
+                        setNewContent(e.target.value);
+                      }}
+                      rows={10}
+                      className="rounded-t-none border-t-0 font-mono text-sm"
+                    />
+                  </>
+                )}
+              </div>
               <div className="flex justify-end gap-2">
                 <Button size="sm" onClick={handleCreate}>
                   <Save className="mr-1 h-4 w-4" />
@@ -199,26 +251,70 @@ export function TemplateManager() {
                         setEditName(e.target.value);
                       }}
                     />
-                    <MarkdownToolbar
-                      textareaRef={editTextareaRef}
-                      value={editContent}
-                      onChange={setEditContent}
-                    />
-                    <Textarea
-                      ref={editTextareaRef}
-                      value={editContent}
-                      onChange={(e) => {
-                        setEditContent(e.target.value);
-                      }}
-                      rows={10}
-                      className="rounded-t-none border-t-0 font-mono text-sm"
-                    />
+                    {/* Edit/Preview toggle */}
+                    <div>
+                      <div className="mb-1 flex justify-end">
+                        <div className="flex rounded-lg border border-[var(--color-border)]">
+                          <button
+                            onClick={() => {
+                              setEditPreviewMode(false);
+                            }}
+                            className={`flex items-center gap-1 px-3 py-1 text-xs ${!editPreviewMode ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"} rounded-l-lg`}
+                          >
+                            <Edit3 className="h-3 w-3" />
+                            {t("settings_about_edit")}
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setEditPreviewHtml(await parseMarkdown(editContent));
+                              setEditPreviewMode(true);
+                            }}
+                            className={`flex items-center gap-1 px-3 py-1 text-xs ${editPreviewMode ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)]"} rounded-r-lg`}
+                          >
+                            <Eye className="h-3 w-3" />
+                            {t("settings_about_preview")}
+                          </button>
+                        </div>
+                      </div>
+                      {editPreviewMode ? (
+                        <div className="min-h-[240px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                          {editPreviewHtml ? (
+                            <div
+                              className="prose dark:prose-invert max-w-none"
+                              dangerouslySetInnerHTML={{ __html: editPreviewHtml }}
+                            />
+                          ) : (
+                            <p className="text-sm text-[var(--color-text-secondary)]">
+                              {t("settings_about_empty")}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <MarkdownToolbar
+                            textareaRef={editTextareaRef}
+                            value={editContent}
+                            onChange={setEditContent}
+                          />
+                          <Textarea
+                            ref={editTextareaRef}
+                            value={editContent}
+                            onChange={(e) => {
+                              setEditContent(e.target.value);
+                            }}
+                            rows={10}
+                            className="rounded-t-none border-t-0 font-mono text-sm"
+                          />
+                        </>
+                      )}
+                    </div>
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
                           setEditingId(null);
+                          setEditPreviewMode(false);
                         }}
                       >
                         {t("cancel")}
