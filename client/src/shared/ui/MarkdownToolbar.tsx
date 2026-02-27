@@ -223,6 +223,7 @@ export function MarkdownToolbar({
 
   const [calloutOpen, setCalloutOpen] = useState(false);
   const calloutRef = useRef<HTMLDivElement>(null);
+  const calloutPopoverRef = useRef<HTMLDivElement>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
   const helpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -263,31 +264,48 @@ export function MarkdownToolbar({
     };
   }, [tableOpen]);
 
-  // Dynamically position table popover to stay within viewport
+  // Shared helper: position a popover within viewport bounds
+  const alignPopover = useCallback(
+    (popover: HTMLDivElement | null, wrapper: HTMLDivElement | null) => {
+      if (!popover || !wrapper) return;
+      // Reset to natural position before measuring
+      popover.style.left = "auto";
+      popover.style.right = "auto";
+      requestAnimationFrame(() => {
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const popoverWidth = popover.offsetWidth;
+        const viewportWidth = document.documentElement.clientWidth;
+        const gap = 8; // minimum distance from screen edge
+        // Default: align left edge of popover with left edge of wrapper
+        let left = 0;
+        const popoverRight = wrapperRect.left + left + popoverWidth;
+        // If overflows right, shift left
+        if (popoverRight > viewportWidth - gap) {
+          left = viewportWidth - gap - popoverWidth - wrapperRect.left;
+        }
+        // If overflows left after shift, clamp to left edge
+        if (wrapperRect.left + left < gap) {
+          left = gap - wrapperRect.left;
+        }
+        popover.style.left = `${left}px`;
+      });
+    },
+    [],
+  );
+
+  // Position table popover when opened
   useEffect(() => {
-    if (!tableOpen) return;
-    const popover = tablePopoverRef.current;
-    const wrapper = tableRef.current;
-    if (!popover || !wrapper) return;
-    // Reset position before measuring
-    popover.style.left = "0px";
-    popover.style.right = "auto";
-    const wrapperRect = wrapper.getBoundingClientRect();
-    const popoverRect = popover.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const padding = 8; // minimum gap from screen edge
-    // Calculate ideal left: align popover start with wrapper start
-    let left = 0;
-    // If popover overflows right edge, shift left
-    if (wrapperRect.left + popoverRect.width > viewportWidth - padding) {
-      left = viewportWidth - padding - popoverRect.width - wrapperRect.left;
+    if (tableOpen) {
+      alignPopover(tablePopoverRef.current, tableRef.current);
     }
-    // If popover overflows left edge after adjustment, clamp to left edge
-    if (wrapperRect.left + left < padding) {
-      left = padding - wrapperRect.left;
+  }, [tableOpen, alignPopover]);
+
+  // Position callout popover when opened
+  useEffect(() => {
+    if (calloutOpen) {
+      alignPopover(calloutPopoverRef.current, calloutRef.current);
     }
-    popover.style.left = `${left}px`;
-  }, [tableOpen]);
+  }, [calloutOpen, alignPopover]);
 
   // Keyboard navigation for grid picker
   const handleGridKeyDown = useCallback(
@@ -502,7 +520,10 @@ export function MarkdownToolbar({
           <Info className="h-4 w-4" />
         </button>
         {calloutOpen && (
-          <div className="border-border bg-surface absolute top-full left-0 z-50 mt-1 min-w-40 rounded-lg border py-1 shadow-lg">
+          <div
+            ref={calloutPopoverRef}
+            className="border-border bg-surface absolute top-full z-50 mt-1 min-w-40 rounded-lg border py-1 shadow-lg"
+          >
             {calloutTypes.map((ct) => (
               <button
                 key={ct.type}
