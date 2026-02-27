@@ -383,6 +383,11 @@ export const ko: Record<TranslationKeys, string> = {
   toolbar_code_block: "코드 블록",
   toolbar_hr: "구분선",
   toolbar_table: "표",
+  toolbar_table_select_size: "표 크기를 선택하세요",
+  toolbar_table_grid: "표 크기 선택기",
+  toolbar_table_rows: "행",
+  toolbar_table_cols: "열",
+  toolbar_table_insert: "표 삽입",
   toolbar_callout: "콜아웃",
 
   // Admin - Notifications

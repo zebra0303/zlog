@@ -379,6 +379,11 @@ export const en = {
   toolbar_code_block: "Code block",
   toolbar_hr: "Horizontal rule",
   toolbar_table: "Table",
+  toolbar_table_select_size: "Select table size",
+  toolbar_table_grid: "Table size selector",
+  toolbar_table_rows: "Rows",
+  toolbar_table_cols: "Columns",
+  toolbar_table_insert: "Insert Table",
   toolbar_callout: "Callout",
 
   // Admin - Notifications

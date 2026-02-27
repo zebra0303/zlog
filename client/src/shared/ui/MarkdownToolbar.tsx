@@ -26,6 +26,17 @@ interface MarkdownToolbarProps {
   onImageUpload?: () => void;
 }
 
+// Generate markdown table string with given rows and cols
+function generateMarkdownTable(rows: number, cols: number): string {
+  const header = Array.from({ length: cols }, (_, i) => ` Header ${i + 1} `).join("|");
+  const separator = Array.from({ length: cols }, () => " --- ").join("|");
+  const emptyRow = Array.from({ length: cols }, () => "  ").join("|");
+  const dataRows = Array.from({ length: rows - 1 }, () => `|${emptyRow}|`).join("\n");
+  return `|${header}|\n|${separator}|\n${dataRows}\n`;
+}
+
+const GRID_SIZE = 8;
+
 export function MarkdownToolbar({
   textareaRef,
   value,
@@ -91,6 +102,7 @@ export function MarkdownToolbar({
     [textareaRef, value, onChange, restoreCursor],
   );
 
+  // Buttons array — table removed, rendered separately below
   const buttons: { icon: React.ReactNode; label: string; action: () => void }[][] = [
     [
       {
@@ -198,15 +210,6 @@ export function MarkdownToolbar({
           applyInsert("\n---\n");
         },
       },
-      {
-        icon: <Table className="h-4 w-4" />,
-        label: t("toolbar_table"),
-        action: () => {
-          applyInsert(
-            "| Column 1 | Column 2 |\n| -------- | -------- |\n| Cell     | Cell     |\n",
-          );
-        },
-      },
     ],
   ];
 
@@ -224,6 +227,14 @@ export function MarkdownToolbar({
   const helpRef = useRef<HTMLDivElement>(null);
   const helpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Table size picker state
+  const [tableOpen, setTableOpen] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [tableHover, setTableHover] = useState({ rows: 0, cols: 0 });
+  const [tableInput, setTableInput] = useState({ rows: 3, cols: 3 });
+  const [isTouchDevice] = useState(() => typeof window !== "undefined" && "ontouchstart" in window);
+
+  // Close callout popover on outside click
   useEffect(() => {
     if (!calloutOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -236,6 +247,63 @@ export function MarkdownToolbar({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [calloutOpen]);
+
+  // Close table popover on outside click
+  useEffect(() => {
+    if (!tableOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
+        setTableOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [tableOpen]);
+
+  // Keyboard navigation for grid picker
+  const handleGridKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const { rows, cols } = tableHover;
+      switch (e.key) {
+        case "ArrowRight":
+          e.preventDefault();
+          setTableHover({ rows: rows || 1, cols: Math.min((cols || 0) + 1, GRID_SIZE) });
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          setTableHover({ rows: rows || 1, cols: Math.max((cols || 1) - 1, 1) });
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          setTableHover({ rows: Math.min((rows || 0) + 1, GRID_SIZE), cols: cols || 1 });
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setTableHover({ rows: Math.max((rows || 1) - 1, 1), cols: cols || 1 });
+          break;
+        case "Enter":
+        case " ":
+          e.preventDefault();
+          if (rows > 0 && cols > 0) {
+            applyInsert(generateMarkdownTable(rows, cols));
+            setTableOpen(false);
+            setTableHover({ rows: 0, cols: 0 });
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          setTableOpen(false);
+          setTableHover({ rows: 0, cols: 0 });
+          break;
+      }
+    },
+    [tableHover, applyInsert],
+  );
+
+  // Clamp helper for mobile number inputs
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
   return (
     <div
@@ -263,7 +331,133 @@ export function MarkdownToolbar({
           ))}
         </div>
       ))}
+
+      {/* Table size picker — separate from buttons array */}
       <div className="bg-border mx-1 h-5 w-px" role="separator" aria-hidden="true" />
+      <div ref={tableRef} className="relative">
+        <button
+          type="button"
+          title={t("toolbar_table")}
+          aria-label={t("toolbar_table")}
+          aria-expanded={tableOpen}
+          aria-haspopup="true"
+          onClick={() => {
+            setTableOpen((prev) => !prev);
+            setCalloutOpen(false); // prevent both popovers open
+          }}
+          className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
+        >
+          <Table className="h-4 w-4" />
+        </button>
+        {tableOpen && (
+          <div
+            className="border-border bg-surface absolute top-full left-0 z-50 mt-1 rounded-lg border p-2 shadow-lg"
+            role="dialog"
+            aria-label={t("toolbar_table_grid")}
+          >
+            {isTouchDevice ? (
+              /* Mobile: number inputs for rows/cols */
+              <div className="flex flex-col gap-2" style={{ minWidth: 160 }}>
+                <label className="text-text-secondary flex items-center justify-between gap-2 text-xs">
+                  {t("toolbar_table_rows")}
+                  <input
+                    type="number"
+                    min={1}
+                    max={8}
+                    value={tableInput.rows}
+                    onChange={(e) => {
+                      setTableInput((prev) => ({
+                        ...prev,
+                        rows: clamp(Number(e.target.value) || 1, 1, 8),
+                      }));
+                    }}
+                    className="border-border bg-background text-text w-14 rounded border px-1.5 py-0.5 text-sm"
+                  />
+                </label>
+                <label className="text-text-secondary flex items-center justify-between gap-2 text-xs">
+                  {t("toolbar_table_cols")}
+                  <input
+                    type="number"
+                    min={1}
+                    max={8}
+                    value={tableInput.cols}
+                    onChange={(e) => {
+                      setTableInput((prev) => ({
+                        ...prev,
+                        cols: clamp(Number(e.target.value) || 1, 1, 8),
+                      }));
+                    }}
+                    className="border-border bg-background text-text w-14 rounded border px-1.5 py-0.5 text-sm"
+                  />
+                </label>
+                <div className="text-text-secondary text-center text-xs">
+                  {tableInput.rows} &times; {tableInput.cols}
+                </div>
+                <button
+                  type="button"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded px-2 py-1 text-sm transition-colors"
+                  onClick={() => {
+                    applyInsert(generateMarkdownTable(tableInput.rows, tableInput.cols));
+                    setTableOpen(false);
+                  }}
+                >
+                  {t("toolbar_table_insert")}
+                </button>
+              </div>
+            ) : (
+              /* Desktop: 8x8 hover grid */
+              <div>
+                <div
+                  className="grid gap-0.5"
+                  style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
+                  role="grid"
+                  aria-label={t("toolbar_table_select_size")}
+                  tabIndex={0}
+                  onKeyDown={handleGridKeyDown}
+                >
+                  {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
+                    const r = Math.floor(i / GRID_SIZE) + 1;
+                    const c = (i % GRID_SIZE) + 1;
+                    const highlighted = r <= tableHover.rows && c <= tableHover.cols;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`h-4 w-4 rounded-sm border transition-colors ${
+                          highlighted
+                            ? "bg-primary/30 border-primary"
+                            : "border-border bg-background hover:border-text-secondary"
+                        }`}
+                        aria-label={`${r} × ${c}`}
+                        onMouseEnter={() => {
+                          setTableHover({ rows: r, cols: c });
+                        }}
+                        onClick={() => {
+                          applyInsert(generateMarkdownTable(r, c));
+                          setTableOpen(false);
+                          setTableHover({ rows: 0, cols: 0 });
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <div
+                  className="text-text-secondary mt-1.5 text-center text-xs"
+                  onMouseLeave={() => {
+                    setTableHover({ rows: 0, cols: 0 });
+                  }}
+                >
+                  {tableHover.rows > 0 && tableHover.cols > 0
+                    ? `${tableHover.rows} × ${tableHover.cols}`
+                    : t("toolbar_table_select_size")}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Callout popover */}
       <div ref={calloutRef} className="relative">
         <button
           type="button"
@@ -273,6 +467,7 @@ export function MarkdownToolbar({
           aria-haspopup="true"
           onClick={() => {
             setCalloutOpen((prev) => !prev);
+            setTableOpen(false); // prevent both popovers open
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
