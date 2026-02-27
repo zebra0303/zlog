@@ -565,7 +565,10 @@ function CategoryManager() {
         ) : (
           <div className="flex flex-col gap-2">
             {categories.map((cat) => (
-              <div key={cat.id} className="rounded-lg border border-[var(--color-border)] p-3">
+              <div
+                key={cat.id}
+                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+              >
                 {editingId === cat.id ? (
                   <div className="flex flex-col gap-3">
                     <Input
