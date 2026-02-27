@@ -430,7 +430,7 @@ function CommentForm({
             maxLength={2000}
             rows={3}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-[var(--color-destructive)]">{error}</p>}
           <div className="flex justify-end gap-2">
             {onCancel && (
               <Button variant="ghost" size="sm" type="button" onClick={onCancel}>
@@ -653,7 +653,7 @@ function CommentThread({
                   }}
                 />
               )}
-              {editError && <p className="text-xs text-red-500">{editError}</p>}
+              {editError && <p className="text-xs text-[var(--color-destructive)]">{editError}</p>}
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleEdit} disabled={isEditSubmitting}>
                   {isEditSubmitting ? "..." : t("comment_edit_save")}
@@ -707,7 +707,7 @@ function CommentThread({
               {canDelete && (
                 <button
                   onClick={onDeleteClick}
-                  className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-red-500"
+                  className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-destructive)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   {t("comment_delete")}

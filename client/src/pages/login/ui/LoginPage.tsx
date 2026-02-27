@@ -73,7 +73,7 @@ export default function LoginPage() {
               />
             </div>
             {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20">
+              <div className="rounded-lg bg-[var(--color-destructive-light)] p-3 text-sm text-[var(--color-destructive)]">
                 {error}
               </div>
             )}

@@ -134,13 +134,13 @@ export function TemplateManager() {
         </div>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20">
+          <div className="mb-4 rounded-lg bg-[var(--color-destructive-light)] p-3 text-sm text-[var(--color-destructive)]">
             {error}
           </div>
         )}
 
         {isAdding && (
-          <div className="mb-6 rounded-lg border border-[var(--color-primary)] p-4 shadow-sm">
+          <div className="mb-6 rounded-lg border border-[var(--color-primary)] bg-[var(--color-surface)] p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-bold text-[var(--color-primary)]">
                 {t("admin_template_new")}
@@ -242,7 +242,10 @@ export function TemplateManager() {
         ) : (
           <div className="flex flex-col gap-3">
             {templates.map((tpl) => (
-              <div key={tpl.id} className="rounded-lg border border-[var(--color-border)] p-3">
+              <div
+                key={tpl.id}
+                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+              >
                 {editingId === tpl.id ? (
                   <div className="flex flex-col gap-3">
                     <Input
@@ -352,7 +355,7 @@ export function TemplateManager() {
                         }}
                         aria-label={t("delete")}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
                       </Button>
                     </div>
                   </div>

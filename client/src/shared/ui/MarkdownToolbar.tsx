@@ -441,7 +441,7 @@ export function MarkdownToolbar({
                 </div>
                 <button
                   type="button"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded px-2 py-1 text-sm transition-colors"
+                  className="bg-primary hover:bg-primary/90 rounded px-2 py-1 text-sm text-white transition-colors"
                   onClick={() => {
                     applyInsert(generateMarkdownTable(tableInput.rows, tableInput.cols));
                     setTableOpen(false);

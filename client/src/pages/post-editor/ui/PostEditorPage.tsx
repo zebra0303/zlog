@@ -375,12 +375,12 @@ export default function PostEditorPage() {
         </div>
       </div>
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20">
+        <div className="rounded-lg bg-[var(--color-destructive-light)] p-3 text-sm text-[var(--color-destructive)]">
           {error}
         </div>
       )}
       {isUploading && (
-        <div className="flex items-center gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-600 dark:bg-blue-900/20">
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)]/10 p-3 text-sm text-[var(--color-primary)]">
           <ImageIcon className="h-4 w-4 animate-pulse" />
           {t("editor_image_uploading")}
         </div>
@@ -526,7 +526,7 @@ export default function PostEditorPage() {
                 setError(null);
                 setCoverImage("");
               }}
-              className="shrink-0 text-xs text-red-500 hover:underline"
+              className="shrink-0 text-xs text-[var(--color-destructive)] hover:underline"
             >
               {t("editor_cover_delete")}
             </button>

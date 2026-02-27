@@ -12,6 +12,11 @@
   --color-text: #1a1a2e;
   --color-text-secondary: #6b7280;
   --color-border: #e5e7eb;
+  /* Semantic status colors */
+  --color-destructive: #dc2626;
+  --color-destructive-light: #fef2f2;
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
 }
 
 .dark {
@@ -20,6 +25,10 @@
   --color-text: #f0f0f5;
   --color-text-secondary: #9ca3af;
   --color-border: #3f3f50;
+  --color-destructive: #f87171;
+  --color-destructive-light: rgba(239, 68, 68, 0.15);
+  --color-success: #4ade80;
+  --color-success-light: rgba(34, 197, 94, 0.15);
 }
 
 html {

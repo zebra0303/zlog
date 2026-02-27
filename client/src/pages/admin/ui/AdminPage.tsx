@@ -278,7 +278,7 @@ function PostManager() {
                         disabled={deletingId === post.id}
                         aria-label={t("delete")}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
                       </Button>
                     </div>
                   </div>
@@ -496,7 +496,7 @@ function CategoryManager() {
         </div>
 
         {error && (
-          <div className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20">
+          <div className="mb-3 rounded-lg bg-[var(--color-destructive-light)] p-3 text-sm text-[var(--color-destructive)]">
             {error}
           </div>
         )}
@@ -651,7 +651,7 @@ function CategoryManager() {
                         onClick={() => handleDelete(cat.id, cat.name)}
                         aria-label={t("delete")}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
                       </Button>
                     </div>
                   </div>
@@ -729,7 +729,7 @@ function ImageUploadInput({
             onClick={() => {
               onChange("");
             }}
-            className="text-xs text-red-500 hover:underline"
+            className="text-xs text-[var(--color-destructive)] hover:underline"
           >
             {t("reset")}
           </button>
@@ -851,7 +851,7 @@ function ThemeCustomizer({
             onClick={() => {
               update(colorKey, "");
             }}
-            className="text-xs text-red-500 hover:underline"
+            className="text-xs text-[var(--color-destructive)] hover:underline"
           >
             {t("reset")}
           </button>
@@ -994,7 +994,7 @@ function ThemeCustomizer({
                 onClick={() => {
                   update("primary_color", "");
                 }}
-                className="text-xs text-red-500 hover:underline"
+                className="text-xs text-[var(--color-destructive)] hover:underline"
               >
                 {t("reset")}
               </button>
@@ -1047,7 +1047,7 @@ function ThemeCustomizer({
                         onClick={() => {
                           update("surface_color_light", "");
                         }}
-                        className="text-xs text-red-500 hover:underline"
+                        className="text-xs text-[var(--color-destructive)] hover:underline"
                       >
                         {t("reset")}
                       </button>
@@ -1078,7 +1078,7 @@ function ThemeCustomizer({
                         onClick={() => {
                           update("text_color_light", "");
                         }}
-                        className="text-xs text-red-500 hover:underline"
+                        className="text-xs text-[var(--color-destructive)] hover:underline"
                       >
                         {t("reset")}
                       </button>
@@ -1128,7 +1128,7 @@ function ThemeCustomizer({
                         onClick={() => {
                           update("surface_color_dark", "");
                         }}
-                        className="text-xs text-red-500 hover:underline"
+                        className="text-xs text-[var(--color-destructive)] hover:underline"
                       >
                         {t("reset")}
                       </button>
@@ -1159,7 +1159,7 @@ function ThemeCustomizer({
                         onClick={() => {
                           update("text_color_dark", "");
                         }}
-                        className="text-xs text-red-500 hover:underline"
+                        className="text-xs text-[var(--color-destructive)] hover:underline"
                       >
                         {t("reset")}
                       </button>
@@ -1855,7 +1855,7 @@ function SubscriptionManager({
 
               {addMessage && (
                 <p
-                  className={`text-xs ${addMessage.type === "success" ? "text-green-600" : "text-red-500"}`}
+                  className={`text-xs ${addMessage.type === "success" ? "text-[var(--color-success)]" : "text-[var(--color-destructive)]"}`}
                 >
                   {addMessage.text}
                 </p>
@@ -1886,9 +1886,7 @@ function SubscriptionManager({
                       <span className="text-xs text-[var(--color-text-secondary)]">→</span>
                       <Badge variant="outline">{sub.localCategoryName}</Badge>
                       {!sub.isActive && (
-                        <Badge variant="outline" className="border-red-300 text-red-500">
-                          {t("admin_mysub_inactive")}
-                        </Badge>
+                        <Badge variant="destructive">{t("admin_mysub_inactive")}</Badge>
                       )}
                     </div>
                     <div className="mt-1 flex flex-wrap gap-3 text-xs text-[var(--color-text-secondary)]">
@@ -1906,7 +1904,7 @@ function SubscriptionManager({
                     </div>
                     {syncMessage?.id === sub.id && (
                       <p
-                        className={`mt-1 text-xs ${syncMessage.type === "success" ? "text-green-600" : "text-red-500"}`}
+                        className={`mt-1 text-xs ${syncMessage.type === "success" ? "text-[var(--color-success)]" : "text-[var(--color-destructive)]"}`}
                       >
                         {syncMessage.text}
                       </p>
@@ -1945,7 +1943,7 @@ function SubscriptionManager({
                       onClick={() => handleDelete(sub)}
                       aria-label={t("delete")}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
                     </Button>
                   </div>
                 </div>
@@ -2056,7 +2054,7 @@ function SubscriberManager() {
                   disabled={deletingId === sub.id}
                   aria-label={t("delete")}
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
                 </Button>
               </div>
             ))}
@@ -2470,10 +2468,12 @@ export default function AdminPage() {
                   </Button>
                 </div>
                 {slackTestResult === "ok" && (
-                  <p className="text-sm text-green-600">{t("admin_slack_test_ok")}</p>
+                  <p className="text-sm text-[var(--color-success)]">{t("admin_slack_test_ok")}</p>
                 )}
                 {slackTestResult === "error" && (
-                  <p className="text-sm text-red-500">{t("admin_slack_test_error")}</p>
+                  <p className="text-sm text-[var(--color-destructive)]">
+                    {t("admin_slack_test_error")}
+                  </p>
                 )}
                 <p className="text-xs text-[var(--color-text-secondary)]">
                   {t("admin_slack_webhook_hint")}

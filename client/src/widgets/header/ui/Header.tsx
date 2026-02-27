@@ -235,7 +235,7 @@ export function Header() {
                     </Link>
                     <div className="border-border/50 mx-3 my-1 border-t" />
                     <button
-                      className="hover:bg-background/80 flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-red-500"
+                      className="hover:bg-background/80 flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-destructive)]"
                       onClick={() => {
                         handleLogout();
                         setIsMobileMenuOpen(false);

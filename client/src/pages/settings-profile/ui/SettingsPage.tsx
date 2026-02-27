@@ -500,7 +500,7 @@ export default function SettingsPage() {
                     setSocialLinks((p) => p.filter((_, j) => j !== i));
                   }}
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
                 </Button>
               </div>
             ))}
@@ -517,7 +517,7 @@ export default function SettingsPage() {
           </h2>
           {accountMessage && (
             <div
-              className={`mb-4 rounded-lg p-3 text-sm ${accountMessage.type === "success" ? "bg-green-50 text-green-600 dark:bg-green-900/20" : "bg-red-50 text-red-600 dark:bg-red-900/20"}`}
+              className={`mb-4 rounded-lg p-3 text-sm ${accountMessage.type === "success" ? "bg-[var(--color-success-light)] text-[var(--color-success)]" : "bg-[var(--color-destructive-light)] text-[var(--color-destructive)]"}`}
             >
               {accountMessage.text}
             </div>
@@ -539,7 +539,8 @@ export default function SettingsPage() {
             <hr className="border-[var(--color-border)]" />
             <div>
               <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                {t("settings_current_password")} <span className="text-red-500">*</span>
+                {t("settings_current_password")}{" "}
+                <span className="text-[var(--color-destructive)]">*</span>
               </label>
               <Input
                 ref={currentPasswordRef}

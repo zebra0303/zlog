@@ -12,7 +12,8 @@ const buttonVariants = cva(
         outline:
           "border border-[var(--color-border)] bg-transparent hover:bg-[var(--color-surface)] text-[var(--color-text)]",
         ghost: "hover:bg-[var(--color-surface)] text-[var(--color-text)]",
-        destructive: "bg-red-500 text-white hover:bg-red-600",
+        destructive:
+          "bg-[var(--color-destructive)] text-white hover:bg-[var(--color-destructive)]/80",
         link: "text-[var(--color-primary)] underline-offset-4 hover:underline",
       },
       size: {

@@ -53,7 +53,7 @@ export function PostCard({ post, priority = false }: PostCardProps) {
             {post.isRemote && (
               <Badge
                 variant="outline"
-                className="border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400"
+                className="border-[var(--color-primary-light)] text-[var(--color-primary)]"
               >
                 <Globe className="mr-1 h-3 w-3" />
                 {post.remoteBlog?.displayName ?? t("post_external_blog")}
