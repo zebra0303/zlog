@@ -407,53 +407,57 @@ export default function PostEditorPage() {
           {t("preview")}
         </button>
       </div>
-      <div className="flex flex-wrap gap-3">
+      {/* Mobile: stack title above category+template; Desktop: single row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Input
           placeholder={t("editor_title_placeholder")}
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
           }}
-          className="flex-1 text-lg font-bold"
+          className="min-w-0 flex-1 text-lg font-bold"
         />
-        <select
-          value={categoryId}
-          title={t("editor_category_select")}
-          aria-label={t("editor_category_select")}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
-          }}
-          className="border-border bg-surface text-text rounded-lg border px-3 py-2 text-sm"
-        >
-          <option value="">{t("editor_category_select")}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        {templates.length > 0 && (
+        <div className="flex gap-3">
           <select
-            value=""
-            title={t("editor_template_select")}
-            aria-label={t("editor_template_select")}
+            value={categoryId}
+            title={t("editor_category_select")}
+            aria-label={t("editor_category_select")}
             onChange={(e) => {
-              handleTemplateSelect(e.target.value);
+              setCategoryId(e.target.value);
             }}
             className="border-border bg-surface text-text rounded-lg border px-3 py-2 text-sm"
           >
-            <option value="">{t("editor_template_select")}</option>
-            {templates.map((tpl) => (
-              <option key={tpl.id} value={tpl.id}>
-                {tpl.name}
+            <option value="">{t("editor_category_select")}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
-        )}
+
+          {templates.length > 0 && (
+            <select
+              value=""
+              title={t("editor_template_select")}
+              aria-label={t("editor_template_select")}
+              onChange={(e) => {
+                handleTemplateSelect(e.target.value);
+              }}
+              className="border-border bg-surface text-text rounded-lg border px-3 py-2 text-sm"
+            >
+              <option value="">{t("editor_template_select")}</option>
+              {templates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
-      <div className="flex gap-3">
-        <div className="relative flex-1">
+      {/* Mobile: stack tags above cover image; Desktop: side by side */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative sm:flex-1">
           <Input
             placeholder={t("editor_tag_placeholder")}
             value={tags}
@@ -490,7 +494,7 @@ export default function PostEditorPage() {
             </div>
           )}
         </div>
-        <div className="flex flex-1 items-center gap-2">
+        <div className="flex items-center gap-2 sm:flex-1">
           <Input
             placeholder={t("editor_cover_image_placeholder")}
             value={coverImage}
