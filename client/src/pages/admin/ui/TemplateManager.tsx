@@ -22,25 +22,8 @@ export function TemplateManager() {
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
 
-  const fetchTemplates = useCallback(
-    (showLoading = true) => {
-      if (showLoading) setIsLoading(true);
-      void api
-        .get<PostTemplate[]>("/templates")
-        .then((data) => {
-          setTemplates(data);
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setError(t("request_failed"));
-          setIsLoading(false);
-        });
-    },
-    [t],
-  );
-
-  useEffect(() => {
-    // Initial fetch
+  const fetchTemplates = useCallback(() => {
+    setIsLoading(true);
     void api
       .get<PostTemplate[]>("/templates")
       .then((data) => {
@@ -52,6 +35,11 @@ export function TemplateManager() {
         setIsLoading(false);
       });
   }, [t]);
+
+  useEffect(() => {
+    fetchTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreate = async () => {
     if (!newName.trim()) {
