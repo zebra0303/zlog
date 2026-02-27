@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { FileText, Plus, Pencil, Trash2, X, Save, Loader2 } from "lucide-react";
-import { Button, Input, Textarea, Card, CardContent } from "@/shared/ui";
+import { Button, Input, Textarea, Card, CardContent, MarkdownToolbar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import type { PostTemplate } from "@zlog/shared";
@@ -15,6 +15,9 @@ export function TemplateManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editContent, setEditContent] = useState("");
+
+  const newTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
@@ -163,14 +166,20 @@ export function TemplateManager() {
                   setNewName(e.target.value);
                 }}
               />
+              <MarkdownToolbar
+                textareaRef={newTextareaRef}
+                value={newContent}
+                onChange={setNewContent}
+              />
               <Textarea
+                ref={newTextareaRef}
                 placeholder={t("admin_template_content_placeholder")}
                 value={newContent}
                 onChange={(e) => {
                   setNewContent(e.target.value);
                 }}
                 rows={10}
-                className="font-mono text-sm"
+                className="rounded-t-none border-t-0 font-mono text-sm"
               />
               <div className="flex justify-end gap-2">
                 <Button size="sm" onClick={handleCreate}>
@@ -202,13 +211,19 @@ export function TemplateManager() {
                         setEditName(e.target.value);
                       }}
                     />
+                    <MarkdownToolbar
+                      textareaRef={editTextareaRef}
+                      value={editContent}
+                      onChange={setEditContent}
+                    />
                     <Textarea
+                      ref={editTextareaRef}
                       value={editContent}
                       onChange={(e) => {
                         setEditContent(e.target.value);
                       }}
                       rows={10}
-                      className="font-mono text-sm"
+                      className="rounded-t-none border-t-0 font-mono text-sm"
                     />
                     <div className="flex justify-end gap-2">
                       <Button
