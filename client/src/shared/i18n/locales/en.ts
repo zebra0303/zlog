@@ -409,6 +409,25 @@ export const en = {
   recent_visitors: "Recent Visitors",
   recent_visitors_title: "Recent Visitors (Today)",
   no_visitors_yet: "No visitors yet.",
+
+  // Admin - Template Management
+  admin_template_title: "Post Templates",
+  admin_template_add: "Add Template",
+  admin_template_new: "New Template",
+  admin_template_name_placeholder: "Template name",
+  admin_template_content_placeholder: "Template content (markdown)",
+  admin_template_name_required: "Please enter a template name.",
+  admin_template_content_required: "Please enter template content.",
+  admin_template_create_failed: "Failed to create template.",
+  admin_template_update_failed: "Failed to update template.",
+  admin_template_delete_failed: "Failed to delete template.",
+  admin_template_delete_confirm: 'Delete template "{name}"?',
+  admin_template_empty: "No templates. Create one to use when writing posts.",
+
+  // Post Editor - Templates
+  editor_template_select: "Use Template",
+  editor_template_none: "No Template",
+  editor_template_confirm: "Applying this template will overwrite your current content. Continue?",
 };
 
 export type TranslationKeys = keyof typeof en;

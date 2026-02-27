@@ -414,4 +414,23 @@ export const ko: Record<TranslationKeys, string> = {
   recent_visitors: "최근 방문자",
   recent_visitors_title: "최근 방문자 (오늘)",
   no_visitors_yet: "아직 방문자가 없습니다.",
+
+  // Admin - Template Management
+  admin_template_title: "템플릿 관리",
+  admin_template_add: "추가",
+  admin_template_new: "새 템플릿",
+  admin_template_name_placeholder: "템플릿 이름",
+  admin_template_content_placeholder: "템플릿 내용 (마크다운)",
+  admin_template_name_required: "템플릿 이름을 입력해주세요.",
+  admin_template_content_required: "템플릿 내용을 입력해주세요.",
+  admin_template_create_failed: "생성에 실패했습니다.",
+  admin_template_update_failed: "수정에 실패했습니다.",
+  admin_template_delete_failed: "삭제에 실패했습니다.",
+  admin_template_delete_confirm: '"{name}" 템플릿을 삭제하시겠습니까?',
+  admin_template_empty: "템플릿이 없습니다. 글쓰기 시 사용할 템플릿을 생성해보세요.",
+
+  // Post Editor - Templates
+  editor_template_select: "템플릿 선택",
+  editor_template_none: "선택 안 함",
+  editor_template_confirm: "템플릿을 적용하면 현재 입력된 내용이 덮어씌워집니다. 계속하시겠습니까?",
 };

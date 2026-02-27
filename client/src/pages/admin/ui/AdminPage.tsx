@@ -46,6 +46,7 @@ import { timeAgo } from "@/shared/lib/formatDate";
 import { countryFlag, countryName } from "@/shared/lib/country";
 import { VisitorStats } from "@/features/visitor-analytics/ui";
 import { FONT_OPTIONS, applyFont } from "@/shared/lib/fonts";
+import { TemplateManager } from "./TemplateManager";
 import type {
   CategoryWithStats,
   PostWithCategory,
@@ -2545,6 +2546,7 @@ export default function AdminPage() {
       {activeTab === "content" && (
         <>
           <CategoryManager />
+          <TemplateManager />
           <PostManager />
         </>
       )}

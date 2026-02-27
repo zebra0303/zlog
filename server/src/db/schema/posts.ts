@@ -83,3 +83,12 @@ export const postLikes = sqliteTable(
     index("idx_post_likes_visitor").on(table.visitorId),
   ],
 );
+
+// ============ post_templates ============
+export const postTemplates = sqliteTable("post_templates", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  content: text("content").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

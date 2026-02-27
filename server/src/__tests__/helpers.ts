@@ -214,6 +214,7 @@ export function cleanDb(): void {
     DELETE FROM remote_blogs;
     DELETE FROM commenters;
     DELETE FROM owner;
+    DELETE FROM post_templates;
   `);
 
   // Clean Analytics DB

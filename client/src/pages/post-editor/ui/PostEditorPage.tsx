@@ -7,7 +7,12 @@ import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useI18n } from "@/shared/i18n";
-import type { PostWithCategory, CategoryWithStats, CreatePostRequest } from "@zlog/shared";
+import type {
+  PostWithCategory,
+  CategoryWithStats,
+  CreatePostRequest,
+  PostTemplate,
+} from "@zlog/shared";
 
 type ViewMode = "edit" | "preview";
 
@@ -80,11 +85,28 @@ export default function PostEditorPage() {
     queryFn: () => api.get<string[]>("/posts/tags").catch(() => []),
   });
 
+  const { data: templates = [] } = useQuery({
+    queryKey: ["templates"],
+    queryFn: () => api.get<PostTemplate[]>("/templates").catch(() => []),
+  });
+
   const { data: post } = useQuery({
     queryKey: ["post", id],
     queryFn: () => api.get<PostWithCategory>(`/posts/${id}`),
     enabled: !!id,
   });
+
+  const handleTemplateSelect = (templateId: string) => {
+    if (!templateId) return;
+    const template = templates.find((t) => t.id === templateId);
+    if (!template) return;
+
+    if (content.trim() && !confirm(t("editor_template_confirm"))) {
+      return;
+    }
+
+    setContent(template.content);
+  };
 
   // Sync post data to form
   useEffect(() => {
@@ -410,6 +432,25 @@ export default function PostEditorPage() {
             </option>
           ))}
         </select>
+
+        {templates.length > 0 && (
+          <select
+            value=""
+            title={t("editor_template_select")}
+            aria-label={t("editor_template_select")}
+            onChange={(e) => {
+              handleTemplateSelect(e.target.value);
+            }}
+            className="border-border bg-surface text-text rounded-lg border px-3 py-2 text-sm"
+          >
+            <option value="">{t("editor_template_select")}</option>
+            {templates.map((tpl) => (
+              <option key={tpl.id} value={tpl.id}>
+                {tpl.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
       <div className="flex gap-3">
         <div className="relative flex-1">

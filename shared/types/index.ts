@@ -189,6 +189,15 @@ export interface PostAccessLog {
   createdAt: string;
 }
 
+// ============ PostTemplate ============
+export interface PostTemplate {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============ API types ============
 export interface LoginRequest {
   email: string;

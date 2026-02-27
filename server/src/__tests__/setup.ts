@@ -241,6 +241,14 @@ beforeAll(() => {
       value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS post_templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
     
     -- FTS Table for search tests
     CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
