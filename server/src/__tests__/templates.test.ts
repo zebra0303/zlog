@@ -45,7 +45,9 @@ describe("Post Templates API", () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as PostTemplate[];
     expect(json.length).toBe(1);
-    expect(json[0].name).toBe("My Template");
+    const first = json[0];
+    expect(first).toBeDefined();
+    expect(first?.name).toBe("My Template");
   });
 
   it("should update a template", async () => {
@@ -53,7 +55,8 @@ describe("Post Templates API", () => {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     const templates = (await listRes.json()) as PostTemplate[];
-    const templateId = templates[0].id;
+    expect(templates[0]).toBeDefined();
+    const templateId = templates[0]?.id;
 
     const res = await app.request(`/api/templates/${templateId}`, {
       method: "PUT",
@@ -77,7 +80,8 @@ describe("Post Templates API", () => {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     const templates = (await listRes.json()) as PostTemplate[];
-    const templateId = templates[0].id;
+    expect(templates[0]).toBeDefined();
+    const templateId = templates[0]?.id;
 
     const res = await app.request(`/api/templates/${templateId}`, {
       method: "DELETE",
