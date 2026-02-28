@@ -394,6 +394,11 @@ export const en = {
   toolbar_table_insert: "Insert Table",
   toolbar_callout: "Callout",
   toolbar_emoji: "Emoji",
+  toolbar_color: "Text/Background color",
+  toolbar_color_text: "Text color",
+  toolbar_color_bg: "Background color",
+  toolbar_color_copy: "Copy hex code",
+  toolbar_color_copied: "Copied!",
 
   // Admin - Notifications
   admin_notifications: "Notifications",

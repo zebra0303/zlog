@@ -398,6 +398,11 @@ export const ko: Record<TranslationKeys, string> = {
   toolbar_table_insert: "표 삽입",
   toolbar_callout: "콜아웃",
   toolbar_emoji: "이모지",
+  toolbar_color: "텍스트/배경 색상",
+  toolbar_color_text: "텍스트 색상",
+  toolbar_color_bg: "배경 색상",
+  toolbar_color_copy: "색상 코드 복사",
+  toolbar_color_copied: "복사됨!",
 
   // Admin - Notifications
   admin_notifications: "알림 설정",

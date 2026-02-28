@@ -14,11 +14,15 @@ import {
   Code,
   FileCode,
   Minus,
+  Palette,
   Table,
   Info,
   SmilePlus,
   HelpCircle,
+  Copy,
+  Check,
 } from "lucide-react";
+import { HexColorPicker } from "react-colorful";
 import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
 import { useI18n } from "../i18n";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
@@ -40,6 +44,28 @@ function generateMarkdownTable(rows: number, cols: number): string {
 }
 
 const GRID_SIZE = 8;
+
+// Preset colors for text/background color picker
+const PRESET_COLORS_DARK = [
+  "#dc2626",
+  "#ea580c",
+  "#ca8a04",
+  "#16a34a",
+  "#0891b2",
+  "#2563eb",
+  "#7c3aed",
+  "#64748b",
+];
+const PRESET_COLORS_LIGHT = [
+  "#fecaca",
+  "#fed7aa",
+  "#fef08a",
+  "#bbf7d0",
+  "#a5f3fc",
+  "#bfdbfe",
+  "#ddd6fe",
+  "#e2e8f0",
+];
 
 export function MarkdownToolbar({
   textareaRef,
@@ -238,6 +264,14 @@ export function MarkdownToolbar({
   const emojiRef = useRef<HTMLDivElement>(null);
   const emojiPopoverRef = useRef<HTMLDivElement>(null);
 
+  // Color picker state
+  const [colorOpen, setColorOpen] = useState(false);
+  const colorRef = useRef<HTMLDivElement>(null);
+  const colorPopoverRef = useRef<HTMLDivElement>(null);
+  const [colorMode, setColorMode] = useState<"text" | "bg">("text");
+  const [customColor, setCustomColor] = useState("#dc2626");
+  const [colorCopied, setColorCopied] = useState(false);
+
   // Table size picker state
   const [tableOpen, setTableOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -265,9 +299,16 @@ export function MarkdownToolbar({
     },
     [],
   );
+  const closeColor = useMemo(
+    () => () => {
+      setColorOpen(false);
+    },
+    [],
+  );
   useClickOutside(calloutRef, closeCallout, calloutOpen);
   useClickOutside(tableRef, closeTable, tableOpen);
   useClickOutside(emojiRef, closeEmoji, emojiOpen);
+  useClickOutside(colorRef, closeColor, colorOpen);
 
   // Shared helper: position a popover within viewport bounds
   const alignPopover = useCallback(
@@ -317,6 +358,12 @@ export function MarkdownToolbar({
     }
   }, [emojiOpen, alignPopover]);
 
+  useEffect(() => {
+    if (colorOpen) {
+      alignPopover(colorPopoverRef.current, colorRef.current);
+    }
+  }, [colorOpen, alignPopover]);
+
   // Keyboard navigation for grid picker
   const handleGridKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -362,6 +409,29 @@ export function MarkdownToolbar({
     setEmojiOpen(false);
   };
 
+  // Apply color wrap to selected text
+  const applyColor = useCallback(
+    (hex: string, mode: "text" | "bg") => {
+      const style = mode === "text" ? `color:${hex}` : `background-color:${hex}`;
+      applyWrap(`<span style="${style}">`, "</span>", "colored text");
+      setColorOpen(false);
+    },
+    [applyWrap],
+  );
+
+  // Copy hex code to clipboard
+  const copyHex = useCallback(async (hex: string) => {
+    try {
+      await navigator.clipboard.writeText(hex);
+      setColorCopied(true);
+      setTimeout(() => {
+        setColorCopied(false);
+      }, 1500);
+    } catch {
+      // Clipboard API may not be available
+    }
+  }, []);
+
   // Clamp helper for mobile number inputs
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
@@ -392,6 +462,131 @@ export function MarkdownToolbar({
         </div>
       ))}
 
+      {/* Color picker popover */}
+      <div className="bg-border mx-1 h-5 w-px" role="separator" aria-hidden="true" />
+      <div ref={colorRef} className="relative">
+        <button
+          type="button"
+          title={t("toolbar_color")}
+          aria-label={t("toolbar_color")}
+          aria-expanded={colorOpen}
+          aria-haspopup="true"
+          onClick={() => {
+            setColorOpen((prev) => !prev);
+            setTableOpen(false);
+            setCalloutOpen(false);
+            setEmojiOpen(false);
+          }}
+          className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
+        >
+          <Palette className="h-4 w-4" />
+        </button>
+        {colorOpen && (
+          <div
+            ref={colorPopoverRef}
+            className="border-border bg-surface absolute top-full z-50 mt-1 rounded-lg border p-3 shadow-lg"
+            style={{ minWidth: 220 }}
+          >
+            {/* Mode toggle tabs */}
+            <div className="mb-2 flex gap-1 rounded-md bg-[var(--color-background)] p-0.5">
+              <button
+                type="button"
+                className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  colorMode === "text"
+                    ? "bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                }`}
+                onClick={() => {
+                  setColorMode("text");
+                }}
+              >
+                {t("toolbar_color_text")}
+              </button>
+              <button
+                type="button"
+                className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  colorMode === "bg"
+                    ? "bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                }`}
+                onClick={() => {
+                  setColorMode("bg");
+                }}
+              >
+                {t("toolbar_color_bg")}
+              </button>
+            </div>
+
+            {/* Preset colors — dark row */}
+            <div className="mb-1 flex gap-1">
+              {PRESET_COLORS_DARK.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  className="h-5 w-5 rounded-sm border border-[var(--color-border)] transition-transform hover:scale-125"
+                  style={{ backgroundColor: hex }}
+                  aria-label={hex}
+                  onClick={() => {
+                    applyColor(hex, colorMode);
+                  }}
+                />
+              ))}
+            </div>
+            {/* Preset colors — light row */}
+            <div className="mb-2 flex gap-1">
+              {PRESET_COLORS_LIGHT.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  className="h-5 w-5 rounded-sm border border-[var(--color-border)] transition-transform hover:scale-125"
+                  style={{ backgroundColor: hex }}
+                  aria-label={hex}
+                  onClick={() => {
+                    applyColor(hex, colorMode);
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Custom color picker */}
+            <div className="border-border border-t pt-2">
+              <HexColorPicker
+                color={customColor}
+                onChange={setCustomColor}
+                style={{ width: "100%" }}
+              />
+              <div className="mt-2 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  className="bg-primary hover:bg-primary/90 flex-1 rounded px-2 py-1 text-xs text-white transition-colors"
+                  onClick={() => {
+                    applyColor(customColor, colorMode);
+                  }}
+                >
+                  {colorMode === "text" ? t("toolbar_color_text") : t("toolbar_color_bg")}
+                </button>
+                <code className="text-text-secondary bg-background rounded px-1.5 py-1 text-xs">
+                  {customColor}
+                </code>
+                <button
+                  type="button"
+                  title={t("toolbar_color_copy")}
+                  aria-label={t("toolbar_color_copy")}
+                  className="text-text-secondary hover:text-text rounded p-1 transition-colors"
+                  onClick={() => copyHex(customColor)}
+                >
+                  {colorCopied ? (
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Table size picker — separate from buttons array */}
       <div className="bg-border mx-1 h-5 w-px" role="separator" aria-hidden="true" />
       <div ref={tableRef} className="relative">
@@ -405,6 +600,7 @@ export function MarkdownToolbar({
             setTableOpen((prev) => !prev);
             setCalloutOpen(false);
             setEmojiOpen(false);
+            setColorOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -531,6 +727,7 @@ export function MarkdownToolbar({
             setCalloutOpen((prev) => !prev);
             setTableOpen(false);
             setEmojiOpen(false);
+            setColorOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -571,6 +768,7 @@ export function MarkdownToolbar({
             setEmojiOpen((prev) => !prev);
             setCalloutOpen(false);
             setTableOpen(false);
+            setColorOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
