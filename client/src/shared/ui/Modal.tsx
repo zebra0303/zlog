@@ -36,7 +36,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   return createPortal(
     <dialog
       ref={dialogRef}
-      className="open:animate-in open:fade-in-0 open:zoom-in-95 backdrop:open:animate-in backdrop:open:fade-in-0 fixed inset-0 z-50 flex max-h-[85vh] w-full max-w-lg flex-col gap-4 rounded-lg bg-[var(--color-surface)] p-6 shadow-xl backdrop:bg-black/50"
+      className="open:animate-in open:fade-in-0 open:zoom-in-95 backdrop:open:animate-in backdrop:open:fade-in-0 fixed inset-0 z-50 m-auto flex max-h-[85vh] w-[calc(100%-2rem)] max-w-sm flex-col gap-4 rounded-2xl bg-[var(--color-surface)] p-6 shadow-2xl backdrop:bg-black/50 sm:w-full"
       onClose={onClose}
       onClick={handleBackdropClick}
     >
