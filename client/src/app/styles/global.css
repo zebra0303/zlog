@@ -51,6 +51,24 @@ body {
   word-break: break-word;
 }
 
+/* Compact list styling: tighter line-height and reduced indentation */
+.prose :where(ol, ul) {
+  padding-left: 1.25em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.prose :where(li) {
+  line-height: 1.2;
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+.prose :where(li > ol, li > ul) {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
 /* Mobile optimization: responsive prose heading sizes + CJK line-break */
 .prose h1 {
   font-size: clamp(1.4rem, 4.5vw, 2.25rem) !important;

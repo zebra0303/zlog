@@ -254,16 +254,59 @@ export default function PostEditorPage() {
     }
   }, []);
 
-  // Tab / Shift+Tab indent/outdent handler for textarea
+  // Tab / Shift+Tab indent/outdent + Enter auto-continue list handler
   const handleTextareaKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key !== "Tab") return;
-      e.preventDefault();
-
       const textarea = textareaRef.current;
       if (!textarea) return;
 
       const { selectionStart, selectionEnd, value } = textarea;
+
+      // Enter key: auto-continue list items
+      if (
+        e.key === "Enter" &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        selectionStart === selectionEnd
+      ) {
+        const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+        const currentLine = value.slice(lineStart, selectionStart);
+        const listMatch = /^(\s*)([-*]|\d+\.)\s/.exec(currentLine);
+
+        if (listMatch) {
+          e.preventDefault();
+          const [, indent, marker] = listMatch;
+          const emptyMatch = /^(\s*)([-*]|\d+\.)\s*$/.exec(currentLine);
+
+          if (emptyMatch) {
+            // Empty list item — remove marker to end the list
+            const newValue = value.slice(0, lineStart) + "\n" + value.slice(selectionStart);
+            setContent(newValue);
+            const newCursor = lineStart + 1;
+            requestAnimationFrame(() => {
+              textarea.selectionStart = textarea.selectionEnd = newCursor;
+            });
+          } else {
+            // Continue list with next marker
+            const nextMarker = /^\d+$/.test(marker.replace(".", ""))
+              ? `${parseInt(marker) + 1}.`
+              : marker;
+            const insertion = `\n${indent}${nextMarker} `;
+            const newValue = value.slice(0, selectionStart) + insertion + value.slice(selectionEnd);
+            setContent(newValue);
+            const newCursor = selectionStart + insertion.length;
+            requestAnimationFrame(() => {
+              textarea.selectionStart = textarea.selectionEnd = newCursor;
+            });
+          }
+          return;
+        }
+      }
+
+      if (e.key !== "Tab") return;
+      e.preventDefault();
+
       const indent = "  "; // 2-space indent
 
       if (selectionStart === selectionEnd) {
