@@ -222,6 +222,5 @@ export function cleanDb(): void {
     DELETE FROM failed_logins;
     DELETE FROM post_access_logs;
     DELETE FROM visitor_logs;
-    DELETE FROM daily_visitor_counts;
   `);
 }

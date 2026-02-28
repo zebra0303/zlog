@@ -243,11 +243,8 @@ export function bootstrap() {
     );
     CREATE INDEX IF NOT EXISTS idx_visitor_logs_date ON visitor_logs(visited_at);
 
-    CREATE TABLE IF NOT EXISTS daily_visitor_counts (
-      date TEXT PRIMARY KEY,
-      count INTEGER NOT NULL DEFAULT 0,
-      updated_at TEXT NOT NULL
-    );
+    -- Cleanup unused tables
+    DROP TABLE IF EXISTS daily_visitor_counts;
   `);
 
   // ============ New indexes (migration) ============

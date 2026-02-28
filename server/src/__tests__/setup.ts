@@ -291,14 +291,8 @@ beforeAll(() => {
       referer TEXT,
       visited_at TEXT NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS idx_visitor_logs_date ON visitor_logs(visited_at);
-
-    CREATE TABLE IF NOT EXISTS daily_visitor_counts (
-      date TEXT PRIMARY KEY,
-      count INTEGER DEFAULT 0 NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-  `);
+    CREATE INDEX IF NOT EXISTS idx_visitor_logs_date ON visitor_logs (visited_at);
+    `);
 });
 
 afterAll(() => {

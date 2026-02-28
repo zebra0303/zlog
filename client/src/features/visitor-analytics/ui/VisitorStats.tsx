@@ -127,7 +127,12 @@ export function VisitorStats({ className }: VisitorStatsProps) {
                         className="border-b border-[var(--color-border)] last:border-0"
                       >
                         <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text-secondary)]">
-                          {new Date(log.visitedAt).toLocaleTimeString()}
+                          {new Date(log.visitedAt).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </td>
                         <td className="px-3 py-1.5 whitespace-nowrap text-[var(--color-text)]">
                           <div className="flex items-center gap-1.5">

@@ -18,7 +18,6 @@ describe("Analytics API", () => {
 
   beforeEach(() => {
     analyticsDb.delete(analyticsSchema.visitorLogs).run();
-    analyticsDb.delete(analyticsSchema.dailyVisitorCounts).run();
   });
 
   it("should record a visit for anonymous user", async () => {
@@ -69,8 +68,8 @@ describe("Analytics API", () => {
     const data = await res.json();
     expect(data).toEqual({ counted: false, reason: "is_admin" });
 
-    const daily = analyticsDb.select().from(analyticsSchema.dailyVisitorCounts).get();
-    expect(daily).toBeUndefined(); // No row created
+    const log = analyticsDb.select().from(analyticsSchema.visitorLogs).get();
+    expect(log).toBeUndefined(); // No row created
   });
 
   it("should return visitor stats for admin", async () => {

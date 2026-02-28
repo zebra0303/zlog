@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
 import { posts } from "./posts.js";
 
 // ============ failedLogins — brute-force protection ============
@@ -50,10 +50,3 @@ export const visitorLogs = sqliteTable(
   },
   (table) => [index("idx_visitor_logs_date").on(table.visitedAt)],
 );
-
-// ============ dailyVisitorCounts — simple counter per day ============
-export const dailyVisitorCounts = sqliteTable("daily_visitor_counts", {
-  date: text("date").primaryKey(), // YYYY-MM-DD
-  count: integer("count").default(0).notNull(),
-  updatedAt: text("updated_at").notNull(),
-});
