@@ -273,6 +273,10 @@ export const ko: Record<TranslationKeys, string> = {
   admin_theme_align_center: "가운데",
   admin_theme_align_right: "오른쪽",
   admin_theme_font: "폰트",
+  admin_theme_default_mode: "기본 테마 모드",
+  admin_theme_default_mode_system: "시스템 설정 (자동)",
+  admin_theme_default_mode_light: "밝은 모드",
+  admin_theme_default_mode_dark: "어두운 모드",
 
   // Admin - Federation
   admin_fed_title: "Federation 설정",

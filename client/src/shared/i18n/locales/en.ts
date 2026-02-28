@@ -269,6 +269,10 @@ export const en = {
   admin_theme_align_center: "Center",
   admin_theme_align_right: "Right",
   admin_theme_font: "Font",
+  admin_theme_default_mode: "Default Theme Mode",
+  admin_theme_default_mode_system: "System Default (Auto)",
+  admin_theme_default_mode_light: "Light Mode",
+  admin_theme_default_mode_dark: "Dark Mode",
 
   // Admin - Federation
   admin_fed_title: "Federation Settings",

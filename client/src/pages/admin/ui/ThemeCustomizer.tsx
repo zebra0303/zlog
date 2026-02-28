@@ -229,6 +229,26 @@ export function ThemeCustomizer({
           </div>
         </div>
 
+        {/* Default Theme Mode Selection */}
+        <div className="mb-6 rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="mb-1 font-medium text-[var(--color-text)]">
+            {t("admin_theme_default_mode")}
+          </h3>
+          <div className="flex flex-col gap-2">
+            <select
+              value={settings.default_theme ?? "system"}
+              onChange={(e) => {
+                update("default_theme", e.target.value);
+              }}
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+            >
+              <option value="system">{t("admin_theme_default_mode_system")}</option>
+              <option value="light">{t("admin_theme_default_mode_light")}</option>
+              <option value="dark">{t("admin_theme_default_mode_dark")}</option>
+            </select>
+          </div>
+        </div>
+
         {/* Primary theme color */}
         <div className="mb-6 rounded-lg border border-[var(--color-border)] p-4">
           <h3 className="mb-1 font-medium text-[var(--color-text)]">

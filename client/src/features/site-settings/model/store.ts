@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { api } from "@/shared/api/client";
 import { useI18n, type Locale } from "@/shared/i18n";
 import { applyFont } from "@/shared/lib/fonts";
+import { useThemeStore } from "@/features/toggle-theme/model/store";
 
 interface SiteSettingsState {
   settings: Record<string, string>;
@@ -32,6 +33,12 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
       const serverLang = data.default_language as Locale | undefined;
       if (serverLang && !localStorage.getItem("zlog_locale")) {
         useI18n.getState().setLocale(serverLang);
+      }
+      // Apply default theme from server if exists and user hasn't manually set one
+      const serverTheme = data.default_theme;
+      if (serverTheme && serverTheme !== "system" && !localStorage.getItem("zlog_theme")) {
+        const isDark = serverTheme === "dark";
+        useThemeStore.getState().setTheme(isDark);
       }
     } catch {
       set({ isLoaded: true });
