@@ -419,6 +419,8 @@ postsRoute.openapi(
           content: rp.content,
           excerpt: rp.excerpt,
           coverImage: rp.coverImage,
+          coverImageWidth: rp.coverImageWidth,
+          coverImageHeight: rp.coverImageHeight,
           status: "published" as const,
           viewCount: 0,
           commentCount: 0,
