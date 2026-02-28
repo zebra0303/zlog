@@ -254,6 +254,81 @@ export default function PostEditorPage() {
     }
   }, []);
 
+  // Tab / Shift+Tab indent/outdent handler for textarea
+  const handleTextareaKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key !== "Tab") return;
+      e.preventDefault();
+
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const { selectionStart, selectionEnd, value } = textarea;
+      const indent = "  "; // 2-space indent
+
+      if (selectionStart === selectionEnd) {
+        // No selection — single cursor
+        if (e.shiftKey) {
+          // Outdent: remove up to 2 leading spaces from current line
+          const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+          const linePrefix = value.slice(lineStart, selectionStart);
+          const spacesToRemove = linePrefix.startsWith("  ")
+            ? 2
+            : linePrefix.startsWith(" ")
+              ? 1
+              : 0;
+          if (spacesToRemove === 0) return;
+          const newValue = value.slice(0, lineStart) + value.slice(lineStart + spacesToRemove);
+          setContent(newValue);
+          const newCursor = selectionStart - spacesToRemove;
+          requestAnimationFrame(() => {
+            textarea.selectionStart = textarea.selectionEnd = newCursor;
+          });
+        } else {
+          // Indent: insert 2 spaces at cursor
+          const newValue = value.slice(0, selectionStart) + indent + value.slice(selectionEnd);
+          setContent(newValue);
+          const newCursor = selectionStart + indent.length;
+          requestAnimationFrame(() => {
+            textarea.selectionStart = textarea.selectionEnd = newCursor;
+          });
+        }
+      } else {
+        // Block selection — indent/outdent each line
+        const blockStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+        const selectedText = value.slice(blockStart, selectionEnd);
+        const lines = selectedText.split("\n");
+        let offset = 0; // cumulative shift for selectionStart line
+        let totalOffset = 0;
+        const firstLineStart = blockStart;
+
+        const newLines = lines.map((line, i) => {
+          if (e.shiftKey) {
+            const spacesToRemove = line.startsWith("  ") ? 2 : line.startsWith(" ") ? 1 : 0;
+            if (i === 0) offset = -spacesToRemove;
+            totalOffset -= spacesToRemove;
+            return line.slice(spacesToRemove);
+          } else {
+            if (i === 0) offset = indent.length;
+            totalOffset += indent.length;
+            return indent + line;
+          }
+        });
+
+        const newValue =
+          value.slice(0, firstLineStart) + newLines.join("\n") + value.slice(selectionEnd);
+        setContent(newValue);
+        const newStart = Math.max(firstLineStart, selectionStart + offset);
+        const newEnd = selectionEnd + totalOffset;
+        requestAnimationFrame(() => {
+          textarea.selectionStart = newStart;
+          textarea.selectionEnd = newEnd;
+        });
+      }
+    },
+    [setContent],
+  );
+
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -560,6 +635,7 @@ export default function PostEditorPage() {
               onChange={(e) => {
                 setContent(e.target.value);
               }}
+              onKeyDown={handleTextareaKeyDown}
               onPaste={handlePaste}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
