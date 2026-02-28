@@ -393,6 +393,7 @@ export const ko: Record<TranslationKeys, string> = {
   toolbar_table_cols: "열",
   toolbar_table_insert: "표 삽입",
   toolbar_callout: "콜아웃",
+  toolbar_emoji: "이모지",
 
   // Admin - Notifications
   admin_notifications: "알림 설정",

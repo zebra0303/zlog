@@ -16,9 +16,12 @@ import {
   Minus,
   Table,
   Info,
+  SmilePlus,
   HelpCircle,
 } from "lucide-react";
+import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
 import { useI18n } from "../i18n";
+import { useThemeStore } from "@/features/toggle-theme/model/store";
 
 interface MarkdownToolbarProps {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -45,6 +48,7 @@ export function MarkdownToolbar({
   onImageUpload,
 }: MarkdownToolbarProps) {
   const { t } = useI18n();
+  const { isDark } = useThemeStore();
 
   const restoreCursor = useCallback(
     (start: number, end: number) => {
@@ -229,6 +233,11 @@ export function MarkdownToolbar({
   const helpRef = useRef<HTMLDivElement>(null);
   const helpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Emoji picker state
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const emojiRef = useRef<HTMLDivElement>(null);
+  const emojiPopoverRef = useRef<HTMLDivElement>(null);
+
   // Table size picker state
   const [tableOpen, setTableOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -237,7 +246,7 @@ export function MarkdownToolbar({
   const [tableInput, setTableInput] = useState({ rows: 3, cols: 3 });
   const [isTouchDevice] = useState(() => typeof window !== "undefined" && "ontouchstart" in window);
 
-  // Close callout/table popovers on outside click
+  // Close popovers on outside click
   const closeCallout = useMemo(
     () => () => {
       setCalloutOpen(false);
@@ -250,8 +259,15 @@ export function MarkdownToolbar({
     },
     [],
   );
+  const closeEmoji = useMemo(
+    () => () => {
+      setEmojiOpen(false);
+    },
+    [],
+  );
   useClickOutside(calloutRef, closeCallout, calloutOpen);
   useClickOutside(tableRef, closeTable, tableOpen);
+  useClickOutside(emojiRef, closeEmoji, emojiOpen);
 
   // Shared helper: position a popover within viewport bounds
   const alignPopover = useCallback(
@@ -282,19 +298,24 @@ export function MarkdownToolbar({
     [],
   );
 
-  // Position table popover when opened
+  // Position popovers when opened
   useEffect(() => {
     if (tableOpen) {
       alignPopover(tablePopoverRef.current, tableRef.current);
     }
   }, [tableOpen, alignPopover]);
 
-  // Position callout popover when opened
   useEffect(() => {
     if (calloutOpen) {
       alignPopover(calloutPopoverRef.current, calloutRef.current);
     }
   }, [calloutOpen, alignPopover]);
+
+  useEffect(() => {
+    if (emojiOpen) {
+      alignPopover(emojiPopoverRef.current, emojiRef.current);
+    }
+  }, [emojiOpen, alignPopover]);
 
   // Keyboard navigation for grid picker
   const handleGridKeyDown = useCallback(
@@ -335,6 +356,11 @@ export function MarkdownToolbar({
     },
     [tableHover, applyInsert],
   );
+
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    applyInsert(emojiData.emoji);
+    setEmojiOpen(false);
+  };
 
   // Clamp helper for mobile number inputs
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -377,7 +403,8 @@ export function MarkdownToolbar({
           aria-haspopup="true"
           onClick={() => {
             setTableOpen((prev) => !prev);
-            setCalloutOpen(false); // prevent both popovers open
+            setCalloutOpen(false);
+            setEmojiOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -502,7 +529,8 @@ export function MarkdownToolbar({
           aria-haspopup="true"
           onClick={() => {
             setCalloutOpen((prev) => !prev);
-            setTableOpen(false); // prevent both popovers open
+            setTableOpen(false);
+            setEmojiOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -530,6 +558,37 @@ export function MarkdownToolbar({
           </div>
         )}
       </div>
+
+      {/* Emoji popover */}
+      <div ref={emojiRef} className="relative">
+        <button
+          type="button"
+          title={t("toolbar_emoji")}
+          aria-label={t("toolbar_emoji")}
+          aria-expanded={emojiOpen}
+          aria-haspopup="true"
+          onClick={() => {
+            setEmojiOpen((prev) => !prev);
+            setCalloutOpen(false);
+            setTableOpen(false);
+          }}
+          className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
+        >
+          <SmilePlus className="h-4 w-4" />
+        </button>
+        {emojiOpen && (
+          <div ref={emojiPopoverRef} className="absolute top-full z-50 mt-1 shadow-lg">
+            <EmojiPicker
+              onEmojiClick={onEmojiClick}
+              theme={isDark ? Theme.DARK : Theme.LIGHT}
+              lazyLoadEmojis={true}
+              searchDisabled={true}
+              skinTonesDisabled={true}
+            />
+          </div>
+        )}
+      </div>
+
       <div className="ml-auto flex items-center">
         <div className="bg-border mx-1 h-5 w-px" role="separator" aria-hidden="true" />
         <div

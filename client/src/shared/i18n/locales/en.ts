@@ -389,6 +389,7 @@ export const en = {
   toolbar_table_cols: "Columns",
   toolbar_table_insert: "Insert Table",
   toolbar_callout: "Callout",
+  toolbar_emoji: "Emoji",
 
   // Admin - Notifications
   admin_notifications: "Notifications",

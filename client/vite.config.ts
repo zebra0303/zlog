@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => {
               "rehype-raw",
               "rehype-sanitize",
             ],
+            "emoji-vendor": ["emoji-picker-react"],
           },
         },
       },
