@@ -307,6 +307,7 @@ erDiagram
 - **Background sync worker**: automatic periodic federation sync with GC optimization
 - **Server-proxied federation**: all cross-origin calls are server-to-server (no CORS dependency)
 - **Testing**: Vitest + Testing Library for both server API and client UI components
+- **Performance**: Built-in Lighthouse script to measure Core Web Vitals and provide context for AI-driven performance optimization
 
 ---
 

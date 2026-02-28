@@ -307,6 +307,7 @@ erDiagram
 - **백그라운드 동기화 워커**: 주기적 Federation 자동 동기화 + GC 최적화
 - **서버 프록시 Federation**: 모든 크로스 오리진 호출이 서버 간 통신 (CORS 의존성 없음)
 - **테스트**: Vitest + Testing Library 기반 서버 API 및 클라이언트 UI 컴포넌트 테스트
+- **성능 측정**: 내장된 Lighthouse 스크립트로 Core Web Vitals 지표를 자동 측정하고 AI 성능 최적화 컨텍스트로 활용
 
 ---
 
