@@ -54,9 +54,9 @@ body {
 /* Compact list styling: tighter line-height and reduced indentation */
 .prose ol,
 .prose ul {
-  padding-left: 1.25em;
-  margin-top: 0.35em;
-  margin-bottom: 0.35em;
+  padding-left: 0.75em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
 }
 
 .prose li {
@@ -72,15 +72,13 @@ body {
 }
 
 /* Reduce gap between headings and the list that immediately follows */
-.prose h1 + ol,
-.prose h1 + ul,
-.prose h2 + ol,
-.prose h2 + ul,
-.prose h3 + ol,
-.prose h3 + ul,
-.prose h4 + ol,
-.prose h4 + ul {
-  margin-top: 0.1em;
+.prose :is(h1, h2, h3, h4) {
+  margin-bottom: 0.4em;
+}
+
+.prose :is(h1, h2, h3, h4) + ol,
+.prose :is(h1, h2, h3, h4) + ul {
+  margin-top: 0;
 }
 
 /* Mobile optimization: responsive prose heading sizes + CJK line-break */
