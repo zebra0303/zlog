@@ -36,8 +36,10 @@ function getProcessor() {
         ...defaultSchema.attributes,
         iframe: ["src", "width", "height", "frameBorder", "allowFullScreen", "allow", "style"],
         div: ["className", "class"],
-        // Allow inline styles on span for text/background color
+        // Allow inline styles on span/td/th for text/background color
         span: ["style"],
+        td: ["style"],
+        th: ["style"],
       },
     };
 
