@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Rss, Trash2 } from "lucide-react";
-import { Button, Card, CardContent, Badge } from "@/shared/ui";
+import { Button, Card, CardContent, Badge, useConfirm } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 
@@ -19,6 +19,7 @@ export function SubscriberManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { t, locale } = useI18n();
+  const { confirm } = useConfirm();
 
   const fetchSubscribers = () => {
     setIsLoading(true);
@@ -38,7 +39,8 @@ export function SubscriberManager() {
   }, []);
 
   const handleDelete = async (sub: Subscriber) => {
-    if (!confirm(t("admin_sub_delete_confirm", { url: sub.subscriberUrl }))) return;
+    const isConfirmed = await confirm(t("admin_sub_delete_confirm", { url: sub.subscriberUrl }));
+    if (!isConfirmed) return;
     setDeletingId(sub.id);
     try {
       await api.delete(`/federation/subscribers/${sub.id}`);

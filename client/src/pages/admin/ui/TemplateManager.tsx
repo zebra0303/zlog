@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { FileText, Plus, Pencil, Trash2, X, Save, Loader2, Edit3, Eye } from "lucide-react";
-import { Button, Input, Textarea, Card, CardContent, MarkdownToolbar } from "@/shared/ui";
+import {
+  Button,
+  Input,
+  Textarea,
+  Card,
+  CardContent,
+  MarkdownToolbar,
+  useConfirm,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
@@ -29,6 +37,7 @@ export function TemplateManager() {
 
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
+  const { confirm } = useConfirm();
 
   const fetchTemplates = useCallback(() => {
     setIsLoading(true);
@@ -97,7 +106,8 @@ export function TemplateManager() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(t("admin_template_delete_confirm", { name }))) return;
+    const isConfirmed = await confirm(t("admin_template_delete_confirm", { name }));
+    if (!isConfirmed) return;
     try {
       await api.delete(`/templates/${id}`);
       fetchTemplates();

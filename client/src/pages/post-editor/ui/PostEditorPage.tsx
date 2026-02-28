@@ -2,7 +2,15 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { Eye, Edit3, Save, ArrowLeft, ImageIcon, Upload, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Input, Card, CardContent, SEOHead, MarkdownToolbar } from "@/shared/ui";
+import {
+  Button,
+  Input,
+  Card,
+  CardContent,
+  SEOHead,
+  MarkdownToolbar,
+  useConfirm,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -97,13 +105,16 @@ export default function PostEditorPage() {
     enabled: !!id,
   });
 
-  const handleTemplateSelect = (templateId: string) => {
+  const { confirm } = useConfirm();
+
+  const handleTemplateSelect = async (templateId: string) => {
     if (!templateId) return;
     const template = templates.find((t) => t.id === templateId);
     if (!template) return;
 
-    if (content.trim() && !confirm(t("editor_template_confirm"))) {
-      return;
+    if (content.trim()) {
+      const isConfirmed = await confirm(t("editor_template_confirm"));
+      if (!isConfirmed) return;
     }
 
     setContent(template.content);
@@ -568,7 +579,7 @@ export default function PostEditorPage() {
               title={t("editor_template_select")}
               aria-label={t("editor_template_select")}
               onChange={(e) => {
-                handleTemplateSelect(e.target.value);
+                void handleTemplateSelect(e.target.value);
               }}
               className="border-border bg-surface text-text rounded-lg border px-3 py-2 text-sm"
             >

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Heart, Reply, Pencil, Trash2 } from "lucide-react";
-import { Button, Input, Textarea, DefaultAvatar, useToast } from "@/shared/ui";
+import { Button, Input, Textarea, DefaultAvatar, useToast, useConfirm } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
@@ -52,6 +52,7 @@ export function CommentThread({
   };
   const { t } = useI18n();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
 
   const avatarUrl = comment.authorAvatarUrl;
 
@@ -103,10 +104,11 @@ export function CommentThread({
     }
   };
 
-  const onDeleteClick = () => {
+  const onDeleteClick = async () => {
     if (isAdmin || isSsoOwner) {
       // Admin or SSO owner: confirm dialog
-      if (window.confirm(t("comment_delete_confirm"))) {
+      const isConfirmed = await confirm(t("comment_delete_confirm"));
+      if (isConfirmed) {
         void handleDelete();
       }
     } else if (isAnonComment) {
@@ -115,9 +117,10 @@ export function CommentThread({
     }
   };
 
-  const onDeletePasswordSubmit = () => {
+  const onDeletePasswordSubmit = async () => {
     if (!deletePassword) return;
-    if (window.confirm(t("comment_delete_confirm"))) {
+    const isConfirmed = await confirm(t("comment_delete_confirm"));
+    if (isConfirmed) {
       void handleDelete(deletePassword);
       setShowDeletePassword(false);
       setDeletePassword("");

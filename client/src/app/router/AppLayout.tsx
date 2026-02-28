@@ -3,7 +3,7 @@ import { Outlet, useLocation } from "react-router";
 import { Header } from "@/widgets/header/ui/Header";
 import { Footer } from "@/widgets/footer/ui/Footer";
 import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
-import { ToastContainer } from "@/shared/ui";
+import { ToastContainer, ConfirmModal } from "@/shared/ui";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 
@@ -273,6 +273,7 @@ export function AppLayout() {
         )}
       </div>
       <Footer />
+      <ConfirmModal />
       <ToastContainer />
     </div>
   );

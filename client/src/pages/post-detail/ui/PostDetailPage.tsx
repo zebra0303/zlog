@@ -23,6 +23,7 @@ import {
   Skeleton,
   LazyImage,
   useToast,
+  useConfirm,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -40,6 +41,7 @@ export default function PostDetailPage() {
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const [post, setPost] = useState<PostWithCategory | null>(null);
   const [localCommentCount, setLocalCommentCount] = useState(0);
   const [localLikeCount, setLocalLikeCount] = useState(0);
@@ -74,7 +76,10 @@ export default function PostDetailPage() {
   }, [slug, t]);
 
   const handleDelete = async () => {
-    if (!post || !confirm(t("post_confirm_delete"))) return;
+    if (!post) return;
+    const isConfirmed = await confirm(t("post_confirm_delete"));
+    if (!isConfirmed) return;
+
     try {
       await api.delete(`/posts/${post.id}`);
       window.location.href = "/";

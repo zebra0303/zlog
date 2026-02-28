@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { FileText, Trash2, X, Loader2, Edit, Eye, EyeOff, Search, Activity } from "lucide-react";
-import { Button, Input, Card, CardContent, Badge, Pagination } from "@/shared/ui";
+import { Button, Input, Card, CardContent, Badge, Pagination, useConfirm } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import { timeAgo } from "@/shared/lib/formatDate";
@@ -34,6 +34,7 @@ export function PostManager() {
   const [logsLoading, setLogsLoading] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
+  const { confirm } = useConfirm();
 
   // Close popover on outside click
   useClickOutside(
@@ -96,8 +97,10 @@ export function PostManager() {
   };
 
   const handleDelete = async (post: PostWithCategory) => {
-    if (!confirm(t("admin_post_delete_confirm", { title: post.title || t("admin_post_untitled") })))
-      return;
+    const isConfirmed = await confirm(
+      t("admin_post_delete_confirm", { title: post.title || t("admin_post_untitled") }),
+    );
+    if (!isConfirmed) return;
     setDeletingId(post.id);
     try {
       await api.delete(`/posts/${post.id}`);

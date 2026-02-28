@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Folder, Plus, Pencil, Trash2, Check, X } from "lucide-react";
-import { Button, Input, Card, CardContent, Badge, ToggleSwitch } from "@/shared/ui";
+import { Button, Input, Card, CardContent, Badge, ToggleSwitch, useConfirm } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
@@ -18,6 +18,7 @@ export function CategoryManager() {
   const [editIsPublic, setEditIsPublic] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
+  const { confirm } = useConfirm();
 
   const fetchCategories = useCallback(() => {
     void api
@@ -74,7 +75,8 @@ export function CategoryManager() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(t("admin_cat_delete_confirm", { name }))) return;
+    const isConfirmed = await confirm(t("admin_cat_delete_confirm", { name }));
+    if (!isConfirmed) return;
     try {
       await api.delete(`/categories/${id}`);
       fetchCategories();
