@@ -106,19 +106,20 @@ body {
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-.prose thead th {
+/* Apply consistent padding to all th/td (covers raw HTML tables without thead/tbody) */
+.prose th,
+.prose td {
   padding: 0.75rem 1rem !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.prose th {
   font-weight: 600 !important;
   color: var(--color-text) !important;
-  border-bottom: 1px solid var(--color-border) !important;
 }
 
-.prose tbody td {
-  padding: 0.75rem 1rem !important;
-  border-bottom: 1px solid var(--color-border) !important;
-}
-
-.prose tbody tr:last-child td {
+.prose tbody tr:last-child td,
+.prose tr:last-child td {
   border-bottom: none !important;
 }
 
