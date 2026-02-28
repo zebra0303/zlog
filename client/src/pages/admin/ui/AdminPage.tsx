@@ -11,7 +11,7 @@ import {
   Activity,
   ChevronDown,
 } from "lucide-react";
-import { Button, Input, Textarea, Card, CardContent, SEOHead } from "@/shared/ui";
+import { Button, Input, Textarea, Card, CardContent, SEOHead, ToggleSwitch } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
@@ -323,21 +323,16 @@ export default function AdminPage() {
                       {t("admin_display_lazy_load")}
                     </label>
                   </div>
-                  <button
-                    role="switch"
-                    aria-checked={settings.lazy_load_images === "true"}
-                    onClick={() => {
+                  <ToggleSwitch
+                    checked={settings.lazy_load_images === "true"}
+                    onToggle={() => {
                       update(
                         "lazy_load_images",
                         settings.lazy_load_images === "true" ? "false" : "true",
                       );
                     }}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${settings.lazy_load_images === "true" ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
-                  >
-                    <span
-                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${settings.lazy_load_images === "true" ? "left-[22px]" : "left-0.5"}`}
-                    />
-                  </button>
+                    label={t("admin_display_lazy_load")}
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">

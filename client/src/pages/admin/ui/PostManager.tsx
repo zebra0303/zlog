@@ -156,6 +156,7 @@ export function PostManager() {
                 setDebouncedSearch("");
                 setPage(1);
               }}
+              aria-label="Clear search"
               className="absolute top-1/2 right-3 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
             >
               <X className="h-4 w-4" />

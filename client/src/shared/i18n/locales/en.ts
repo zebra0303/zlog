@@ -153,6 +153,7 @@ export const en = {
   comment_submit: "Post Comment",
   comment_submitting: "Posting...",
   comment_reply: "Reply",
+  comment_like: "Like",
   comment_deleted: "Deleted",
   comment_login_prompt:
     "Sign in with social to leave a comment. Your profile picture and name will be shown automatically.",

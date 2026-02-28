@@ -157,6 +157,7 @@ export const ko: Record<TranslationKeys, string> = {
   comment_submit: "댓글 작성",
   comment_submitting: "작성 중...",
   comment_reply: "답글",
+  comment_like: "좋아요",
   comment_deleted: "삭제됨",
   comment_login_prompt:
     "소셜 로그인으로 댓글을 남겨보세요. 프로필 이미지와 이름이 자동으로 표시됩니다.",

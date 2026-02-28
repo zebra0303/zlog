@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Folder, Plus, Pencil, Trash2, Check, X } from "lucide-react";
-import { Button, Input, Card, CardContent, Badge } from "@/shared/ui";
+import { Button, Input, Card, CardContent, Badge, ToggleSwitch } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
@@ -141,18 +141,13 @@ export function CategoryManager() {
               />
               <div className="flex items-center justify-between">
                 <label className="text-sm text-[var(--color-text)]">{t("public")}</label>
-                <button
-                  role="switch"
-                  aria-checked={newIsPublic}
-                  onClick={() => {
+                <ToggleSwitch
+                  checked={newIsPublic}
+                  onToggle={() => {
                     setNewIsPublic(!newIsPublic);
                   }}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${newIsPublic ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${newIsPublic ? "left-[22px]" : "left-0.5"}`}
-                  />
-                </button>
+                  label={t("public")}
+                />
               </div>
               <div className="flex justify-end gap-2">
                 <Button
@@ -204,18 +199,13 @@ export function CategoryManager() {
                     />
                     <div className="flex items-center justify-between">
                       <label className="text-sm text-[var(--color-text)]">{t("public")}</label>
-                      <button
-                        role="switch"
-                        aria-checked={editIsPublic}
-                        onClick={() => {
+                      <ToggleSwitch
+                        checked={editIsPublic}
+                        onToggle={() => {
                           setEditIsPublic(!editIsPublic);
                         }}
-                        className={`relative h-6 w-11 rounded-full transition-colors ${editIsPublic ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
-                      >
-                        <span
-                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${editIsPublic ? "left-[22px]" : "left-0.5"}`}
-                        />
-                      </button>
+                        label={t("public")}
+                      />
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button

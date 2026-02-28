@@ -1,5 +1,5 @@
 import { Palette } from "lucide-react";
-import { Input, Card, CardContent, ColorPicker } from "@/shared/ui";
+import { Input, Card, CardContent, ColorPicker, ToggleSwitch } from "@/shared/ui";
 import { useI18n } from "@/shared/i18n";
 import { FONT_OPTIONS, applyFont } from "@/shared/lib/fonts";
 import { ImageUploadInput } from "./ImageUploadInput";
@@ -513,10 +513,9 @@ export function ThemeCustomizer({
                           <span className="text-xs text-[var(--color-text-secondary)]">
                             {t("admin_theme_gradient")}
                           </span>
-                          <button
-                            role="switch"
-                            aria-checked={!!settings[lightGradientTo]}
-                            onClick={() => {
+                          <ToggleSwitch
+                            checked={!!settings[lightGradientTo]}
+                            onToggle={() => {
                               if (settings[lightGradientTo]) {
                                 update(lightGradientTo, "");
                                 update(lightGradientDir, "");
@@ -527,18 +526,9 @@ export function ThemeCustomizer({
                                 if (lightGradientMid) update(lightGradientMid, "50");
                               }
                             }}
-                            className={`relative h-5 w-9 rounded-full transition-colors ${
-                              settings[lightGradientTo]
-                                ? "bg-[var(--color-primary)]"
-                                : "bg-[var(--color-border)]"
-                            }`}
-                          >
-                            <span
-                              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-                                settings[lightGradientTo] ? "left-[18px]" : "left-0.5"
-                              }`}
-                            />
-                          </button>
+                            size="sm"
+                            label={t("admin_theme_gradient")}
+                          />
                         </div>
                       )}
                     </div>
@@ -615,10 +605,9 @@ export function ThemeCustomizer({
                           <span className="text-xs text-[var(--color-text-secondary)]">
                             {t("admin_theme_gradient")}
                           </span>
-                          <button
-                            role="switch"
-                            aria-checked={!!settings[darkGradientTo]}
-                            onClick={() => {
+                          <ToggleSwitch
+                            checked={!!settings[darkGradientTo]}
+                            onToggle={() => {
                               if (settings[darkGradientTo]) {
                                 update(darkGradientTo, "");
                                 update(darkGradientDir, "");
@@ -629,18 +618,9 @@ export function ThemeCustomizer({
                                 if (darkGradientMid) update(darkGradientMid, "50");
                               }
                             }}
-                            className={`relative h-5 w-9 rounded-full transition-colors ${
-                              settings[darkGradientTo]
-                                ? "bg-[var(--color-primary)]"
-                                : "bg-[var(--color-border)]"
-                            }`}
-                          >
-                            <span
-                              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-                                settings[darkGradientTo] ? "left-[18px]" : "left-0.5"
-                              }`}
-                            />
-                          </button>
+                            size="sm"
+                            label={t("admin_theme_gradient")}
+                          />
                         </div>
                       )}
                     </div>

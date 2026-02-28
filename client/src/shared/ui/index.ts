@@ -12,3 +12,4 @@ export * from "./Skeleton";
 export * from "./Textarea";
 export * from "./ZlogLogo";
 export * from "./Modal";
+export * from "./ToggleSwitch";

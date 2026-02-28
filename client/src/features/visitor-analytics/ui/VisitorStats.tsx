@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
 import { Users, X } from "lucide-react";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -51,12 +51,9 @@ export function VisitorStats({ className }: VisitorStatsProps) {
   }, [isAuthenticated, isOpen]);
 
   // Close popover on outside click
-  const closePopover = useMemo(
-    () => () => {
-      setIsOpen(false);
-    },
-    [],
-  );
+  const closePopover = useCallback(() => {
+    setIsOpen(false);
+  }, []);
   useClickOutside(popoverRef, closePopover, isOpen);
 
   if (!isAuthenticated || !stats) return null;
@@ -74,7 +71,7 @@ export function VisitorStats({ className }: VisitorStatsProps) {
               setIsOpen(!isOpen);
             }}
             className={`cursor-pointer transition-colors ${isOpen ? "text-[var(--color-primary)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"}`}
-            title={t("recent_visitors")}
+            aria-label={t("recent_visitors")}
           >
             <Users className="h-4 w-4" />
           </button>

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link, useLocation } from "react-router";
 import { Calendar, Eye, Folder, Globe, ExternalLink, MessageCircle, Heart } from "lucide-react";
 import { Card, CardContent, Badge, LazyImage } from "@/shared/ui";
@@ -19,7 +20,8 @@ interface PostCardProps {
   priority?: boolean;
 }
 
-export function PostCard({ post, priority = false }: PostCardProps) {
+// Memoized to prevent unnecessary re-renders in list views
+export const PostCard = memo(function PostCard({ post, priority = false }: PostCardProps) {
   const linkTo = post.isRemote ? `/remote-posts/${post.id}` : `/posts/${post.slug}`;
   const location = useLocation();
   const { t } = useI18n();
@@ -132,4 +134,4 @@ export function PostCard({ post, priority = false }: PostCardProps) {
       )}
     </Card>
   );
-}
+});

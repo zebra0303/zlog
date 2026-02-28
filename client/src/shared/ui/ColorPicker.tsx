@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { HexColorPicker } from "react-colorful";
+import { useClickOutside } from "@/shared/hooks/useClickOutside";
 
 interface ColorPickerProps {
   value: string;
@@ -8,33 +9,17 @@ interface ColorPickerProps {
 
 export function ColorPicker({ value, onChange }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const swatchRef = useRef<HTMLButtonElement>(null);
+  // Single wrapper ref covers both the swatch button and popover
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const handleClickOutside = useCallback((e: MouseEvent) => {
-    if (
-      popoverRef.current &&
-      !popoverRef.current.contains(e.target as Node) &&
-      swatchRef.current &&
-      !swatchRef.current.contains(e.target as Node)
-    ) {
-      setOpen(false);
-    }
+  const close = useCallback(() => {
+    setOpen(false);
   }, []);
-
-  useEffect(() => {
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [open, handleClickOutside]);
+  useClickOutside(wrapperRef, close, open);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={wrapperRef}>
       <button
-        ref={swatchRef}
         type="button"
         onClick={() => {
           setOpen(!open);
@@ -44,10 +29,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
         aria-label="Pick color"
       />
       {open && (
-        <div
-          ref={popoverRef}
-          className="absolute top-10 left-0 z-50 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-lg"
-        >
+        <div className="absolute top-10 left-0 z-50 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-lg">
           <HexColorPicker color={value || "#ffffff"} onChange={onChange} />
         </div>
       )}
