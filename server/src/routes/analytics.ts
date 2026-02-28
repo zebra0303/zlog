@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { desc, gte, lt } from "drizzle-orm";
+import { desc, gte, lt, sql } from "drizzle-orm";
 import { getCookie, setCookie } from "hono/cookie";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware, verifyToken } from "../middleware/auth.js";
@@ -58,9 +58,12 @@ analytics.post("/visit", async (c) => {
       .run();
 
     // 4. Cleanup: Delete logs older than 24 hours to keep the rolling window accurate for counts.
-    tx.delete(schema.visitorLogs)
-      .where(lt(schema.visitorLogs.visitedAt, twentyFourHoursAgoStr))
-      .run();
+    // To handle high traffic (e.g., millions of visits), we run the cleanup probabilistically (e.g., 5% chance).
+    if (Math.random() < 0.05) {
+      tx.delete(schema.visitorLogs)
+        .where(lt(schema.visitorLogs.visitedAt, twentyFourHoursAgoStr))
+        .run();
+    }
   });
 
   // 5. Set Cookie (Expires 24 hours from now)
@@ -83,10 +86,10 @@ analytics.get("/visitors", authMiddleware, (c) => {
 
   // Get total count of visitors in the last 24 hours
   const countResult = analyticsDb
-    .select({ id: schema.visitorLogs.id })
+    .select({ count: sql<number>`count(*)` })
     .from(schema.visitorLogs)
     .where(gte(schema.visitorLogs.visitedAt, twentyFourHoursAgoStr))
-    .all();
+    .get();
 
   // Get recent logs (max 20)
   const logs = analyticsDb
@@ -98,7 +101,7 @@ analytics.get("/visitors", authMiddleware, (c) => {
     .all();
 
   return c.json({
-    count: countResult.length,
+    count: countResult?.count ?? 0,
     recent: logs,
   });
 });

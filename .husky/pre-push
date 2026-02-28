@@ -8,10 +8,10 @@ npm run vitals -w client
 if [ $? -eq 0 ]; then
   # 변경된 내용이 있는지 확인
   if ! git diff --quiet .ai-vitals.md; then
-    echo "📝 .ai-vitals.md 파일이 업데이트되었습니다."
-    # echo "📝 .ai-vitals.md 파일이 업데이트되었습니다. 커밋 중..."
+    # echo "📝 .ai-vitals.md 파일이 업데이트되었습니다."
+    echo "📝 .ai-vitals.md 파일이 업데이트되었습니다. 커밋 중..."
     # # prettier 적용
-    # npx prettier --write .ai-vitals.md
+    npx prettier --write .ai-vitals.md
     
     # git add .ai-vitals.md
     # git commit -m "chore: update Lighthouse Core Web Vitals (.ai-vitals.md)" --no-verify
