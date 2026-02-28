@@ -71,6 +71,18 @@ body {
   margin-bottom: 0.1em;
 }
 
+/* Reduce gap between headings and the list that immediately follows */
+.prose h1 + ol,
+.prose h1 + ul,
+.prose h2 + ol,
+.prose h2 + ul,
+.prose h3 + ol,
+.prose h3 + ul,
+.prose h4 + ol,
+.prose h4 + ul {
+  margin-top: 0.1em;
+}
+
 /* Mobile optimization: responsive prose heading sizes + CJK line-break */
 .prose h1 {
   font-size: clamp(1.4rem, 4.5vw, 2.25rem) !important;
