@@ -306,19 +306,25 @@ export default function PostEditorPage() {
       if (e.key !== "Tab") return;
       e.preventDefault();
 
-      const indent = "  "; // 2-space indent
+      // Use 3-space indent for ordered lists (CommonMark requires marker-width indent)
+      const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+      const currentLine = value.slice(lineStart);
+      const isOrderedList = /^\s*\d+\.\s/.test(currentLine);
+      const indent = isOrderedList ? "   " : "  ";
+      const indentSize = indent.length;
 
       if (selectionStart === selectionEnd) {
         // No selection — single cursor
         if (e.shiftKey) {
-          // Outdent: remove up to 2 leading spaces from current line
-          const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+          // Outdent: remove leading spaces (3 for ordered, 2 for unordered)
           const linePrefix = value.slice(lineStart, selectionStart);
-          const spacesToRemove = linePrefix.startsWith("  ")
-            ? 2
-            : linePrefix.startsWith(" ")
-              ? 1
-              : 0;
+          const spacesToRemove = linePrefix.startsWith("   ")
+            ? 3
+            : linePrefix.startsWith("  ")
+              ? 2
+              : linePrefix.startsWith(" ")
+                ? 1
+                : 0;
           if (spacesToRemove === 0) return;
           const newValue = value.slice(0, lineStart) + value.slice(lineStart + spacesToRemove);
           setContent(newValue);
@@ -327,10 +333,10 @@ export default function PostEditorPage() {
             textarea.selectionStart = textarea.selectionEnd = newCursor;
           });
         } else {
-          // Indent: insert 2 spaces at cursor
-          const newValue = value.slice(0, selectionStart) + indent + value.slice(selectionEnd);
+          // Indent: insert spaces at line start for list context
+          const newValue = value.slice(0, lineStart) + indent + value.slice(lineStart);
           setContent(newValue);
-          const newCursor = selectionStart + indent.length;
+          const newCursor = selectionStart + indentSize;
           requestAnimationFrame(() => {
             textarea.selectionStart = textarea.selectionEnd = newCursor;
           });
@@ -345,15 +351,24 @@ export default function PostEditorPage() {
         const firstLineStart = blockStart;
 
         const newLines = lines.map((line, i) => {
+          // Detect indent size per line based on ordered/unordered list
+          const lineIndent = /^\s*\d+\.\s/.test(line) ? "   " : "  ";
+          const lineIndentSize = lineIndent.length;
           if (e.shiftKey) {
-            const spacesToRemove = line.startsWith("  ") ? 2 : line.startsWith(" ") ? 1 : 0;
+            const spacesToRemove = line.startsWith("   ")
+              ? 3
+              : line.startsWith("  ")
+                ? 2
+                : line.startsWith(" ")
+                  ? 1
+                  : 0;
             if (i === 0) offset = -spacesToRemove;
             totalOffset -= spacesToRemove;
             return line.slice(spacesToRemove);
           } else {
-            if (i === 0) offset = indent.length;
-            totalOffset += indent.length;
-            return indent + line;
+            if (i === 0) offset = lineIndentSize;
+            totalOffset += lineIndentSize;
+            return lineIndent + line;
           }
         });
 
