@@ -17,6 +17,7 @@ export function LazyImage({
   priority = false,
   srcSet,
   sizes,
+  style,
   ...props
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -52,6 +53,7 @@ export function LazyImage({
     <div
       ref={imgRef}
       className={cn("relative overflow-hidden bg-gray-100 dark:bg-gray-800", className)}
+      style={style}
     >
       {isInView && (
         <img
@@ -63,7 +65,8 @@ export function LazyImage({
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           className={cn(
-            "h-full w-full transition-opacity duration-500",
+            "block w-full transition-opacity duration-500",
+            style?.aspectRatio ? "h-full" : "h-auto",
             objectFit === "contain"
               ? "object-contain"
               : objectFit === "contain-mobile"

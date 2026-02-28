@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router";
 import { Calendar, ArrowLeft, ExternalLink } from "lucide-react";
-import { Button, Card, CardContent, DefaultAvatar, SEOHead, Skeleton } from "@/shared/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  DefaultAvatar,
+  SEOHead,
+  Skeleton,
+  LazyImage,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -117,10 +125,10 @@ export default function RemotePostDetailPage() {
         </Button>
       </div>
       {post.coverImage && (
-        <img
+        <LazyImage
           src={post.coverImage}
           alt={post.title}
-          className="mb-6 w-full rounded-xl object-cover"
+          className="mb-6 w-full rounded-xl"
           style={{
             aspectRatio:
               post.coverImageWidth && post.coverImageHeight
@@ -128,6 +136,7 @@ export default function RemotePostDetailPage() {
                 : "16 / 9",
             height: "auto",
           }}
+          objectFit="cover"
         />
       )}
       <div className="mb-8">

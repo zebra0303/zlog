@@ -438,7 +438,7 @@ async function autoRepairPostImageDimensions() {
   if (staleLocalPosts.length > 0) {
     console.log(`🔍 Found ${staleLocalPosts.length} local posts with missing image dimensions.`);
     for (const post of staleLocalPosts) {
-      if (!post.coverImage.startsWith("/uploads/images/")) continue;
+      if (!post.coverImage?.startsWith("/uploads/images/")) continue;
       try {
         const filePath = path.join(process.cwd(), post.coverImage);
         const metadata = await sharp(filePath).metadata();

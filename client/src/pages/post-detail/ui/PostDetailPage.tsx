@@ -14,7 +14,7 @@ import {
   Heart,
 } from "lucide-react";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
-import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
+import { Badge, Button, Card, CardContent, SEOHead, Skeleton, LazyImage } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { getVisitorId } from "@/shared/lib/visitorId";
@@ -143,10 +143,10 @@ export default function PostDetailPage() {
         </Button>
       </div>
       {post.coverImage && (
-        <img
+        <LazyImage
           src={post.coverImage}
           alt={post.title}
-          className="mb-6 w-full rounded-xl object-cover"
+          className="mb-6 w-full rounded-xl"
           style={{
             aspectRatio:
               post.coverImageWidth && post.coverImageHeight
@@ -154,8 +154,8 @@ export default function PostDetailPage() {
                 : "16 / 9",
             height: "auto",
           }}
-          fetchPriority="high"
-          decoding="async"
+          objectFit="cover"
+          priority={true}
         />
       )}
       <div className="mb-8">
