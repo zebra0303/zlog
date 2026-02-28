@@ -39,7 +39,13 @@ export const comments = sqliteTable(
     updatedAt: text("updated_at").notNull(),
     deletedAt: text("deleted_at"),
   },
-  (table) => [index("idx_comments_post").on(table.postId)],
+  (table) => [
+    index("idx_comments_post").on(table.postId),
+    // Speed up parent lookups for depth validation and reply fetching
+    index("idx_comments_parent").on(table.parentId),
+    // Composite index for level-by-level descendant queries
+    index("idx_comments_post_parent").on(table.postId, table.parentId, table.createdAt),
+  ],
 );
 
 // ============ commentLikes — comment likes ============

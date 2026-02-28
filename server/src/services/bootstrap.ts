@@ -112,6 +112,8 @@ export function bootstrap() {
       deleted_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id);
+    CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id);
+    CREATE INDEX IF NOT EXISTS idx_comments_post_parent ON comments(post_id, parent_id, created_at);
 
     CREATE TABLE IF NOT EXISTS comment_likes (
       id TEXT PRIMARY KEY,

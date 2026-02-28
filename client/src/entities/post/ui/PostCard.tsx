@@ -37,7 +37,7 @@ export function PostCard({ post, priority = false }: PostCardProps) {
           <LazyImage
             src={post.coverImage}
             alt={post.title}
-            className="h-auto w-full"
+            className="aspect-video h-auto w-full"
             objectFit="contain"
             priority={priority}
           />

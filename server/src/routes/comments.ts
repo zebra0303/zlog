@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../db/index.js";
+import { db, sqlite } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and, sql, inArray, isNull, asc, desc } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
@@ -317,18 +317,19 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   }
 
   if (body.parentId) {
-    let depth = 0;
-    let currentId: string | null = body.parentId;
-    while (currentId) {
-      const parent = db
-        .select()
-        .from(schema.comments)
-        .where(eq(schema.comments.id, currentId))
-        .get();
-      if (!parent) break;
-      currentId = parent.parentId;
-      depth++;
-    }
+    // Batch depth check: single recursive CTE query instead of N+1 loop
+    const stmt = sqlite.prepare(`
+      WITH RECURSIVE ancestors(id, parent_id, lvl) AS (
+        SELECT id, parent_id, 1 FROM comments WHERE id = ?
+        UNION ALL
+        SELECT c.id, c.parent_id, a.lvl + 1
+        FROM comments c JOIN ancestors a ON c.id = a.parent_id
+        WHERE a.lvl < 4
+      )
+      SELECT max(lvl) as depth FROM ancestors
+    `);
+    const ancestors = stmt.all(body.parentId) as { depth: number }[];
+    const depth = ancestors[0]?.depth ?? 0;
     if (depth >= 3) {
       return c.json({ error: "Maximum reply depth (3) reached." }, 400);
     }

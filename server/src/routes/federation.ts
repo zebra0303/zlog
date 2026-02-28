@@ -55,9 +55,17 @@ federationRoute.get("/categories", (c) => {
   );
 });
 
+// Default max posts per federation sync to prevent unbounded responses
+const FEDERATION_POST_LIMIT = 200;
+
 federationRoute.get("/categories/:id/posts", (c) => {
   const categoryId = c.req.param("id");
   const since = c.req.query("since");
+  const limitParam = c.req.query("limit");
+  const limit = Math.min(
+    Math.max(1, parseInt(limitParam ?? "", 10) || FEDERATION_POST_LIMIT),
+    FEDERATION_POST_LIMIT,
+  );
   const subscriberUrl = c.req.header("X-Zlog-Subscriber-Url")?.replace(/\/+$/, "");
 
   // Verify subscriber if header is present (Strict mode for identified pullers)
@@ -86,14 +94,22 @@ federationRoute.get("/categories/:id/posts", (c) => {
     eq(schema.posts.categoryId, categoryId),
     eq(schema.posts.status, "published"),
   );
+  // Apply LIMIT to prevent unbounded response payloads
   const postsResult = since
     ? db
         .select()
         .from(schema.posts)
         .where(and(conditions, gt(schema.posts.updatedAt, since)))
         .orderBy(desc(schema.posts.createdAt))
+        .limit(limit)
         .all()
-    : db.select().from(schema.posts).where(conditions).orderBy(desc(schema.posts.createdAt)).all();
+    : db
+        .select()
+        .from(schema.posts)
+        .where(conditions)
+        .orderBy(desc(schema.posts.createdAt))
+        .limit(limit)
+        .all();
 
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
   const siteUrl = ownerRecord?.siteUrl ?? "";

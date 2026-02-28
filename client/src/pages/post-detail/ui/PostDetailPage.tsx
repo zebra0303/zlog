@@ -142,7 +142,11 @@ export default function PostDetailPage() {
         </Button>
       </div>
       {post.coverImage && (
-        <img src={post.coverImage} alt={post.title} className="mb-6 h-auto w-full rounded-xl" />
+        <img
+          src={post.coverImage}
+          alt={post.title}
+          className="mb-6 aspect-video h-auto w-full rounded-xl object-cover"
+        />
       )}
       <div className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2">
