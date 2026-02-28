@@ -52,19 +52,21 @@ body {
 }
 
 /* Compact list styling: tighter line-height and reduced indentation */
-.prose :where(ol, ul) {
+.prose ol,
+.prose ul {
   padding-left: 1.25em;
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
+  margin-top: 0.35em;
+  margin-bottom: 0.35em;
 }
 
-.prose :where(li) {
+.prose li {
   line-height: 1.2;
   margin-top: 0.1em;
   margin-bottom: 0.1em;
 }
 
-.prose :where(li > ol, li > ul) {
+.prose li > ol,
+.prose li > ul {
   margin-top: 0.1em;
   margin-bottom: 0.1em;
 }
