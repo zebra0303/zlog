@@ -306,17 +306,14 @@ export default function PostEditorPage() {
       if (e.key !== "Tab") return;
       e.preventDefault();
 
-      // Use 3-space indent for ordered lists (CommonMark requires marker-width indent)
-      const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
-      const currentLine = value.slice(lineStart);
-      const isOrderedList = /^\s*\d+\.\s/.test(currentLine);
-      const indent = isOrderedList ? "   " : "  ";
-      const indentSize = indent.length;
+      // Uniform 3-space indent for both ordered and unordered lists
+      const indent = "   ";
 
       if (selectionStart === selectionEnd) {
         // No selection — single cursor
+        const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
         if (e.shiftKey) {
-          // Outdent: remove leading spaces (3 for ordered, 2 for unordered)
+          // Outdent: remove up to 3 leading spaces
           const linePrefix = value.slice(lineStart, selectionStart);
           const spacesToRemove = linePrefix.startsWith("   ")
             ? 3
@@ -333,10 +330,10 @@ export default function PostEditorPage() {
             textarea.selectionStart = textarea.selectionEnd = newCursor;
           });
         } else {
-          // Indent: insert spaces at line start for list context
+          // Indent: insert 3 spaces at line start
           const newValue = value.slice(0, lineStart) + indent + value.slice(lineStart);
           setContent(newValue);
-          const newCursor = selectionStart + indentSize;
+          const newCursor = selectionStart + indent.length;
           requestAnimationFrame(() => {
             textarea.selectionStart = textarea.selectionEnd = newCursor;
           });
@@ -351,9 +348,6 @@ export default function PostEditorPage() {
         const firstLineStart = blockStart;
 
         const newLines = lines.map((line, i) => {
-          // Detect indent size per line based on ordered/unordered list
-          const lineIndent = /^\s*\d+\.\s/.test(line) ? "   " : "  ";
-          const lineIndentSize = lineIndent.length;
           if (e.shiftKey) {
             const spacesToRemove = line.startsWith("   ")
               ? 3
@@ -366,9 +360,9 @@ export default function PostEditorPage() {
             totalOffset -= spacesToRemove;
             return line.slice(spacesToRemove);
           } else {
-            if (i === 0) offset = lineIndentSize;
-            totalOffset += lineIndentSize;
-            return lineIndent + line;
+            if (i === 0) offset = indent.length;
+            totalOffset += indent.length;
+            return indent + line;
           }
         });
 
