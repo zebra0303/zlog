@@ -9,13 +9,13 @@ if [ $? -eq 0 ]; then
   # 변경된 내용이 있는지 확인
   if ! git diff --quiet .ai-vitals.md; then
     # echo "📝 .ai-vitals.md 파일이 업데이트되었습니다."
-    echo "📝 .ai-vitals.md 파일이 업데이트되었습니다. 커밋 중..."
+    echo "📝 .ai-vitals.md 파일이 업데이트되었습니다. 추가 중..."
     # # prettier 적용
     npx prettier --write .ai-vitals.md
     
-    # git add .ai-vitals.md
+    git add .ai-vitals.md
     # git commit -m "chore: update Lighthouse Core Web Vitals (.ai-vitals.md)" --no-verify
-    # echo "✅ .ai-vitals.md 업데이트 및 커밋 완료."
+    echo "✅ .ai-vitals.md 업데이트 및 추가 완료."
   else
     echo "⚡ 성능 지표에 변경 사항이 없습니다."
   fi

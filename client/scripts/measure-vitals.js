@@ -42,7 +42,7 @@ async function runLighthouse() {
 
     chrome = await chromeLauncher.launch({ chromeFlags: ["--headless"] });
     const options = {
-      logLevel: "info",
+      logLevel: "error", // Only log errors to keep console output clean
       output: "json",
       onlyCategories: ["performance"],
       port: chrome.port,
@@ -56,7 +56,13 @@ async function runLighthouse() {
     const tbt = lhr.audits["total-blocking-time"].displayValue;
     const fcp = lhr.audits["first-contentful-paint"].displayValue;
 
-    console.log("Report generated. Parsing Core Vitals...");
+    // Print only Core Metrics to the console
+    console.log("\n📊 Core Metrics:");
+    console.log(`- Performance Score: ${score}`);
+    console.log(`- LCP: ${lcp}`);
+    console.log(`- CLS: ${cls}`);
+    console.log(`- TBT: ${tbt}`);
+    console.log(`- FCP: ${fcp}\n`);
 
     const markdownContent = `
 # Lighthouse Performance Vitals
