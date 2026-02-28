@@ -7,6 +7,7 @@ import { useI18n } from "@/shared/i18n";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useAuthStore } from "@/features/auth/model/store";
 import { getVisitorId } from "@/shared/lib/visitorId";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import type { CommentWithReplies, PaginatedResponse } from "@zlog/shared";
 
 function hasVisibleComments(comment: CommentWithReplies): boolean {
@@ -364,7 +365,7 @@ function CommentForm({
       onCountChange?.(1);
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("comment_write_failed"));
+      setError(getErrorMessage(err, t("comment_write_failed")));
     } finally {
       setIsSubmitting(false);
     }
@@ -554,7 +555,7 @@ function CommentThread({
       setEditPassword("");
       onRefresh();
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : t("comment_edit_wrong_password"));
+      setEditError(getErrorMessage(err, t("comment_edit_wrong_password")));
     } finally {
       setIsEditSubmitting(false);
     }
@@ -574,7 +575,7 @@ function CommentThread({
       onCountChange?.(-1);
       onRefresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : t("comment_edit_wrong_password"));
+      alert(getErrorMessage(err, t("comment_edit_wrong_password")));
     }
   };
 

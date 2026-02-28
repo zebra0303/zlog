@@ -3,6 +3,7 @@ import { FileText, Plus, Pencil, Trash2, X, Save, Loader2, Edit3, Eye } from "lu
 import { Button, Input, Textarea, Card, CardContent, MarkdownToolbar } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import type { PostTemplate } from "@zlog/shared";
 
@@ -69,7 +70,7 @@ export function TemplateManager() {
       setNewPreviewMode(false);
       fetchTemplates();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("admin_template_create_failed"));
+      setError(getErrorMessage(err, t("admin_template_create_failed")));
     }
   };
 
@@ -91,7 +92,7 @@ export function TemplateManager() {
       setEditingId(null);
       fetchTemplates();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("admin_template_update_failed"));
+      setError(getErrorMessage(err, t("admin_template_update_failed")));
     }
   };
 
@@ -101,7 +102,7 @@ export function TemplateManager() {
       await api.delete(`/templates/${id}`);
       fetchTemplates();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("admin_template_delete_failed"));
+      setError(getErrorMessage(err, t("admin_template_delete_failed")));
     }
   };
 

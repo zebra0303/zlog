@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Heart,
 } from "lucide-react";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import { Badge, Button, Card, CardContent, SEOHead, Skeleton } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -57,7 +58,7 @@ export default function PostDetailPage() {
         setIsLoading(false);
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Failed to load post");
+        setError(getErrorMessage(err, "Failed to load post"));
         setIsLoading(false);
       });
   }, [slug, t]);

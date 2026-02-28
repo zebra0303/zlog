@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useClickOutside } from "@/shared/hooks/useClickOutside";
 import { Users, X } from "lucide-react";
 import { useAuthStore } from "@/features/auth/model/store";
 import { api } from "@/shared/api/client";
@@ -49,20 +50,14 @@ export function VisitorStats({ className }: VisitorStatsProps) {
     }
   }, [isAuthenticated, isOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+  // Close popover on outside click
+  const closePopover = useMemo(
+    () => () => {
+      setIsOpen(false);
+    },
+    [],
+  );
+  useClickOutside(popoverRef, closePopover, isOpen);
 
   if (!isAuthenticated || !stats) return null;
 

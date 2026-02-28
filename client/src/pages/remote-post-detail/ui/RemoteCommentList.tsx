@@ -4,6 +4,7 @@ import { DefaultAvatar, Skeleton, Button } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import type { CommentWithReplies, PaginatedResponse } from "@zlog/shared";
 
 function hasVisibleComments(comment: CommentWithReplies): boolean {
@@ -129,7 +130,7 @@ export function RemoteCommentList({ remotePostId }: { remotePostId: string }) {
           setIsLoading(false);
         })
         .catch((err: unknown) => {
-          setError(err instanceof Error ? err.message : "Failed to load comments");
+          setError(getErrorMessage(err, "Failed to load comments"));
           setIsLoading(false);
         });
     },

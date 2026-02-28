@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useClickOutside } from "@/shared/hooks/useClickOutside";
 import {
   Bold,
   Italic,
@@ -236,33 +237,21 @@ export function MarkdownToolbar({
   const [tableInput, setTableInput] = useState({ rows: 3, cols: 3 });
   const [isTouchDevice] = useState(() => typeof window !== "undefined" && "ontouchstart" in window);
 
-  // Close callout popover on outside click
-  useEffect(() => {
-    if (!calloutOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (calloutRef.current && !calloutRef.current.contains(e.target as Node)) {
-        setCalloutOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [calloutOpen]);
-
-  // Close table popover on outside click
-  useEffect(() => {
-    if (!tableOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
-        setTableOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [tableOpen]);
+  // Close callout/table popovers on outside click
+  const closeCallout = useMemo(
+    () => () => {
+      setCalloutOpen(false);
+    },
+    [],
+  );
+  const closeTable = useMemo(
+    () => () => {
+      setTableOpen(false);
+    },
+    [],
+  );
+  useClickOutside(calloutRef, closeCallout, calloutOpen);
+  useClickOutside(tableRef, closeTable, tableOpen);
 
   // Shared helper: position a popover within viewport bounds
   const alignPopover = useCallback(

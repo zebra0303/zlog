@@ -6,6 +6,7 @@ import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useI18n } from "@/shared/i18n";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import { RemoteCommentList } from "./RemoteCommentList";
 
 import { getVisitorId } from "@/shared/lib/visitorId";
@@ -76,7 +77,7 @@ export default function RemotePostDetailPage() {
         }
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Failed to load remote post");
+        setError(getErrorMessage(err, "Failed to load remote post"));
         setIsLoading(false);
       });
   }, [id, navigate, t]);

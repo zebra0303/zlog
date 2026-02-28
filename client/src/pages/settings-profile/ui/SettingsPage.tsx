@@ -15,6 +15,7 @@ import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useI18n } from "@/shared/i18n";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import { SOCIAL_PLATFORMS } from "@zlog/shared";
 import type { ProfileWithStats, UpdateProfileRequest } from "@zlog/shared";
 
@@ -141,7 +142,7 @@ export default function SettingsPage() {
       setAvatarPreview(r.avatarUrl);
       setMessage(t("settings_saved"));
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : t("upload_failed"));
+      setMessage(getErrorMessage(err, t("upload_failed")));
     }
   };
 
@@ -202,7 +203,7 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      let errorMessage = err instanceof Error ? err.message : t("request_failed");
+      let errorMessage = getErrorMessage(err, t("request_failed"));
 
       if (errorMessage === "Current password is incorrect.") {
         errorMessage = t("settings_current_password_wrong");

@@ -7,6 +7,7 @@ import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useI18n } from "@/shared/i18n";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import type {
   PostWithCategory,
   CategoryWithStats,
@@ -283,7 +284,7 @@ export default function PostEditorPage() {
       }
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : t("request_failed"));
+      setError(getErrorMessage(err, t("request_failed")));
     },
   });
 
@@ -299,7 +300,7 @@ export default function PostEditorPage() {
       }
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : t("request_failed"));
+      setError(getErrorMessage(err, t("request_failed")));
     },
   });
 

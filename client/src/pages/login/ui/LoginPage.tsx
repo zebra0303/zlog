@@ -4,6 +4,7 @@ import { LogIn } from "lucide-react";
 import { Button, Input, Card, CardContent, CardHeader, SEOHead, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useI18n } from "@/shared/i18n";
+import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ export default function LoginPage() {
       // Force a full page reload so caches (categories, posts) are refreshed
       window.location.href = redirect ?? "/";
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("request_failed"));
+      setError(getErrorMessage(err, t("request_failed")));
     } finally {
       setIsLoading(false);
     }
