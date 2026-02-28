@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { eq, desc, and, gte, lt } from "drizzle-orm";
+import { desc, gte, lt } from "drizzle-orm";
 import { getCookie, setCookie } from "hono/cookie";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware, verifyToken } from "../middleware/auth.js";
@@ -31,7 +31,6 @@ analytics.post("/visit", async (c) => {
     }
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
   const xForwardedFor = c.req.header("x-forwarded-for");
   const ip = xForwardedFor?.split(",")[0]?.trim() ?? c.req.header("x-real-ip") ?? null;
   const userAgent = c.req.header("user-agent");
@@ -39,29 +38,11 @@ analytics.post("/visit", async (c) => {
   const { os, browser } = parseUserAgent(userAgent ?? "");
   const country = ip ? (geoip.lookup(ip)?.country ?? null) : null;
 
-  // 3. Upsert Daily Count & Insert Log
-  analyticsDb.transaction((tx) => {
-    // Upsert Count
-    const existing = tx
-      .select()
-      .from(schema.dailyVisitorCounts)
-      .where(eq(schema.dailyVisitorCounts.date, todayStr))
-      .get();
-    if (existing) {
-      tx.update(schema.dailyVisitorCounts)
-        .set({ count: existing.count + 1, updatedAt: new Date().toISOString() })
-        .where(eq(schema.dailyVisitorCounts.date, todayStr))
-        .run();
-    } else {
-      tx.insert(schema.dailyVisitorCounts)
-        .values({
-          date: todayStr,
-          count: 1,
-          updatedAt: new Date().toISOString(),
-        })
-        .run();
-    }
+  const nowISO = new Date().toISOString();
+  const twentyFourHoursAgoStr = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
+  // 3. Insert Log and cleanup old logs
+  analyticsDb.transaction((tx) => {
     // Insert Log
     tx.insert(schema.visitorLogs)
       .values({
@@ -72,48 +53,21 @@ analytics.post("/visit", async (c) => {
         os,
         browser,
         referer,
-        visitedAt: new Date().toISOString(),
+        visitedAt: nowISO,
       })
       .run();
 
-    // 4. Cleanup: Keep only last 20 logs for today
-    const startOfDayStr = `${todayStr}T00:00:00.000Z`;
-    const endOfDayStr = `${todayStr}T23:59:59.999Z`;
-
-    const logs = tx
-      .select({ id: schema.visitorLogs.id })
-      .from(schema.visitorLogs)
-      .where(
-        and(
-          gte(schema.visitorLogs.visitedAt, startOfDayStr),
-          lt(schema.visitorLogs.visitedAt, endOfDayStr),
-        ),
-      )
-      .orderBy(desc(schema.visitorLogs.visitedAt))
-      .all();
-
-    if (logs.length > 20) {
-      const toDelete = logs.slice(20);
-      for (const log of toDelete) {
-        tx.delete(schema.visitorLogs).where(eq(schema.visitorLogs.id, log.id)).run();
-      }
-    }
+    // 4. Cleanup: Delete logs older than 24 hours
+    tx.delete(schema.visitorLogs)
+      .where(lt(schema.visitorLogs.visitedAt, twentyFourHoursAgoStr))
+      .run();
   });
 
-  // 5. Set Cookie (Expires at end of day)
-  const expires = new Date();
-  expires.setUTCHours(23, 59, 59, 999); // Expires at UTC midnight? No, should match todayStr.
-  // Actually, if we use UTC date, the cookie should expire at next UTC midnight.
-  // If we setHours on a local date object, it sets local time.
-  // We want the cookie to expire when the "day" ends.
-  // If "Day" = UTC Day, then expire at next UTC midnight.
-  const now = new Date();
-  const nextUtcMidnight = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0),
-  );
+  // 5. Set Cookie (Expires 24 hours from now)
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   setCookie(c, "zlog_visited_today", "true", {
-    expires: nextUtcMidnight,
+    expires,
     path: "/",
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
@@ -125,26 +79,26 @@ analytics.post("/visit", async (c) => {
 
 // Get visitors (Admin only)
 analytics.get("/visitors", authMiddleware, (c) => {
-  const todayStr = new Date().toISOString().slice(0, 10); // UTC Date
-  const startOfDayStr = `${todayStr}T00:00:00.000Z`;
+  const twentyFourHoursAgoStr = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const countRecord = analyticsDb
-    .select()
-    .from(schema.dailyVisitorCounts)
-    .where(eq(schema.dailyVisitorCounts.date, todayStr))
-    .get();
+  // Get total count of visitors in the last 24 hours
+  const countResult = analyticsDb
+    .select({ id: schema.visitorLogs.id })
+    .from(schema.visitorLogs)
+    .where(gte(schema.visitorLogs.visitedAt, twentyFourHoursAgoStr))
+    .all();
 
   // Get recent logs (max 20)
   const logs = analyticsDb
     .select()
     .from(schema.visitorLogs)
-    .where(gte(schema.visitorLogs.visitedAt, startOfDayStr))
+    .where(gte(schema.visitorLogs.visitedAt, twentyFourHoursAgoStr))
     .orderBy(desc(schema.visitorLogs.visitedAt))
     .limit(20)
     .all();
 
   return c.json({
-    count: countRecord?.count ?? 0,
+    count: countResult.length,
     recent: logs,
   });
 });

@@ -38,10 +38,6 @@ describe("Analytics API", () => {
     const log = analyticsDb.select().from(analyticsSchema.visitorLogs).get();
     expect(log).toBeDefined();
     expect(log?.ip).toBe("1.2.3.4");
-
-    const daily = analyticsDb.select().from(analyticsSchema.dailyVisitorCounts).get();
-    expect(daily).toBeDefined();
-    expect(daily?.count).toBe(1);
   });
 
   it("should not count visit if cookie exists", async () => {
@@ -61,10 +57,6 @@ describe("Analytics API", () => {
     expect(res2.status).toBe(200);
     const data = await res2.json();
     expect(data).toEqual({ counted: false, reason: "already_visited" });
-
-    // Count should still be 1
-    const daily = analyticsDb.select().from(analyticsSchema.dailyVisitorCounts).get();
-    expect(daily?.count).toBe(1);
   });
 
   it("should not count visit for admin", async () => {
