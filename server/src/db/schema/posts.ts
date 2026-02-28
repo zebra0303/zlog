@@ -25,6 +25,8 @@ export const posts = sqliteTable(
     content: text("content").notNull(),
     excerpt: text("excerpt"),
     coverImage: text("cover_image"),
+    coverImageWidth: integer("cover_image_width"),
+    coverImageHeight: integer("cover_image_height"),
     status: text("status", { enum: ["draft", "published", "deleted"] })
       .default("draft")
       .notNull(),

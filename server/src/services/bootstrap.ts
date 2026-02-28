@@ -2,12 +2,14 @@ import { db, sqlite, initAnalyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { generateId } from "../lib/uuid.js";
 import { hashPassword } from "../lib/password.js";
-import { eq } from "drizzle-orm";
+import { eq, isNull, and, isNotNull, or } from "drizzle-orm";
+import path from "node:path";
+import sharp from "sharp";
 
 /**
  * On first run: create tables + admin account + default settings
  */
-export function bootstrap() {
+export async function bootstrap() {
   initAnalyticsDb();
 
   sqlite.exec(`
@@ -44,7 +46,7 @@ export function bootstrap() {
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      slug TEXT UNIQUE NOT NULL,
+      slug UNIQUE NOT NULL,
       description TEXT,
       long_description TEXT,
       cover_image TEXT,
@@ -62,6 +64,8 @@ export function bootstrap() {
       content TEXT NOT NULL,
       excerpt TEXT,
       cover_image TEXT,
+      cover_image_width INTEGER,
+      cover_image_height INTEGER,
       status TEXT NOT NULL DEFAULT 'draft',
       view_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
@@ -161,10 +165,12 @@ export function bootstrap() {
       local_category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
       title TEXT NOT NULL,
       slug TEXT NOT NULL,
-      content TEXT NOT NULL,
-      excerpt TEXT,
-      cover_image TEXT,
-      remote_status TEXT NOT NULL DEFAULT 'published',
+      content: TEXT NOT NULL,
+      excerpt: TEXT,
+      cover_image: TEXT,
+      cover_image_width: INTEGER,
+      cover_image_height: INTEGER,
+      remote_status: TEXT NOT NULL DEFAULT 'published',
       author_name TEXT,
       remote_created_at TEXT NOT NULL,
       remote_updated_at TEXT NOT NULL,
@@ -303,6 +309,22 @@ export function bootstrap() {
     // Ignore if already exists
   }
 
+  // Add cover_image_width/height columns to posts table (migration)
+  try {
+    sqlite.exec("ALTER TABLE posts ADD COLUMN cover_image_width INTEGER");
+    sqlite.exec("ALTER TABLE posts ADD COLUMN cover_image_height INTEGER");
+  } catch {
+    // Ignore if already exists
+  }
+
+  // Add cover_image_width/height columns to remote_posts table (migration)
+  try {
+    sqlite.exec("ALTER TABLE remote_posts ADD COLUMN cover_image_width INTEGER");
+    sqlite.exec("ALTER TABLE remote_posts ADD COLUMN cover_image_height INTEGER");
+  } catch {
+    // Ignore if already exists
+  }
+
   // Create admin account if none exists
   const existingOwner = db.select().from(schema.owner).limit(1).all();
   if (existingOwner.length === 0) {
@@ -388,5 +410,54 @@ export function bootstrap() {
     }
   }
 
+  // Auto-repair missing image dimensions for existing posts
+  await autoRepairPostImageDimensions();
+
   console.log("✅ Database bootstrap complete");
+}
+
+/**
+ * Scan all posts with coverImage but no dimensions, and update them.
+ */
+async function autoRepairPostImageDimensions() {
+  const stalePosts = db
+    .select({
+      id: schema.posts.id,
+      coverImage: schema.posts.coverImage,
+    })
+    .from(schema.posts)
+    .where(
+      and(
+        isNotNull(schema.posts.coverImage),
+        or(isNull(schema.posts.coverImageWidth), isNull(schema.posts.coverImageHeight)),
+      ),
+    )
+    .all();
+
+  if (stalePosts.length === 0) return;
+
+  console.log(`🔍 Found ${stalePosts.length} posts with missing image dimensions. Repairing...`);
+
+  for (const post of stalePosts) {
+    if (!post.coverImage?.startsWith("/uploads/images/")) continue;
+
+    try {
+      const filePath = path.join(process.cwd(), post.coverImage);
+      const metadata = await sharp(filePath).metadata();
+
+      if (metadata.width && metadata.height) {
+        db.update(schema.posts)
+          .set({
+            coverImageWidth: metadata.width,
+            coverImageHeight: metadata.height,
+          })
+          .where(eq(schema.posts.id, post.id))
+          .run();
+      }
+    } catch (err) {
+      console.warn(`⚠️ Failed to repair dimensions for post ${post.id}:`, err);
+    }
+  }
+
+  console.log("✅ Image dimensions repair complete");
 }

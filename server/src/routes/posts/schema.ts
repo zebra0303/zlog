@@ -16,6 +16,8 @@ const PostSchema = z.object({
   content: z.string(),
   excerpt: z.string().nullable().optional(),
   coverImage: z.string().nullable().optional(),
+  coverImageWidth: z.number().nullable().optional(),
+  coverImageHeight: z.number().nullable().optional(),
   status: z.enum(["draft", "published", "deleted"]),
   viewCount: z.number().default(0),
   commentCount: z.number().default(0),
@@ -58,6 +60,8 @@ export const CreatePostSchema = z.object({
   status: z.enum(["draft", "published"]).optional(),
   tags: z.array(z.string()).optional(),
   coverImage: z.string().optional(),
+  coverImageWidth: z.number().optional(),
+  coverImageHeight: z.number().optional(),
   excerpt: z.string().optional(),
 });
 

@@ -17,8 +17,8 @@ import { startSyncWorker } from "./services/syncService.js";
 const app = createApp();
 const port = Number(process.env.PORT) || 3000;
 
-function main() {
-  bootstrap();
+async function main() {
+  await bootstrap();
   startSyncWorker();
   serve({ fetch: app.fetch, port }, () => {
     console.log(`🦓 zlog server running on port ${port}`);
@@ -26,4 +26,4 @@ function main() {
   });
 }
 
-main();
+void main();

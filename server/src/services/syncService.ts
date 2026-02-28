@@ -80,6 +80,8 @@ export async function syncSubscription(
     content: string;
     excerpt?: string;
     coverImage?: string;
+    coverImageWidth?: number;
+    coverImageHeight?: number;
     uri?: string;
     createdAt: string;
     updatedAt: string;
@@ -122,6 +124,8 @@ export async function syncSubscription(
             content: fixedContent,
             excerpt: post.excerpt ?? null,
             coverImage: fixedCover,
+            coverImageWidth: post.coverImageWidth ?? null,
+            coverImageHeight: post.coverImageHeight ?? null,
             remoteStatus: "published",
             remoteUpdatedAt: post.updatedAt,
             fetchedAt: now,
@@ -141,6 +145,8 @@ export async function syncSubscription(
           content: fixedContent,
           excerpt: post.excerpt ?? null,
           coverImage: fixedCover,
+          coverImageWidth: post.coverImageWidth ?? null,
+          coverImageHeight: post.coverImageHeight ?? null,
           remoteStatus: "published",
           authorName: remoteBlog.displayName,
           remoteCreatedAt: post.createdAt,

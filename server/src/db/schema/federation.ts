@@ -67,6 +67,8 @@ export const remotePosts = sqliteTable(
     content: text("content").notNull(),
     excerpt: text("excerpt"),
     coverImage: text("cover_image"),
+    coverImageWidth: integer("cover_image_width"),
+    coverImageHeight: integer("cover_image_height"),
     remoteStatus: text("remote_status", {
       enum: ["published", "draft", "deleted", "unreachable"],
     })

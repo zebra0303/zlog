@@ -8,6 +8,8 @@ import type { PostWithCategory } from "@zlog/shared";
 
 interface PostCardProps {
   post: PostWithCategory & {
+    coverImageWidth?: number | null;
+    coverImageHeight?: number | null;
     isRemote?: boolean;
     remoteUri?: string | null;
     remoteBlog?: {
@@ -28,6 +30,12 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
 
   const sourceUrl = post.isRemote ? (post.remoteUri ?? post.remoteBlog?.siteUrl ?? null) : null;
 
+  // Use natural aspect ratio if available, otherwise fallback to 16/9
+  const aspectRatio =
+    post.coverImageWidth && post.coverImageHeight
+      ? `${post.coverImageWidth} / ${post.coverImageHeight}`
+      : "16 / 9";
+
   return (
     <Card className="group overflow-hidden transition-shadow hover:shadow-md">
       <Link
@@ -39,7 +47,8 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
           <LazyImage
             src={post.coverImage}
             alt={post.title}
-            className="aspect-video h-auto w-full"
+            className="w-full"
+            style={{ aspectRatio, height: "auto" }}
             objectFit="cover"
             priority={priority}
           />

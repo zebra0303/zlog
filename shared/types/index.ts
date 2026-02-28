@@ -63,6 +63,8 @@ export interface Post {
   content: string;
   excerpt: string | null;
   coverImage: string | null;
+  coverImageWidth: number | null;
+  coverImageHeight: number | null;
   status: PostStatus;
   viewCount: number;
   createdAt: string;
@@ -143,6 +145,8 @@ export interface RemotePost {
   content: string;
   excerpt: string | null;
   coverImage: string | null;
+  coverImageWidth: number | null;
+  coverImageHeight: number | null;
   remoteStatus: RemotePostStatus;
   authorName: string | null;
   remoteCreatedAt: string;
@@ -269,6 +273,8 @@ export interface WebhookEvent {
     content: string;
     excerpt: string | null;
     coverImage: string | null;
+    coverImageWidth: number | null;
+    coverImageHeight: number | null;
     createdAt: string;
     updatedAt: string;
   };

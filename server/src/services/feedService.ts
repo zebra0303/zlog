@@ -28,6 +28,8 @@ export async function sendWebhookToSubscribers(
       content: post.content,
       excerpt: post.excerpt,
       coverImage: post.coverImage,
+      coverImageWidth: post.coverImageWidth,
+      coverImageHeight: post.coverImageHeight,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     },

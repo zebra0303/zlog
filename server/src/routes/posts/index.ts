@@ -13,6 +13,23 @@ import { unlinkSync } from "node:fs";
 import path from "node:path";
 import geoip from "geoip-lite";
 import { parseUserAgent } from "../../lib/userAgent.js";
+import sharp from "sharp";
+
+async function getImageDimensions(
+  imageUrl: string | null | undefined,
+): Promise<{ width: number; height: number } | null> {
+  if (!imageUrl?.startsWith("/uploads/images/")) return null;
+  try {
+    const filePath = path.join(process.cwd(), imageUrl);
+    const metadata = await sharp(filePath).metadata();
+    if (metadata.width && metadata.height) {
+      return { width: metadata.width, height: metadata.height };
+    }
+  } catch (err) {
+    console.error("Failed to get image dimensions:", err);
+  }
+  return null;
+}
 
 function deleteUploadedImage(imageUrl: string) {
   if (!imageUrl.startsWith("/uploads/images/")) return;
@@ -657,6 +674,8 @@ postsRoute.post("/", authMiddleware, async (c) => {
   const id = generateId();
   const excerpt = body.excerpt ?? stripMarkdown(body.content).slice(0, 200);
 
+  const dimensions = await getImageDimensions(body.coverImage);
+
   db.insert(schema.posts)
     .values({
       id,
@@ -666,6 +685,8 @@ postsRoute.post("/", authMiddleware, async (c) => {
       content: body.content,
       excerpt,
       coverImage: body.coverImage ?? null,
+      coverImageWidth: dimensions?.width ?? null,
+      coverImageHeight: dimensions?.height ?? null,
       status: body.status ?? "draft",
       viewCount: 0,
       createdAt: now,
@@ -746,6 +767,14 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
       deleteUploadedImage(existing.coverImage);
     }
     updateData.coverImage = body.coverImage;
+    if (body.coverImage) {
+      const dimensions = await getImageDimensions(body.coverImage);
+      updateData.coverImageWidth = dimensions?.width ?? null;
+      updateData.coverImageHeight = dimensions?.height ?? null;
+    } else {
+      updateData.coverImageWidth = null;
+      updateData.coverImageHeight = null;
+    }
   }
   if (body.status !== undefined) {
     updateData.status = body.status;
