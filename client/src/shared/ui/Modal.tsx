@@ -40,16 +40,14 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       onClose={onClose}
       onClick={handleBackdropClick}
     >
-      <div className="flex items-center justify-between">
-        {title && <h2 className="text-lg font-semibold text-[var(--color-text)]">{title}</h2>}
-        <button
-          onClick={onClose}
-          className="rounded-sm opacity-70 ring-offset-[var(--color-background)] transition-opacity hover:opacity-100 focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:outline-none disabled:pointer-events-none"
-        >
-          <X className="h-4 w-4 text-[var(--color-text)]" />
-          <span className="sr-only">Close</span>
-        </button>
-      </div>
+      {title && <div className="pr-6 text-lg font-semibold text-[var(--color-text)]">{title}</div>}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-[var(--color-background)] transition-opacity hover:opacity-100 focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:outline-none disabled:pointer-events-none"
+      >
+        <X className="h-4 w-4 text-[var(--color-text)]" />
+        <span className="sr-only">Close</span>
+      </button>
       <div className="overflow-y-auto text-[var(--color-text)]">{children}</div>
     </dialog>,
     document.body,

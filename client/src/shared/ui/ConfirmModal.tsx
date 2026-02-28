@@ -10,11 +10,11 @@ export function ConfirmModal() {
 
   return (
     <Modal isOpen={isOpen} onClose={onCancel}>
-      <div className="flex flex-col items-center gap-4 py-4 text-center sm:py-6">
+      <div className="mt-2 flex flex-col items-center gap-3 text-center sm:gap-4">
         <div className="rounded-full bg-[var(--color-primary)]/10 p-3 text-[var(--color-primary)]">
-          <AlertCircle className="h-8 w-8" />
+          <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8" />
         </div>
-        <p className="text-lg font-medium whitespace-pre-wrap text-[var(--color-text)]">
+        <p className="text-base font-medium whitespace-pre-wrap text-[var(--color-text)] sm:text-lg">
           {message}
         </p>
         <div className="mt-4 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center">
