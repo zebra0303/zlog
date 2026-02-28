@@ -242,6 +242,9 @@ export const en = {
   admin_theme_primary_color: "Primary Theme Color",
   admin_theme_primary_color_desc:
     "Accent color used for buttons, links, and highlights. Leave empty to use the default purple.",
+  admin_theme_accent_color: "Accent Color",
+  admin_theme_accent_color_desc:
+    "Color used for highlighted elements like likes and alerts. Leave empty to use the default red.",
   admin_theme_header: "Header",
   admin_theme_footer: "Footer",
   admin_theme_body: "Body Background",

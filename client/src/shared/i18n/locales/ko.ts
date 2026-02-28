@@ -246,6 +246,9 @@ export const ko: Record<TranslationKeys, string> = {
   admin_theme_primary_color: "주요 테마 색상",
   admin_theme_primary_color_desc:
     "버튼, 링크, 강조 표시에 사용되는 테마 색상입니다. 비워두면 기본 보라색이 사용됩니다.",
+  admin_theme_accent_color: "포인트 색상 (Accent)",
+  admin_theme_accent_color_desc:
+    "좋아요, 알림 등 눈에 띄어야 하는 요소에 사용되는 색상입니다. 비워두면 기본 붉은색이 사용됩니다.",
   admin_theme_header: "헤더 (Header)",
   admin_theme_footer: "푸터 (Footer)",
   admin_theme_body: "전체 배경",

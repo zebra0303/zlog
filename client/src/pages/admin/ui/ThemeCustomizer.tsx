@@ -264,12 +264,43 @@ export function ThemeCustomizer({
               </button>
             )}
           </div>
-          {settings.primary_color && (
-            <div
-              className="mt-2 h-8 rounded border border-[var(--color-border)]"
-              style={{ backgroundColor: settings.primary_color }}
+        </div>
+
+        {/* Accent color */}
+        <div className="mb-6 rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="mb-1 font-medium text-[var(--color-text)]">
+            {t("admin_theme_accent_color")}
+          </h3>
+          <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+            {t("admin_theme_accent_color_desc")}
+          </p>
+          <div className="flex items-center gap-2">
+            <ColorPicker
+              // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+              value={settings.accent_color || "#ff6b6b"}
+              onChange={(color) => {
+                update("accent_color", color);
+              }}
             />
-          )}
+            <Input
+              placeholder="#ff6b6b"
+              value={settings.accent_color ?? ""}
+              onChange={(e) => {
+                update("accent_color", e.target.value);
+              }}
+              className="flex-1 text-xs"
+            />
+            {settings.accent_color && (
+              <button
+                onClick={() => {
+                  update("accent_color", "");
+                }}
+                className="text-xs text-[var(--color-destructive)] hover:underline"
+              >
+                {t("reset")}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Surface & Text Colors */}

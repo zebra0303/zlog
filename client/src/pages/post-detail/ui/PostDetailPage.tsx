@@ -147,6 +147,8 @@ export default function PostDetailPage() {
           src={post.coverImage}
           alt={post.title}
           className="mb-6 aspect-video h-auto w-full rounded-xl object-cover"
+          fetchPriority="high"
+          decoding="async"
         />
       )}
       <div className="mb-8">

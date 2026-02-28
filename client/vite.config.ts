@@ -19,6 +19,25 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         external: ["mermaid"],
+        // Chunk splitting optimization for performance
+        output: {
+          manualChunks: {
+            "react-vendor": ["react", "react-dom", "react-router"],
+            "ui-vendor": [
+              "lucide-react",
+              "@radix-ui/react-dialog",
+              "@radix-ui/react-dropdown-menu",
+              "@radix-ui/react-tabs",
+            ],
+            "markdown-vendor": [
+              "remark-parse",
+              "remark-rehype",
+              "rehype-stringify",
+              "rehype-raw",
+              "rehype-sanitize",
+            ],
+          },
+        },
       },
     },
     server: {

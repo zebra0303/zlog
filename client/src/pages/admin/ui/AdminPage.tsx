@@ -79,6 +79,12 @@ export default function AdminPage() {
       document.documentElement.style.removeProperty("--color-primary");
     }
 
+    if (settings.accent_color) {
+      document.documentElement.style.setProperty("--color-accent", settings.accent_color);
+    } else {
+      document.documentElement.style.removeProperty("--color-accent");
+    }
+
     const surfaceColor = isDark ? settings.surface_color_dark : settings.surface_color_light;
     if (surfaceColor) {
       document.documentElement.style.setProperty("--color-surface", surfaceColor);

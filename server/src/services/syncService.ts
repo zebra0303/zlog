@@ -102,32 +102,35 @@ export async function syncSubscription(
     for (const r of rows) existingMap.set(r.remoteUri, r);
   }
 
-  for (const post of posts) {
-    const rawUri = post.uri ?? `${remoteBlog.siteUrl}/posts/${post.id}`;
-    const remoteUri = rawUri.replace(/^https?:\/\/[^/]+/, remoteBlog.siteUrl);
-    const fixedContent = fixRemoteContentUrls(post.content, remoteBlog.siteUrl);
-    const fixedCover = fixRemoteUrl(post.coverImage ?? null, remoteBlog.siteUrl);
+  const inserts: (typeof schema.remotePosts.$inferInsert)[] = [];
 
-    const existing = existingMap.get(remoteUri);
+  // Use a transaction for performance
+  db.transaction((tx) => {
+    for (const post of posts) {
+      const rawUri = post.uri ?? `${remoteBlog.siteUrl}/posts/${post.id}`;
+      const remoteUri = rawUri.replace(/^https?:\/\/[^/]+/, remoteBlog.siteUrl);
+      const fixedContent = fixRemoteContentUrls(post.content, remoteBlog.siteUrl);
+      const fixedCover = fixRemoteUrl(post.coverImage ?? null, remoteBlog.siteUrl);
 
-    if (existing) {
-      db.update(schema.remotePosts)
-        .set({
-          title: post.title,
-          slug: post.slug,
-          content: fixedContent,
-          excerpt: post.excerpt ?? null,
-          coverImage: fixedCover,
-          remoteStatus: "published",
-          remoteUpdatedAt: post.updatedAt,
-          fetchedAt: now,
-          localCategoryId: sub.localCategoryId,
-        })
-        .where(eq(schema.remotePosts.id, existing.id))
-        .run();
-    } else {
-      db.insert(schema.remotePosts)
-        .values({
+      const existing = existingMap.get(remoteUri);
+
+      if (existing) {
+        tx.update(schema.remotePosts)
+          .set({
+            title: post.title,
+            slug: post.slug,
+            content: fixedContent,
+            excerpt: post.excerpt ?? null,
+            coverImage: fixedCover,
+            remoteStatus: "published",
+            remoteUpdatedAt: post.updatedAt,
+            fetchedAt: now,
+            localCategoryId: sub.localCategoryId,
+          })
+          .where(eq(schema.remotePosts.id, existing.id))
+          .run();
+      } else {
+        inserts.push({
           id: generateId(),
           remoteUri,
           remoteBlogId: remoteBlog.id,
@@ -143,16 +146,26 @@ export async function syncSubscription(
           remoteCreatedAt: post.createdAt,
           remoteUpdatedAt: post.updatedAt,
           fetchedAt: now,
-        })
-        .run();
+        });
+      }
+      synced++;
     }
-    synced++;
-  }
 
-  db.update(schema.categorySubscriptions)
-    .set({ lastSyncedAt: now })
-    .where(eq(schema.categorySubscriptions.id, sub.id))
-    .run();
+    if (inserts.length > 0) {
+      // Chunk inserts to avoid SQLite binding limits
+      const chunkSize = 100;
+      for (let i = 0; i < inserts.length; i += chunkSize) {
+        tx.insert(schema.remotePosts)
+          .values(inserts.slice(i, i + chunkSize))
+          .run();
+      }
+    }
+
+    tx.update(schema.categorySubscriptions)
+      .set({ lastSyncedAt: now })
+      .where(eq(schema.categorySubscriptions.id, sub.id))
+      .run();
+  });
 
   return synced;
 }

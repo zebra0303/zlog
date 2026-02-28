@@ -70,6 +70,13 @@ export function AppLayout() {
       document.documentElement.style.removeProperty("--color-primary");
     }
 
+    const accentColor = settings.accent_color;
+    if (accentColor) {
+      document.documentElement.style.setProperty("--color-accent", accentColor);
+    } else {
+      document.documentElement.style.removeProperty("--color-accent");
+    }
+
     const surfaceColor = isDark ? settings.surface_color_dark : settings.surface_color_light;
     if (surfaceColor) {
       document.documentElement.style.setProperty("--color-surface", surfaceColor);
