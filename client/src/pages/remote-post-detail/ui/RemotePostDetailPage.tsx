@@ -9,6 +9,7 @@ import {
   SEOHead,
   Skeleton,
   LazyImage,
+  useToast,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -47,6 +48,7 @@ export default function RemotePostDetailPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast();
   const backTo = (location.state as { from?: string } | null)?.from ?? "/";
   const [post, setPost] = useState<RemotePost | null>(null);
   const [htmlContent, setHtmlContent] = useState("");
@@ -62,7 +64,7 @@ export default function RemotePostDetailPage() {
       .then(async (data) => {
         // If the original has been deleted
         if (data.remoteStatus === "deleted") {
-          alert(t("remote_post_deleted_alert"));
+          showToast(t("remote_post_deleted_alert"), "info");
           void navigate("/");
           return;
         }
@@ -90,7 +92,7 @@ export default function RemotePostDetailPage() {
         setError(getErrorMessage(err, "Failed to load remote post"));
         setIsLoading(false);
       });
-  }, [id, navigate, t]);
+  }, [id, navigate, t, showToast]);
 
   if (isLoading)
     return (

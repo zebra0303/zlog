@@ -14,7 +14,16 @@ import {
   Heart,
 } from "lucide-react";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
-import { Badge, Button, Card, CardContent, SEOHead, Skeleton, LazyImage } from "@/shared/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  SEOHead,
+  Skeleton,
+  LazyImage,
+  useToast,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { getVisitorId } from "@/shared/lib/visitorId";
@@ -30,6 +39,7 @@ export default function PostDetailPage() {
   const backTo = (location.state as { from?: string } | null)?.from ?? "/";
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
+  const { showToast } = useToast();
   const [post, setPost] = useState<PostWithCategory | null>(null);
   const [localCommentCount, setLocalCommentCount] = useState(0);
   const [localLikeCount, setLocalLikeCount] = useState(0);
@@ -69,7 +79,7 @@ export default function PostDetailPage() {
       await api.delete(`/posts/${post.id}`);
       window.location.href = "/";
     } catch {
-      alert(t("post_delete_failed"));
+      showToast(t("post_delete_failed"), "error");
     }
   };
 

@@ -78,19 +78,29 @@ self.addEventListener("activate", (event) => {
 // Fetch: route API vs static assets
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-
-  // Only handle GET requests
-  if (request.method !== "GET") return;
-
   const url = new URL(request.url);
 
-  // API requests: stale-while-revalidate for cacheable, passthrough for others
+  // API requests
   if (url.pathname.startsWith("/api/")) {
-    if (CACHEABLE_API_PATTERNS.some((pattern) => pattern.test(url.pathname))) {
-      event.respondWith(handleApiRequest(request, event));
+    // If Mutation (POST/PUT/DELETE), invalidate the whole API cache so that the next GET gets fresh data
+    if (["POST", "PUT", "DELETE"].includes(request.method)) {
+      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => {}));
+      // Passthrough to network
+      return;
     }
+
+    if (request.method === "GET") {
+      if (CACHEABLE_API_PATTERNS.some((pattern) => pattern.test(url.pathname))) {
+        event.respondWith(handleApiRequest(request, event));
+      }
+      return;
+    }
+
     return;
   }
+
+  // Only handle GET requests for static assets
+  if (request.method !== "GET") return;
 
   // Static assets: network-first with cache fallback (unchanged)
   event.respondWith(

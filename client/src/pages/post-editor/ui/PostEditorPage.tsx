@@ -290,7 +290,7 @@ export default function PostEditorPage() {
             });
           } else {
             // Continue list: always use "1." for ordered lists (markdown auto-numbers)
-            const nextMarker = /^\d+\./.test(marker) ? "1." : marker;
+            const nextMarker = /^\d+\./.test(marker ?? "") ? "1." : marker;
             const insertion = `\n${indent}${nextMarker} `;
             const newValue = value.slice(0, selectionStart) + insertion + value.slice(selectionEnd);
             setContent(newValue);

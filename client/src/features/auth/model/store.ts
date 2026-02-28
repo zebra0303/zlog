@@ -41,3 +41,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
+
+// Setup global 401 interceptor listener
+if (typeof window !== "undefined") {
+  window.addEventListener("zlog_unauthorized", () => {
+    useAuthStore.getState().logout();
+  });
+}

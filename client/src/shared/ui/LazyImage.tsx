@@ -63,7 +63,7 @@ export function LazyImage({
           alt={alt}
           fetchPriority={priority ? "high" : "auto"}
           loading={priority ? "eager" : "lazy"}
-          decoding="async"
+          decoding={priority ? "sync" : "async"}
           className={cn(
             "block w-full transition-opacity duration-500",
             style?.aspectRatio ? "h-full" : "h-auto",

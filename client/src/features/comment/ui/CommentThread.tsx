@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Heart, Reply, Pencil, Trash2 } from "lucide-react";
-import { Button, Input, Textarea, DefaultAvatar } from "@/shared/ui";
+import { Button, Input, Textarea, DefaultAvatar, useToast } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
@@ -51,6 +51,7 @@ export function CommentThread({
     }
   };
   const { t } = useI18n();
+  const { showToast } = useToast();
 
   const avatarUrl = comment.authorAvatarUrl;
 
@@ -98,7 +99,7 @@ export function CommentThread({
       onCountChange?.(-1);
       onRefresh();
     } catch (err) {
-      alert(getErrorMessage(err, t("comment_edit_wrong_password")));
+      showToast(getErrorMessage(err, t("comment_edit_wrong_password")), "error");
     }
   };
 
