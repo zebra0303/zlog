@@ -122,6 +122,8 @@ federationRoute.get("/categories/:id/posts", (c) => {
       content: resolveRelativeUrls(post.content, siteUrl),
       excerpt: post.excerpt,
       coverImage: resolveUrl(post.coverImage, siteUrl),
+      coverImageWidth: post.coverImageWidth,
+      coverImageHeight: post.coverImageHeight,
       uri: `${siteUrl}/posts/${post.id}`,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
@@ -146,6 +148,8 @@ federationRoute.get("/posts/:id", (c) => {
     content: resolveRelativeUrls(post.content, siteUrl),
     excerpt: post.excerpt,
     coverImage: resolveUrl(post.coverImage, siteUrl),
+    coverImageWidth: post.coverImageWidth,
+    coverImageHeight: post.coverImageHeight,
     uri: `${siteUrl}/posts/${post.id}`,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
@@ -976,6 +980,8 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
       content: string;
       excerpt?: string;
       coverImage?: string;
+      coverImageWidth?: number;
+      coverImageHeight?: number;
       uri?: string;
       createdAt: string;
       updatedAt: string;
@@ -1014,6 +1020,8 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
             content: fixedContent,
             excerpt: post.excerpt ?? null,
             coverImage: fixedCover,
+            coverImageWidth: post.coverImageWidth ?? null,
+            coverImageHeight: post.coverImageHeight ?? null,
             remoteStatus: "published",
             remoteUpdatedAt: post.updatedAt,
             fetchedAt: now,
@@ -1034,6 +1042,8 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
             content: fixedContent,
             excerpt: post.excerpt ?? null,
             coverImage: fixedCover,
+            coverImageWidth: post.coverImageWidth ?? null,
+            coverImageHeight: post.coverImageHeight ?? null,
             remoteStatus: "published",
             authorName: remoteBlog.displayName,
             remoteCreatedAt: post.createdAt,

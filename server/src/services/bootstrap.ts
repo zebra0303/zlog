@@ -420,7 +420,8 @@ export async function bootstrap() {
  * Scan all posts with coverImage but no dimensions, and update them.
  */
 async function autoRepairPostImageDimensions() {
-  const stalePosts = db
+  // 1. Repair local posts
+  const staleLocalPosts = db
     .select({
       id: schema.posts.id,
       coverImage: schema.posts.coverImage,
@@ -434,28 +435,69 @@ async function autoRepairPostImageDimensions() {
     )
     .all();
 
-  if (stalePosts.length === 0) return;
-
-  console.log(`🔍 Found ${stalePosts.length} posts with missing image dimensions. Repairing...`);
-
-  for (const post of stalePosts) {
-    if (!post.coverImage?.startsWith("/uploads/images/")) continue;
-
-    try {
-      const filePath = path.join(process.cwd(), post.coverImage);
-      const metadata = await sharp(filePath).metadata();
-
-      if (metadata.width && metadata.height) {
-        db.update(schema.posts)
-          .set({
-            coverImageWidth: metadata.width,
-            coverImageHeight: metadata.height,
-          })
-          .where(eq(schema.posts.id, post.id))
-          .run();
+  if (staleLocalPosts.length > 0) {
+    console.log(`🔍 Found ${staleLocalPosts.length} local posts with missing image dimensions.`);
+    for (const post of staleLocalPosts) {
+      if (!post.coverImage.startsWith("/uploads/images/")) continue;
+      try {
+        const filePath = path.join(process.cwd(), post.coverImage);
+        const metadata = await sharp(filePath).metadata();
+        if (metadata.width && metadata.height) {
+          db.update(schema.posts)
+            .set({ coverImageWidth: metadata.width, coverImageHeight: metadata.height })
+            .where(eq(schema.posts.id, post.id))
+            .run();
+        }
+      } catch (err) {
+        console.warn(`⚠️ Failed to repair dimensions for local post ${post.id}:`, err);
       }
-    } catch (err) {
-      console.warn(`⚠️ Failed to repair dimensions for post ${post.id}:`, err);
+    }
+  }
+
+  // 2. Repair remote posts (only if we have the images locally or via URL that we can probe - though usually we only repair what we own or have cached)
+  // For remote posts, we try to probe the URL if it's accessible.
+  const staleRemotePosts = db
+    .select({
+      id: schema.remotePosts.id,
+      coverImage: schema.remotePosts.coverImage,
+    })
+    .from(schema.remotePosts)
+    .where(
+      and(
+        isNotNull(schema.remotePosts.coverImage),
+        or(isNull(schema.remotePosts.coverImageWidth), isNull(schema.remotePosts.coverImageHeight)),
+      ),
+    )
+    .all();
+
+  if (staleRemotePosts.length > 0) {
+    console.log(`🔍 Found ${staleRemotePosts.length} remote posts with missing image dimensions.`);
+    for (const post of staleRemotePosts) {
+      if (!post.coverImage) continue;
+      try {
+        // If it's a local proxy URL or an absolute URL, try to probe it
+        let metadata: sharp.Metadata | undefined;
+        if (post.coverImage.startsWith("/uploads/")) {
+          const filePath = path.join(process.cwd(), post.coverImage);
+          metadata = await sharp(filePath).metadata();
+        } else if (post.coverImage.startsWith("http")) {
+          const res = await fetch(post.coverImage, { signal: AbortSignal.timeout(5000) });
+          if (res.ok) {
+            const buffer = Buffer.from(await res.arrayBuffer());
+            metadata = await sharp(buffer).metadata();
+          }
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (metadata?.width && metadata?.height) {
+          db.update(schema.remotePosts)
+            .set({ coverImageWidth: metadata.width, coverImageHeight: metadata.height })
+            .where(eq(schema.remotePosts.id, post.id))
+            .run();
+        }
+      } catch {
+        // Silent fail for remote images to prevent slow boot
+      }
     }
   }
 
