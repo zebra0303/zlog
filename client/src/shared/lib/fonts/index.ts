@@ -62,7 +62,9 @@ export function applyFont(fontValue: string) {
           const style = document.createElement("style");
           style.id = styleId;
           // Extract primary font name from the family string
-          const primaryFont = font.family.split(",")[0].replace(/"/g, "").trim();
+          // split always returns at least one element
+          const [firstFamily = ""] = font.family.split(",");
+          const primaryFont = firstFamily.replace(/"/g, "").trim();
           style.textContent = `@font-face { font-family: "${primaryFont}"; font-display: swap; }`;
           document.head.appendChild(style);
         }
