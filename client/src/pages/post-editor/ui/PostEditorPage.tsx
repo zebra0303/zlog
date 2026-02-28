@@ -262,9 +262,10 @@ export default function PostEditorPage() {
 
       const { selectionStart, selectionEnd, value } = textarea;
 
-      // Enter key: auto-continue list items
+      // Enter key: auto-continue list items (skip during IME composition)
       if (
         e.key === "Enter" &&
+        !e.nativeEvent.isComposing &&
         !e.shiftKey &&
         !e.ctrlKey &&
         !e.metaKey &&
@@ -288,10 +289,8 @@ export default function PostEditorPage() {
               textarea.selectionStart = textarea.selectionEnd = newCursor;
             });
           } else {
-            // Continue list with next marker
-            const nextMarker = /^\d+$/.test(marker.replace(".", ""))
-              ? `${parseInt(marker) + 1}.`
-              : marker;
+            // Continue list: always use "1." for ordered lists (markdown auto-numbers)
+            const nextMarker = /^\d+\./.test(marker) ? "1." : marker;
             const insertion = `\n${indent}${nextMarker} `;
             const newValue = value.slice(0, selectionStart) + insertion + value.slice(selectionEnd);
             setContent(newValue);
