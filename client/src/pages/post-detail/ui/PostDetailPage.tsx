@@ -146,7 +146,14 @@ export default function PostDetailPage() {
         <img
           src={post.coverImage}
           alt={post.title}
-          className="mb-6 aspect-video h-auto w-full rounded-xl object-cover"
+          className="mb-6 w-full rounded-xl object-cover"
+          style={{
+            aspectRatio:
+              post.coverImageWidth && post.coverImageHeight
+                ? `${post.coverImageWidth} / ${post.coverImageHeight}`
+                : "16 / 9",
+            height: "auto",
+          }}
           fetchPriority="high"
           decoding="async"
         />

@@ -19,6 +19,8 @@ interface RemotePost {
   content: string;
   excerpt: string | null;
   coverImage: string | null;
+  coverImageWidth: number | null;
+  coverImageHeight: number | null;
   remoteStatus: string;
   authorName: string | null;
   remoteCreatedAt: string;
@@ -115,7 +117,18 @@ export default function RemotePostDetailPage() {
         </Button>
       </div>
       {post.coverImage && (
-        <img src={post.coverImage} alt={post.title} className="mb-6 h-auto w-full rounded-xl" />
+        <img
+          src={post.coverImage}
+          alt={post.title}
+          className="mb-6 w-full rounded-xl object-cover"
+          style={{
+            aspectRatio:
+              post.coverImageWidth && post.coverImageHeight
+                ? `${post.coverImageWidth} / ${post.coverImageHeight}`
+                : "16 / 9",
+            height: "auto",
+          }}
+        />
       )}
       <div className="mb-8">
         {/* Original blog profile card + title area */}
