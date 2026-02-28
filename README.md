@@ -285,8 +285,8 @@ erDiagram
 
 ### Visitor Analytics
 
-- **Real-time Dashboard**: Monitor today's unique visitors and total page views.
-- **Detailed Logs**: View recent visitor details including IP, Country, OS, Browser, and Referer.
+- **Real-time Dashboard**: Monitor unique visitors and total page views over the last 24 hours.
+- **Detailed Logs**: View recent 24-hour visitor details including IP, Country, OS, Browser, and Referer.
 - **Federation Views**: Securely track view counts when your posts are read on subscribed remote blogs without compromising reader privacy.
 - **Privacy-focused**: Local storage only, no third-party trackers.
 

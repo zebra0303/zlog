@@ -426,7 +426,7 @@ export const ko: Record<TranslationKeys, string> = {
   // Visitor Analytics
   today_visitors: "오늘 방문자 수",
   recent_visitors: "최근 방문자",
-  recent_visitors_title: "최근 방문자 (오늘)",
+  recent_visitors_title: "최근 방문자 (24시간)",
   no_visitors_yet: "아직 방문자가 없습니다.",
 
   // Admin - Template Management

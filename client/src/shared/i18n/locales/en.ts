@@ -421,7 +421,7 @@ export const en = {
   // Visitor Analytics
   today_visitors: "Today's Visitors",
   recent_visitors: "Recent Visitors",
-  recent_visitors_title: "Recent Visitors (Today)",
+  recent_visitors_title: "Recent Visitors (24h)",
   no_visitors_yet: "No visitors yet.",
 
   // Admin - Template Management

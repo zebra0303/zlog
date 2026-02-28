@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import { desc, gte, lt } from "drizzle-orm";
+import { desc, gte, eq } from "drizzle-orm";
 import { getCookie, setCookie } from "hono/cookie";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware, verifyToken } from "../middleware/auth.js";
@@ -39,7 +39,6 @@ analytics.post("/visit", async (c) => {
   const country = ip ? (geoip.lookup(ip)?.country ?? null) : null;
 
   const nowISO = new Date().toISOString();
-  const twentyFourHoursAgoStr = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   // 3. Insert Log and cleanup old logs
   analyticsDb.transaction((tx) => {
@@ -57,10 +56,19 @@ analytics.post("/visit", async (c) => {
       })
       .run();
 
-    // 4. Cleanup: Delete logs older than 24 hours
-    tx.delete(schema.visitorLogs)
-      .where(lt(schema.visitorLogs.visitedAt, twentyFourHoursAgoStr))
-      .run();
+    // 4. Cleanup: Keep only the latest 100 logs in the DB
+    const allLogs = tx
+      .select({ id: schema.visitorLogs.id })
+      .from(schema.visitorLogs)
+      .orderBy(desc(schema.visitorLogs.visitedAt))
+      .all();
+
+    if (allLogs.length > 100) {
+      const toDelete = allLogs.slice(100);
+      for (const log of toDelete) {
+        tx.delete(schema.visitorLogs).where(eq(schema.visitorLogs.id, log.id)).run();
+      }
+    }
   });
 
   // 5. Set Cookie (Expires 24 hours from now)
