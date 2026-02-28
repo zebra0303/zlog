@@ -40,7 +40,7 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
             src={post.coverImage}
             alt={post.title}
             className="aspect-video h-auto w-full"
-            objectFit="contain"
+            objectFit="cover"
             priority={priority}
           />
         )}

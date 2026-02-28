@@ -137,7 +137,7 @@ export default function HomePage() {
   const { t } = useI18n();
 
   // Queries
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ["categories"],
     queryFn: () => api.get<CategoryWithStats[]>("/categories"),
   });
@@ -211,30 +211,36 @@ export default function HomePage() {
       {/* Mobile: select box */}
       <div className="mb-4 flex items-center gap-2 md:hidden">
         <div className="relative flex-1">
-          <select
-            aria-label={t("home_all")}
-            value={currentCategory || ""}
-            onChange={(e) => {
-              const slug = e.target.value;
-              const params = new URLSearchParams(searchParams);
-              if (slug) {
-                params.set("category", slug);
-              } else {
-                params.delete("category");
-              }
-              params.set("page", "1");
-              setSearchParams(params);
-            }}
-            className="border-border bg-surface text-text focus:border-primary w-full cursor-pointer appearance-none rounded-md border py-1 pr-9 pl-3 text-xs font-medium transition-colors focus:outline-none"
-          >
-            <option value="">{t("home_all")}</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.slug}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="text-text-secondary pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+          {isLoadingCategories ? (
+            <Skeleton className="h-7 w-full" />
+          ) : (
+            <>
+              <select
+                aria-label={t("home_all")}
+                value={currentCategory || ""}
+                onChange={(e) => {
+                  const slug = e.target.value;
+                  const params = new URLSearchParams(searchParams);
+                  if (slug) {
+                    params.set("category", slug);
+                  } else {
+                    params.delete("category");
+                  }
+                  params.set("page", "1");
+                  setSearchParams(params);
+                }}
+                className="border-border bg-surface text-text focus:border-primary w-full cursor-pointer appearance-none rounded-md border py-1 pr-9 pl-3 text-xs font-medium transition-colors focus:outline-none"
+              >
+                <option value="">{t("home_all")}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.slug}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="text-text-secondary pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+            </>
+          )}
         </div>
         <a
           href={currentCategory ? `/category/${currentCategory}/rss.xml` : "/rss.xml"}
@@ -264,14 +270,18 @@ export default function HomePage() {
       <div className="mb-4 hidden items-start gap-2 md:flex">
         <div className="flex flex-1 flex-wrap gap-2">
           <CategoryBadge slug="all" name={t("home_all")} isActive={!currentCategory} />
-          {categories.map((cat) => (
-            <CategoryBadge
-              key={cat.id}
-              slug={cat.slug}
-              name={cat.name}
-              isActive={currentCategory === cat.slug}
-            />
-          ))}
+          {isLoadingCategories
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-6 w-16 rounded-full" />
+              ))
+            : categories.map((cat) => (
+                <CategoryBadge
+                  key={cat.id}
+                  slug={cat.slug}
+                  name={cat.name}
+                  isActive={currentCategory === cat.slug}
+                />
+              ))}
         </div>
         <a
           href={currentCategory ? `/category/${currentCategory}/rss.xml` : "/rss.xml"}
@@ -344,7 +354,15 @@ export default function HomePage() {
       {isLoading ? (
         <div className="flex flex-col gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full" />
+            <div key={i} className="border-border bg-surface overflow-hidden rounded-xl border p-4">
+              <Skeleton className="mb-4 aspect-video w-full rounded-lg" />
+              <Skeleton className="mb-2 h-6 w-3/4" />
+              <Skeleton className="mb-3 h-4 w-1/2" />
+              <div className="flex gap-2">
+                <Skeleton className="h-4 w-16 rounded-full" />
+                <Skeleton className="h-4 w-16 rounded-full" />
+              </div>
+            </div>
           ))}
         </div>
       ) : posts && posts.items.length > 0 ? (
