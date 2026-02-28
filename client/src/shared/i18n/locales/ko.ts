@@ -424,7 +424,7 @@ export const ko: Record<TranslationKeys, string> = {
     "원격 서버에서 구독이 거부되었습니다. 발행자가 구독을 해지했거나 접근을 차단했을 수 있습니다.",
 
   // Visitor Analytics
-  today_visitors: "오늘 방문자 수",
+  today_visitors: "방문자 수 (24시간)",
   recent_visitors: "최근 방문자",
   recent_visitors_title: "최근 방문자 (24시간)",
   no_visitors_yet: "아직 방문자가 없습니다.",

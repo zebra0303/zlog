@@ -419,7 +419,7 @@ export const en = {
   err_subscription_revoked: "Subscription revoked by the remote blog. Sync stopped.",
 
   // Visitor Analytics
-  today_visitors: "Today's Visitors",
+  today_visitors: "Visitors (24h)",
   recent_visitors: "Recent Visitors",
   recent_visitors_title: "Recent Visitors (24h)",
   no_visitors_yet: "No visitors yet.",
