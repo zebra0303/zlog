@@ -102,18 +102,18 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests for static assets
   if (request.method !== "GET") return;
 
-  // Static assets: network-first with cache fallback
+  // Hashed build assets (/assets/*) — let the browser handle directly.
+  // These have content-hash filenames and are immutable, so SW caching
+  // only causes stale-asset 503 errors after deploys.
+  if (url.pathname.startsWith("/assets/")) return;
+
+  // Other static assets (HTML, images, favicons): network-first with cache fallback
   event.respondWith(
     fetch(request)
       .then((response) => {
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        } else if (!response.ok && url.pathname.match(/\/assets\/.*\.(js|css)$/)) {
-          // Hashed asset missing after deploy — notify clients to reload
-          self.clients
-            .matchAll()
-            .then((clients) => clients.forEach((client) => client.postMessage({ type: "RELOAD" })));
         }
         return response;
       })
@@ -124,10 +124,7 @@ self.addEventListener("fetch", (event) => {
           if (request.headers.get("accept")?.includes("text/html")) {
             return caches.match("/");
           }
-          // JS/CSS assets missing from cache — return network error so the
-          // browser's dynamic-import error handler can trigger a page reload
-          // instead of silently serving a 503 response body.
-          return new Response("", { status: 404 });
+          return new Response("", { status: 503 });
         });
       }),
   );

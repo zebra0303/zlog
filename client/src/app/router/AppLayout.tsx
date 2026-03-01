@@ -249,21 +249,6 @@ export function AppLayout() {
     };
   }, []);
 
-  // Listen for SW reload message when hashed assets are missing after deploy
-  useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      const data = e.data as Record<string, unknown> | null;
-      if (data?.type === "RELOAD") {
-        window.location.reload();
-      }
-    };
-    const sw = navigator.serviceWorker;
-    sw.addEventListener("message", handler);
-    return () => {
-      sw.removeEventListener("message", handler);
-    };
-  }, []);
-
   const isEditorPage = pathname.startsWith("/write");
   const isPostDetail = pathname.startsWith("/posts/") || pathname.startsWith("/remote-posts/");
   const hideSidebar = isEditorPage || isPostDetail;
