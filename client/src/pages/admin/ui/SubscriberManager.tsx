@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Rss, Trash2 } from "lucide-react";
-import { Button, Card, CardContent, Badge, useConfirm } from "@/shared/ui";
+import { Button, Card, CardContent, Badge, useConfirm, useToast } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 
@@ -20,6 +20,7 @@ export function SubscriberManager() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { t, locale } = useI18n();
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
 
   const fetchSubscribers = () => {
     setIsLoading(true);
@@ -44,6 +45,7 @@ export function SubscriberManager() {
     setDeletingId(sub.id);
     try {
       await api.delete(`/federation/subscribers/${sub.id}`);
+      showToast(t("success"), "success");
       fetchSubscribers();
     } catch {
       /* ignore */

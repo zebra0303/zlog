@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { Folder, Plus, Pencil, Trash2, Check, X } from "lucide-react";
-import { Button, Input, Card, CardContent, Badge, ToggleSwitch, useConfirm } from "@/shared/ui";
+import {
+  Button,
+  Input,
+  Card,
+  CardContent,
+  Badge,
+  ToggleSwitch,
+  useConfirm,
+  useToast,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
@@ -19,6 +28,7 @@ export function CategoryManager() {
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
 
   const fetchCategories = useCallback(() => {
     void api
@@ -49,6 +59,7 @@ export function CategoryManager() {
       setNewDesc("");
       setNewIsPublic(true);
       setIsAdding(false);
+      showToast(t("success"), "success");
       fetchCategories();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_cat_create_failed")));
@@ -68,6 +79,7 @@ export function CategoryManager() {
         isPublic: editIsPublic,
       });
       setEditingId(null);
+      showToast(t("success"), "success");
       fetchCategories();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_cat_update_failed")));
@@ -79,6 +91,7 @@ export function CategoryManager() {
     if (!isConfirmed) return;
     try {
       await api.delete(`/categories/${id}`);
+      showToast(t("success"), "success");
       fetchCategories();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_cat_delete_failed")));

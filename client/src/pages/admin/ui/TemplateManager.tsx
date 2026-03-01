@@ -8,6 +8,7 @@ import {
   CardContent,
   MarkdownToolbar,
   useConfirm,
+  useToast,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
@@ -38,6 +39,7 @@ export function TemplateManager() {
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
 
   const fetchTemplates = useCallback(() => {
     setIsLoading(true);
@@ -77,6 +79,7 @@ export function TemplateManager() {
       setNewContent("");
       setIsAdding(false);
       setNewPreviewMode(false);
+      showToast(t("success"), "success");
       fetchTemplates();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_template_create_failed")));
@@ -99,6 +102,7 @@ export function TemplateManager() {
         content: editContent,
       });
       setEditingId(null);
+      showToast(t("success"), "success");
       fetchTemplates();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_template_update_failed")));
@@ -110,6 +114,7 @@ export function TemplateManager() {
     if (!isConfirmed) return;
     try {
       await api.delete(`/templates/${id}`);
+      showToast(t("success"), "success");
       fetchTemplates();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_template_delete_failed")));

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link, useLocation } from "react-router";
+import { useParams, Link, useLocation, useNavigate } from "react-router";
 import {
   Calendar,
   Eye,
@@ -52,6 +52,8 @@ export default function PostDetailPage() {
   const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (!slug) return;
     setIsLoading(true);
@@ -82,7 +84,8 @@ export default function PostDetailPage() {
 
     try {
       await api.delete(`/posts/${post.id}`);
-      window.location.href = "/";
+      showToast(t("post_deleted_success"), "success");
+      void navigate("/");
     } catch {
       showToast(t("post_delete_failed"), "error");
     }
@@ -106,10 +109,12 @@ export default function PostDetailPage() {
         visitorId: getVisitorId(),
       });
       setIsLiked(res.liked);
+      showToast(res.liked ? t("post_like_added") : t("post_like_removed"), "success");
     } catch {
       // Revert on error
       setIsLiked(prevLiked);
       setLocalLikeCount((prev) => (prevLiked ? prev + 1 : prev - 1));
+      showToast(t("post_like_failed"), "error");
     } finally {
       setIsLikeSubmitting(false);
     }

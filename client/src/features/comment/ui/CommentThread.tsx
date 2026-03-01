@@ -45,8 +45,10 @@ export function CommentThread({
   const handleLike = async () => {
     try {
       await api.post(`/comments/${comment.id}/like`, { visitorId: getVisitorId() });
+      showToast(t("post_like_added"), "success");
       onRefresh();
     } catch {
+      showToast(t("post_like_failed"), "error");
       return;
     }
   };
@@ -78,6 +80,7 @@ export function CommentThread({
       await api.put(`/comments/${comment.id}`, payload);
       setIsEditing(false);
       setEditPassword("");
+      showToast(t("success"), "success");
       onRefresh();
     } catch (err) {
       setEditError(getErrorMessage(err, t("comment_edit_wrong_password")));
@@ -97,6 +100,7 @@ export function CommentThread({
 
     try {
       await api.delete(`/comments/${comment.id}`, payload);
+      showToast(t("success"), "success");
       onCountChange?.(-1);
       onRefresh();
     } catch (err) {

@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { FileText, Trash2, X, Loader2, Edit, Eye, EyeOff, Search, Activity } from "lucide-react";
-import { Button, Input, Card, CardContent, Badge, Pagination, useConfirm } from "@/shared/ui";
+import {
+  Button,
+  Input,
+  Card,
+  CardContent,
+  Badge,
+  Pagination,
+  useConfirm,
+  useToast,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import { timeAgo } from "@/shared/lib/formatDate";
@@ -35,6 +44,7 @@ export function PostManager() {
   const popoverRef = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
 
   // Close popover on outside click
   useClickOutside(
@@ -104,9 +114,10 @@ export function PostManager() {
     setDeletingId(post.id);
     try {
       await api.delete(`/posts/${post.id}`);
+      showToast(t("post_deleted_success"), "success");
       fetchPosts(filter, page, debouncedSearch);
     } catch {
-      /* ignore */
+      showToast(t("post_delete_failed"), "error");
     } finally {
       setDeletingId(null);
     }

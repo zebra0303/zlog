@@ -10,6 +10,7 @@ import {
   SEOHead,
   MarkdownToolbar,
   useConfirm,
+  useToast,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -61,6 +62,7 @@ export default function PostEditorPage() {
   const listFrom = (location.state as { from?: string } | null)?.from ?? "/";
   const { isAuthenticated } = useAuthStore();
   const { t } = useI18n();
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   // Form State
@@ -414,6 +416,7 @@ export default function PostEditorPage() {
     mutationFn: (payload: CreatePostRequest) => api.post<{ slug: string }>("/posts", payload),
     onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      showToast(t("post_saved_success") || "Post saved successfully.", "success");
       if (variables.status === "published" && data.slug) {
         void navigate(`/posts/${data.slug}`, { state: { from: listFrom } });
       } else {
@@ -430,6 +433,7 @@ export default function PostEditorPage() {
     onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["posts"] });
       void queryClient.invalidateQueries({ queryKey: ["post", id] });
+      showToast(t("post_saved_success") || "Post updated successfully.", "success");
       if (variables.status === "published" && data.slug) {
         void navigate(`/posts/${data.slug}`, { state: { from: listFrom } });
       } else {

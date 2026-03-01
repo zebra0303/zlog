@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Loader2, RefreshCw, Link2, Power } from "lucide-react";
-import { Button, Input, Card, CardContent, Badge, useConfirm } from "@/shared/ui";
+import { Button, Input, Card, CardContent, Badge, useConfirm, useToast } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useI18n } from "@/shared/i18n";
 import { getFederationErrorMessage } from "@/shared/lib/getErrorMessage";
@@ -52,6 +52,7 @@ export function SubscriptionManager({
   } | null>(null);
   const { t, locale } = useI18n();
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const sectionRef = useRef<HTMLDivElement>(null);
   const localCatSelectRef = useRef<HTMLSelectElement>(null);
 
@@ -248,6 +249,7 @@ export function SubscriptionManager({
     if (!isConfirmed) return;
     try {
       await api.delete(`/federation/subscriptions/${sub.id}`);
+      showToast(t("success"), "success");
       fetchSubs();
     } catch {
       /* ignore */
