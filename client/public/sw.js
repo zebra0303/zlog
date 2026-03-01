@@ -1,5 +1,5 @@
-const CACHE_NAME = "zlog-v3";
-const API_CACHE_NAME = "zlog-api-v1";
+const CACHE_NAME = "zlog-v4";
+const API_CACHE_NAME = "zlog-api-v2";
 const PRECACHE_URLS = ["/favicons/favicon.svg"];
 const API_CACHE_MAX = 50;
 
@@ -37,7 +37,7 @@ async function handleApiRequest(request, event) {
 
   if (cached) {
     // Background revalidate — update cache for next visit
-    event.waitUntil(fetchAndCache(request).catch(() => {}));
+    event.waitUntil(fetchAndCache(request).catch(() => { }));
     return cached;
   }
 
@@ -87,7 +87,7 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) {
     // If Mutation (POST/PUT/DELETE), invalidate the whole API cache so that the next GET gets fresh data
     if (["POST", "PUT", "DELETE"].includes(request.method)) {
-      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => {}));
+      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => { }));
       // Passthrough to network
       return;
     }
