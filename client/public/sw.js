@@ -1,6 +1,6 @@
 const CACHE_NAME = "zlog-v3";
 const API_CACHE_NAME = "zlog-api-v1";
-const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
+const PRECACHE_URLS = ["/favicons/favicon.svg"];
 const API_CACHE_MAX = 50;
 
 // Cacheable GET API patterns for stale-while-revalidate
@@ -102,34 +102,40 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Only handle GET requests for static assets
+  // Bypass SW for HTML navigation requests entirely
+  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) return;
+
+  // Bypass SW for manifest files
+  if (url.pathname.endsWith(".webmanifest")) return;
+
+  // Only handle GET requests for static assets that we want to cache (images, fonts, favicons)
   if (request.method !== "GET") return;
 
   // Hashed build assets (/assets/*) — let the browser handle directly.
-  // These have content-hash filenames and are immutable, so SW caching
-  // only causes stale-asset 503 errors after deploys.
   if (url.pathname.startsWith("/assets/")) return;
 
-  // Other static assets (HTML, images, favicons): network-first with cache fallback
+  // We only want to cache specific resource types: images and fonts
+  const isCacheableAsset =
+    request.destination === "image" ||
+    request.destination === "font" ||
+    url.pathname.startsWith("/favicons/");
+
+  if (!isCacheableAsset) return;
+
+  // For cacheable assets (images, fonts): cache-first with network fallback
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(request).then((cached) => {
-          if (cached) return cached;
-          // HTML navigation falls back to cached SPA shell
-          if (request.headers.get("accept")?.includes("text/html")) {
-            return caches.match("/").then((shell) => shell || Response.error());
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
-          // Return standard network error instead of misleading 503
-          return Response.error();
-        });
-      }),
+          return response;
+        })
+        .catch(() => Response.error());
+    }),
   );
 });
