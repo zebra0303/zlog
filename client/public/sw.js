@@ -102,24 +102,32 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests for static assets
   if (request.method !== "GET") return;
 
-  // Static assets: network-first with cache fallback (unchanged)
+  // Static assets: network-first with cache fallback
   event.respondWith(
     fetch(request)
       .then((response) => {
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        } else if (!response.ok && url.pathname.match(/\/assets\/.*\.(js|css)$/)) {
+          // Hashed asset missing after deploy — notify clients to reload
+          self.clients
+            .matchAll()
+            .then((clients) => clients.forEach((client) => client.postMessage({ type: "RELOAD" })));
         }
         return response;
       })
       .catch(() => {
         return caches.match(request).then((cached) => {
           if (cached) return cached;
-          // HTML requests fall back to cached index.html (SPA shell)
+          // HTML navigation falls back to cached SPA shell
           if (request.headers.get("accept")?.includes("text/html")) {
             return caches.match("/");
           }
-          return new Response("Offline", { status: 503 });
+          // JS/CSS assets missing from cache — return network error so the
+          // browser's dynamic-import error handler can trigger a page reload
+          // instead of silently serving a 503 response body.
+          return new Response("", { status: 404 });
         });
       }),
   );
