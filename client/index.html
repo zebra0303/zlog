@@ -26,5 +26,11 @@
       }
     </script>
     <script type="module" src="/src/app/main.tsx"></script>
+    <!-- Register SW independently from app bundle to avoid deadlock when chunks are stale -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      }
+    </script>
   </body>
 </html>

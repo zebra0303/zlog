@@ -1,4 +1,4 @@
-const CACHE_NAME = "zlog-v2";
+const CACHE_NAME = "zlog-v3";
 const API_CACHE_NAME = "zlog-api-v1";
 const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
 const API_CACHE_MAX = 50;

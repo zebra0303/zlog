@@ -11,11 +11,5 @@ createRoot(root).render(
   </StrictMode>,
 );
 
-// Register Service Worker
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      /* SW registration failed */
-    });
-  });
-}
+// SW registration moved to index.html inline script to avoid deadlock
+// when stale SW prevents app bundle from loading
