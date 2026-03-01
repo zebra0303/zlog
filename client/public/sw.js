@@ -45,10 +45,13 @@ async function handleApiRequest(request, event) {
   try {
     return await fetchAndCache(request);
   } catch {
-    // Offline with no cache — return 503 JSON
+    // Offline with no cache — return 503 JSON with custom header to distinguish from true server 503
     return new Response(JSON.stringify({ error: "Offline", message: "No cached data available" }), {
       status: 503,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Service-Worker": "offline",
+      },
     });
   }
 }
@@ -122,9 +125,10 @@ self.addEventListener("fetch", (event) => {
           if (cached) return cached;
           // HTML navigation falls back to cached SPA shell
           if (request.headers.get("accept")?.includes("text/html")) {
-            return caches.match("/");
+            return caches.match("/").then((shell) => shell || Response.error());
           }
-          return new Response("", { status: 503 });
+          // Return standard network error instead of misleading 503
+          return Response.error();
         });
       }),
   );
