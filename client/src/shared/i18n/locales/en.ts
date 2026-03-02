@@ -216,8 +216,7 @@ export const en = {
   admin_cat_create_failed: "Failed to create.",
   admin_cat_update_failed: "Failed to update.",
   admin_cat_delete_failed: "Failed to delete.",
-  admin_cat_delete_confirm:
-    'Delete category "{name}"?\nPosts in this category will become uncategorized.',
+  admin_cat_delete_confirm: 'Delete category "{name}"?',
   admin_cat_empty: "No categories. Click Add to create one.",
   admin_cat_posts_count: "posts",
   admin_cat_delete_last_has_posts: "Cannot delete the last remaining category.",
