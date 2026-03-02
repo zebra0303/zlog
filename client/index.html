@@ -26,24 +26,10 @@
       }
     </script>
     <script type="module" src="/src/app/main.tsx"></script>
-    <!-- Register SW independently from app bundle; auto-reload after SW update -->
+    <!-- Register SW independently from app bundle to avoid deadlock when chunks are stale -->
     <script>
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then(function (reg) {
-            // When a new SW is installing/waiting, reload once it activates
-            // so the old SW's stale asset interception is replaced
-            var newWorker = reg.installing || reg.waiting;
-            if (newWorker) {
-              newWorker.addEventListener("statechange", function () {
-                if (newWorker.state === "activated") {
-                  window.location.reload();
-                }
-              });
-            }
-          })
-          .catch(function () {});
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
       }
     </script>
   </body>

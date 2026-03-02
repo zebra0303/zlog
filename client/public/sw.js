@@ -1,6 +1,6 @@
-const CACHE_NAME = "zlog-v4";
-const API_CACHE_NAME = "zlog-api-v2";
-const PRECACHE_URLS = ["/favicons/favicon.svg"];
+const CACHE_NAME = "zlog-v5";
+const API_CACHE_NAME = "zlog-api-v3";
+const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
 const API_CACHE_MAX = 50;
 
 // Cacheable GET API patterns for stale-while-revalidate
@@ -102,40 +102,33 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Bypass SW for HTML navigation requests entirely
-  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) return;
-
-  // Bypass SW for manifest files
-  if (url.pathname.endsWith(".webmanifest")) return;
-
-  // Only handle GET requests for static assets that we want to cache (images, fonts, favicons)
+  // Only handle GET requests for static assets
   if (request.method !== "GET") return;
 
   // Hashed build assets (/assets/*) — let the browser handle directly.
+  // These have content-hash filenames and are immutable, so SW caching
+  // only causes stale-asset 503 errors after deploys.
   if (url.pathname.startsWith("/assets/")) return;
 
-  // We only want to cache specific resource types: images and fonts
-  const isCacheableAsset =
-    request.destination === "image" ||
-    request.destination === "font" ||
-    url.pathname.startsWith("/favicons/");
-
-  if (!isCacheableAsset) return;
-
-  // For cacheable assets (images, fonts): cache-first with network fallback
+  // Other static assets (HTML, images, favicons): network-first with cache fallback
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(request).then((cached) => {
+          if (cached) return cached;
+          // HTML navigation falls back to cached SPA shell
+          if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
+            return caches.match("/").then((shell) => shell || Response.error());
           }
-          return response;
-        })
-        .catch(() => Response.error());
-    }),
+          return Response.error();
+        });
+      }),
   );
 });
