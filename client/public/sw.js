@@ -1,5 +1,5 @@
-const CACHE_NAME = "zlog-v6";
-const API_CACHE_NAME = "zlog-api-v4";
+const CACHE_NAME = "zlog-v7";
+const API_CACHE_NAME = "zlog-api-v5";
 const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
 const API_CACHE_MAX = 50;
 
@@ -87,8 +87,9 @@ self.addEventListener("fetch", (event) => {
 
   // API requests
   if (url.pathname.startsWith("/api/")) {
-    // If Mutation (POST/PUT/DELETE), invalidate the whole API cache so that the next GET gets fresh data
-    if (["POST", "PUT", "DELETE"].includes(request.method)) {
+    // If Mutation (POST/PUT/DELETE), invalidate the whole API cache so that the next GET gets fresh data.
+    // However, exclude analytics POSTs (e.g., /api/analytics/visit) since they don't affect cached posts/categories.
+    if (["POST", "PUT", "DELETE"].includes(request.method) && !url.pathname.startsWith("/api/analytics/")) {
       event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => { }));
       // Passthrough to network
       return;
