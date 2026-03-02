@@ -1,5 +1,5 @@
-const CACHE_NAME = "zlog-v7";
-const API_CACHE_NAME = "zlog-api-v5";
+const CACHE_NAME = "zlog-v8";
+const API_CACHE_NAME = "zlog-api-v6";
 const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
 const API_CACHE_MAX = 50;
 
@@ -8,6 +8,7 @@ const CACHEABLE_API_PATTERNS = [
   /^\/api\/posts(\?|$)/, // Post list (pagination, category, tag)
   /^\/api\/posts\/[^/]+/, // Individual post detail
   /^\/api\/categories(\?|$)/, // Category list
+  /^\/api\/settings(\?|$)/, // Site settings (themes, metadata)
 ];
 
 // Trim cache to max entries (LRU: oldest first)
