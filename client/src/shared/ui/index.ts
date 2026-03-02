@@ -18,3 +18,4 @@ export * from "./useToast";
 export * from "./useConfirm";
 export * from "./ConfirmModal";
 export * from "./OfflineFallback";
+export * from "./NotFoundFallback";

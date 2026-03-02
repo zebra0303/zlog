@@ -25,6 +25,7 @@ import {
   useToast,
   useConfirm,
   OfflineFallback,
+  NotFoundFallback,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -132,17 +133,7 @@ export default function PostDetailPage() {
     if (error === "Offline") {
       return <OfflineFallback />;
     }
-    return (
-      <div className="py-20 text-center">
-        <p className="text-lg text-[var(--color-text-secondary)]">{error ?? t("post_not_found")}</p>
-        <Button variant="outline" className="mt-4" asChild>
-          <Link to={backTo}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("post_go_home")}
-          </Link>
-        </Button>
-      </div>
-    );
+    return <NotFoundFallback title={t("post_not_found")} message={error ?? undefined} />;
   }
 
   const postUrl = `${window.location.origin}/posts/${post.slug}`;

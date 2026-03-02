@@ -144,7 +144,7 @@ export const en = {
   // Not Found & Offline
   not_found_title: "Page Not Found",
   not_found_description: "The page you are looking for does not exist or has been moved.",
-  not_found_go_home: "Go back home",
+  not_found_go_back: "Go Back",
   offline_title: "Oops, you are offline",
   offline_message: "Your internet connection was lost. Please check your network and try again.",
   offline_go_back: "Go Back",

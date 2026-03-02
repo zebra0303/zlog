@@ -1,6 +1,11 @@
 const CACHE_NAME = "zlog-v7";
 const API_CACHE_NAME = "zlog-api-v7";
-const PRECACHE_URLS = ["/", "/favicons/favicon.svg", "/images/offline.webp"];
+const PRECACHE_URLS = [
+  "/",
+  "/favicons/favicon.svg",
+  "/images/offline.webp",
+  "/images/notfound.webp",
+];
 const API_CACHE_MAX = 50;
 
 // Cacheable GET API patterns for stale-while-revalidate
