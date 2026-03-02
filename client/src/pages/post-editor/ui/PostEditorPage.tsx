@@ -243,8 +243,11 @@ export default function PostEditorPage() {
       try {
         const fd = new FormData();
         fd.append("image", file);
-        const res = await api.upload<{ url: string }>("/upload/image", fd);
-        const markdown = `![${file.name}](${res.url})\n`;
+        const res = await api.upload<{ url: string; width: number; height: number }>(
+          "/upload/image",
+          fd,
+        );
+        const markdown = `![${file.name}](${res.url}?align=center&width=${res.width}&height=${res.height})\n`;
         setContent((prev) => prev.replace(placeholder, markdown));
       } catch {
         setContent((prev) => prev.replace(placeholder, ""));

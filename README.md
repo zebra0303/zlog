@@ -235,7 +235,7 @@ erDiagram
 - **Toolbar Features**: Format text, lists, and insert media with ease. Features multi-step Undo/Redo support.
 - **Post Templates**: Save and reuse markdown templates for consistent writing workflows
 - **Media Insertion**: Image paste & drag-and-drop, GIPHY Sticker Picker for adding expressive stickers
-- **Image dimensions syntax**: Custom markdown `![alt|width|height](url)` supports exact width/height sizing
+- **Image alignment & dimensions syntax**: Custom markdown `![alt](url?align=center&width=W&height=H)` supports image alignment (left/right/center) and exact sizing
 - **Cover image** support with upload
 - **Custom embeds**: YouTube, CodePen, CodeSandbox
 - **Code blocks** with syntax highlighting (highlight.js) and auto-formatting (Prettier)

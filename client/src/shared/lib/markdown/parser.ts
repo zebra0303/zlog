@@ -68,23 +68,43 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     return `MERMAID_BLOCK_${idx}_PLACEHOLDER`;
   });
 
-  // Custom image syntax: ![alt|width|height](url) or ![alt|width](url)
-  // Replaces the markdown image with an HTML <img> tag if | is present in alt text
+  // Custom image syntax: ![alt](url?width=W&height=H)
+  // Replaces the markdown image with an HTML <img> tag if width or height is present in URL
   processed = processed.replace(
-    /!\[([^\]|]*)(?:\|([^\]|]*))?(?:\|([^\]|]*))?\]\(([^)]+)\)/g,
-    (
-      match: string,
-      alt: string | undefined,
-      width: string | undefined,
-      height: string | undefined,
-      url: string,
-    ) => {
-      if (width !== undefined || height !== undefined) {
-        let imgTag = `<img src="${url}" alt="${alt?.trim() ?? ""}"`;
-        if (width?.trim()) imgTag += ` width="${width.trim()}"`;
-        if (height?.trim()) imgTag += ` height="${height.trim()}"`;
-        imgTag += ` />`;
-        return imgTag;
+    /!\[([^\]]*)\]\(([^)]+)\)/g,
+    (match: string, alt: string, rawUrl: string) => {
+      try {
+        const urlObj = new URL(rawUrl, "http://localhost");
+        const width = urlObj.searchParams.get("width");
+        const height = urlObj.searchParams.get("height");
+        const align = urlObj.searchParams.get("align");
+
+        if (width || height || align) {
+          let imgTag = `<img src="${rawUrl}" alt="${alt.trim()}"`;
+          const styles: string[] = [];
+          if (width) {
+            imgTag += ` width="${width}"`;
+            styles.push(`width: ${width}${/^[0-9]+$/.test(width) ? "px" : ""}`);
+          }
+          if (height) {
+            imgTag += ` height="${height}"`;
+            styles.push(`height: ${height}${/^[0-9]+$/.test(height) ? "px" : ""}`);
+          }
+          if (align === "left") {
+            styles.push("float: left", "margin: 0 1rem 1rem 0");
+          } else if (align === "right") {
+            styles.push("float: right", "margin: 0 0 1rem 1rem");
+          } else if (align === "center") {
+            styles.push("display: block", "margin: 0 auto");
+          }
+          if (styles.length > 0) {
+            imgTag += ` style="${styles.join("; ")}"`;
+          }
+          imgTag += ` />`;
+          return imgTag;
+        }
+      } catch {
+        // ignore
       }
       return match;
     },

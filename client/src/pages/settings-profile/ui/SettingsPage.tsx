@@ -64,8 +64,11 @@ export default function SettingsPage() {
       try {
         const fd = new FormData();
         fd.append("image", file);
-        const res = await api.upload<{ url: string }>("/upload/image", fd);
-        const markdown = `![${file.name}](${res.url})\n`;
+        const res = await api.upload<{ url: string; width: number; height: number }>(
+          "/upload/image",
+          fd,
+        );
+        const markdown = `![${file.name}](${res.url}?align=center&width=${res.width}&height=${res.height})\n`;
         setForm((f) => ({ ...f, aboutMe: (f.aboutMe ?? "").replace(placeholder, markdown) }));
       } catch {
         setForm((f) => ({ ...f, aboutMe: (f.aboutMe ?? "").replace(placeholder, "") }));

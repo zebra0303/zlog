@@ -227,7 +227,7 @@ export function MarkdownToolbar({
           if (onImageUpload) {
             onImageUpload();
           } else {
-            applyInsert("![alt|넓이|높이](url)\n");
+            applyInsert("![alt](url?align=center&width=넓이&height=높이)\n");
           }
         },
       },
@@ -894,7 +894,7 @@ export function MarkdownToolbar({
                   apiKey={giphyApiKey}
                   isDark={isDark}
                   onSelect={(url) => {
-                    applyInsert(`![sticker|180](${url})\n`);
+                    applyInsert(`![sticker](${url}?align=center&width=180)\n`);
                     setStickerOpen(false);
                   }}
                 />
@@ -936,7 +936,7 @@ export function MarkdownToolbar({
                   이미지 아이콘 클릭 또는 에디터 영역으로 드래그&amp;드롭
                   <br />
                   <code className="mt-1 inline-block rounded bg-[var(--color-background)] px-1">
-                    ![alt|100|200](url)
+                    ![alt](url?width=100&height=200)
                   </code>{" "}
                   형식으로 넓이와 높이 지정 가능
                 </li>
