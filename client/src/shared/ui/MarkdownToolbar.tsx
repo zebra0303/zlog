@@ -225,6 +225,7 @@ export function MarkdownToolbar({
         },
       },
     ],
+    // List group: bullet, numbered, task list
     [
       {
         icon: <List className="h-4 w-4" />,
@@ -247,6 +248,9 @@ export function MarkdownToolbar({
           applyLinePrefix("- [ ] ");
         },
       },
+    ],
+    // Block formatting: quote, inline code, code block
+    [
       {
         icon: <Quote className="h-4 w-4" />,
         label: t("toolbar_quote"),
@@ -254,8 +258,6 @@ export function MarkdownToolbar({
           applyLinePrefix("> ");
         },
       },
-    ],
-    [
       {
         icon: <Code className="h-4 w-4" />,
         label: t("toolbar_inline_code"),
