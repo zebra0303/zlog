@@ -220,6 +220,11 @@ export const en = {
     'Delete category "{name}"?\nPosts in this category will become uncategorized.',
   admin_cat_empty: "No categories. Click Add to create one.",
   admin_cat_posts_count: "posts",
+  admin_cat_delete_last_has_posts: "Cannot delete the last category because it contains posts.",
+  admin_cat_delete_move_posts:
+    "This category has {count} post(s). Select a category to move them to.",
+  admin_cat_move_target: "Move to",
+  admin_cat_delete_with_move: "Move & Delete",
 
   // Admin - Display
   admin_display_title: "Display Settings",

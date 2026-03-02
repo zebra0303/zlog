@@ -25,6 +25,8 @@ export function CategoryManager() {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editIsPublic, setEditIsPublic] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [moveTargetId, setMoveTargetId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const { t } = useI18n();
   const { confirm } = useConfirm();
@@ -87,10 +89,43 @@ export function CategoryManager() {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    const cat = categories.find((c) => c.id === id);
+    if (!cat) return;
+
+    // Guard: last category with posts cannot be deleted
+    if (cat.postCount > 0 && categories.length <= 1) {
+      showToast(t("admin_cat_delete_last_has_posts"), "error");
+      return;
+    }
+
+    // If posts exist, show inline move-target UI instead of deleting immediately
+    if (cat.postCount > 0) {
+      setDeletingId(id);
+      // Pre-select the first available target
+      const firstTarget = categories.find((c) => c.id !== id);
+      setMoveTargetId(firstTarget?.id ?? "");
+      return;
+    }
+
+    // No posts: confirm and delete directly
     const isConfirmed = await confirm(t("admin_cat_delete_confirm", { name }));
     if (!isConfirmed) return;
     try {
       await api.delete(`/categories/${id}`);
+      showToast(t("success"), "success");
+      fetchCategories();
+    } catch (err) {
+      setError(getErrorMessage(err, t("admin_cat_delete_failed")));
+    }
+  };
+
+  // Execute delete with post migration to the selected target category
+  const handleDeleteWithMove = async () => {
+    if (!deletingId || !moveTargetId) return;
+    try {
+      await api.delete(`/categories/${deletingId}`, { targetCategoryId: moveTargetId });
+      setDeletingId(null);
+      setMoveTargetId("");
       showToast(t("success"), "success");
       fetchCategories();
     } catch (err) {
@@ -241,45 +276,90 @@ export function CategoryManager() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[var(--color-text)]">{cat.name}</span>
-                        <Badge variant="secondary">
-                          {cat.postCount.toLocaleString()} {t("admin_cat_posts_count")}
-                        </Badge>
-                        {!cat.isPublic && <Badge variant="outline">{t("private")}</Badge>}
-                      </div>
-                      {cat.description && (
-                        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                          {cat.description}
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-[var(--color-text)]">{cat.name}</span>
+                          <Badge variant="secondary">
+                            {cat.postCount.toLocaleString()} {t("admin_cat_posts_count")}
+                          </Badge>
+                          {!cat.isPublic && <Badge variant="outline">{t("private")}</Badge>}
+                        </div>
+                        {cat.description && (
+                          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                            {cat.description}
+                          </p>
+                        )}
+                        <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                          /{cat.slug}
                         </p>
-                      )}
-                      <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-                        /{cat.slug}
-                      </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            startEdit(cat);
+                          }}
+                          aria-label={t("edit")}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(cat.id, cat.name)}
+                          aria-label={t("delete")}
+                        >
+                          <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          startEdit(cat);
-                        }}
-                        aria-label={t("edit")}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(cat.id, cat.name)}
-                        aria-label={t("delete")}
-                      >
-                        <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
-                      </Button>
-                    </div>
-                  </div>
+                    {/* Inline UI: select target category before deleting */}
+                    {deletingId === cat.id && (
+                      <div className="mt-3 rounded-lg border border-[var(--color-primary)] bg-[var(--color-surface)] p-3">
+                        <p className="mb-2 text-sm text-[var(--color-text)]">
+                          {t("admin_cat_delete_move_posts", {
+                            count: String(cat.postCount),
+                          })}
+                        </p>
+                        <label className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+                          {t("admin_cat_move_target")}
+                        </label>
+                        <select
+                          className="mb-3 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                          value={moveTargetId}
+                          onChange={(e) => {
+                            setMoveTargetId(e.target.value);
+                          }}
+                        >
+                          {categories
+                            .filter((c) => c.id !== cat.id)
+                            .map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                        </select>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setDeletingId(null);
+                              setMoveTargetId("");
+                            }}
+                          >
+                            {t("cancel")}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={handleDeleteWithMove}>
+                            {t("admin_cat_delete_with_move")}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ))}

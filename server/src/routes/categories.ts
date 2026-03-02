@@ -190,14 +190,61 @@ categoriesRoute.put("/:id", authMiddleware, async (c) => {
   return c.json(result);
 });
 
-categoriesRoute.delete("/:id", authMiddleware, (c) => {
+categoriesRoute.delete("/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const existing = db.select().from(schema.categories).where(eq(schema.categories.id, id)).get();
   if (!existing) {
     return c.json({ error: "Category not found." }, 404);
   }
 
-  db.update(schema.posts).set({ categoryId: null }).where(eq(schema.posts.categoryId, id)).run();
+  // Count posts in this category (all statuses, not just published)
+  const postCount =
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.posts)
+      .where(eq(schema.posts.categoryId, id))
+      .get()?.count ?? 0;
+
+  if (postCount > 0) {
+    // Guard: cannot delete the last remaining category if it has posts
+    const totalCategories =
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(schema.categories)
+        .get()?.count ?? 0;
+    if (totalCategories <= 1) {
+      return c.json(
+        { error: "Cannot delete the last category with posts.", code: "LAST_CATEGORY_HAS_POSTS" },
+        400,
+      );
+    }
+
+    // Require targetCategoryId to move posts before deletion
+    const body = (await c.req.json().catch(() => ({}))) as { targetCategoryId?: string };
+    const targetCategoryId = body.targetCategoryId;
+    if (!targetCategoryId) {
+      return c.json(
+        { error: "Posts exist. Provide targetCategoryId.", code: "POSTS_EXIST", postCount },
+        409,
+      );
+    }
+
+    // Validate target category exists and is different
+    const target = db
+      .select()
+      .from(schema.categories)
+      .where(eq(schema.categories.id, targetCategoryId))
+      .get();
+    if (!target) {
+      return c.json({ error: "Target category not found." }, 404);
+    }
+
+    // Move all posts to the target category
+    db.update(schema.posts)
+      .set({ categoryId: targetCategoryId })
+      .where(eq(schema.posts.categoryId, id))
+      .run();
+  }
 
   db.delete(schema.categories).where(eq(schema.categories.id, id)).run();
   return c.json({ message: "Category has been deleted." });

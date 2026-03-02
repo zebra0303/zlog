@@ -135,20 +135,63 @@ describe("Categories API", () => {
   });
 
   describe("DELETE /api/categories/:id", () => {
-    it("should delete category and nullify posts categoryId", async () => {
-      const cat = createTestCategory({ name: "ToDelete", slug: "to-delete" });
-      const post = createTestPost({ categoryId: cat.id });
+    it("should delete category without posts", async () => {
+      const cat = createTestCategory({ name: "Empty", slug: "empty" });
 
       const res = await app.request(`/api/categories/${cat.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
+    });
 
-      // Verify post's categoryId is null
+    it("should return 400 when deleting last category with posts", async () => {
+      const cat = createTestCategory({ name: "Last", slug: "last" });
+      createTestPost({ categoryId: cat.id });
+
+      const res = await app.request(`/api/categories/${cat.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(res.status).toBe(400);
+      const data = (await res.json()) as { code: string };
+      expect(data.code).toBe("LAST_CATEGORY_HAS_POSTS");
+    });
+
+    it("should return 409 when posts exist but no targetCategoryId provided", async () => {
+      createTestCategory({ name: "Other", slug: "other" });
+      const cat = createTestCategory({ name: "HasPosts", slug: "has-posts" });
+      createTestPost({ categoryId: cat.id });
+
+      const res = await app.request(`/api/categories/${cat.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(res.status).toBe(409);
+      const data = (await res.json()) as { code: string; postCount: number };
+      expect(data.code).toBe("POSTS_EXIST");
+      expect(data.postCount).toBe(1);
+    });
+
+    it("should move posts to target category and delete", async () => {
+      const target = createTestCategory({ name: "Target", slug: "target" });
+      const cat = createTestCategory({ name: "ToDelete", slug: "to-delete" });
+      const post = createTestPost({ categoryId: cat.id });
+
+      const res = await app.request(`/api/categories/${cat.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ targetCategoryId: target.id }),
+      });
+      expect(res.status).toBe(200);
+
+      // Verify post was moved to the target category
       const postRes = await app.request(`/api/posts/${post.slug}`);
       const postData = (await postRes.json()) as { categoryId: string | null };
-      expect(postData.categoryId).toBeNull();
+      expect(postData.categoryId).toBe(target.id);
     });
 
     it("should return 401 without auth", async () => {
