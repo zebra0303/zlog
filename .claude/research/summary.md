@@ -1,6 +1,6 @@
 # ZLOG — Comprehensive Architecture & Codebase Report
 
-**Date:** 2026-02-28
+**Date:** 2026-03-02
 **Scope:** Full-depth analysis of the entire zlog codebase
 
 ---
@@ -431,6 +431,7 @@ All pages are lazy-loaded via `React.lazy()` with Suspense + Skeleton loader.
 6. **Sanitize** with rehype-sanitize (strict schema allowing iframes)
 7. **Highlight** with rehype-highlight
 8. **Post-process:** language labels, copy buttons, external link targets, mermaid div restoration
+9. **Custom Image Styling:** Supports URL query parameters (`?align=left|right|center&width=W&height=H`) to automatically generate inline styles for float, margin, and exact dimensions, overriding global CSS resets.
 
 **Mermaid Rendering:**
 
@@ -490,6 +491,11 @@ All pages are lazy-loaded via `React.lazy()` with Suspense + Skeleton loader.
 - Configurable `objectFit` (cover, contain, contain-mobile)
 - Opacity transition on load
 - Async decoding
+
+**Uploads & Markdown Integration:**
+
+- Image uploads via drag-and-drop or toolbar automatically extract dimensions (width/height) from the server response and insert optimized markdown tags (`![alt](url?align=center&width=...&height=...)`).
+- **GIPHY Sticker Picker** integrated into the editor toolbar, which functions identically to images and auto-appends exact sizing via query params.
 
 **Cover Images:**
 
