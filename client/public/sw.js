@@ -1,4 +1,4 @@
-const CACHE_NAME = "zlog-v10";
+const CACHE_NAME = "zlog-v11";
 const API_CACHE_NAME = "zlog-api-v8";
 const PRECACHE_URLS = ["/", "/favicons/favicon.svg", "/images/offline.webp"];
 const API_CACHE_MAX = 50;
@@ -41,7 +41,7 @@ async function handleApiRequest(request, event) {
 
   if (cached) {
     // Background revalidate — update cache for next visit
-    event.waitUntil(fetchAndCache(request).catch(() => {}));
+    event.waitUntil(fetchAndCache(request).catch(() => { }));
     return cached;
   }
 
@@ -95,7 +95,7 @@ self.addEventListener("fetch", (event) => {
       ["POST", "PUT", "DELETE"].includes(request.method) &&
       !url.pathname.startsWith("/api/analytics/")
     ) {
-      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => {}));
+      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => { }));
       // Passthrough to network
       return;
     }
@@ -131,9 +131,13 @@ self.addEventListener("fetch", (event) => {
       .catch(() => {
         return caches.match(request, { ignoreVary: true }).then((cached) => {
           if (cached) return cached;
+
+          // If the request is for an image, we can optionally just return the offline image directly.
+          if (request.destination === "image" || request.headers.get("accept")?.includes("image/")) {
+            return caches.match("/images/offline.webp", { ignoreVary: true }).then(off => off || Response.error());
+          }
+
           // HTML navigation falls back to cached SPA shell.
-          // ignoreSearch is required because the browser might request `/?page=1`
-          // but our precache only stores the exact `/` without query params.
           if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
             return caches
               .match("/", { ignoreVary: true, ignoreSearch: true })
