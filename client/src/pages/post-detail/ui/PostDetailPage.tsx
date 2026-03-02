@@ -27,7 +27,7 @@ import {
   OfflineFallback,
   NotFoundFallback,
 } from "@/shared/ui";
-import { api } from "@/shared/api/client";
+import { api, queryClient } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { getVisitorId } from "@/shared/lib/visitorId";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -86,6 +86,8 @@ export default function PostDetailPage() {
 
     try {
       await api.delete(`/posts/${post.id}`);
+      // Invalidate post list cache so HomePage shows fresh data
+      void queryClient.invalidateQueries({ queryKey: ["posts"] });
       showToast(t("post_deleted_success"), "success");
       void navigate("/");
     } catch {
