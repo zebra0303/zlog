@@ -1,5 +1,5 @@
-const CACHE_NAME = "zlog-v5";
-const API_CACHE_NAME = "zlog-api-v3";
+const CACHE_NAME = "zlog-v6";
+const API_CACHE_NAME = "zlog-api-v4";
 const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
 const API_CACHE_MAX = 50;
 
@@ -33,7 +33,9 @@ async function fetchAndCache(request) {
 // Stale-while-revalidate for cacheable API requests
 async function handleApiRequest(request, event) {
   const cache = await caches.open(API_CACHE_NAME);
-  const cached = await cache.match(request);
+  // ignoreVary is crucial because CORS adds Vary: Origin
+  // ignoreSearch is NOT used here because /api/posts?page=1 and /api/posts?page=2 are strictly different API responses.
+  const cached = await cache.match(request, { ignoreVary: true });
 
   if (cached) {
     // Background revalidate — update cache for next visit
@@ -121,11 +123,13 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() => {
-        return caches.match(request).then((cached) => {
+        return caches.match(request, { ignoreVary: true }).then((cached) => {
           if (cached) return cached;
-          // HTML navigation falls back to cached SPA shell
+          // HTML navigation falls back to cached SPA shell. 
+          // ignoreSearch is required because the browser might request `/?page=1`
+          // but our precache only stores the exact `/` without query params.
           if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
-            return caches.match("/").then((shell) => shell || Response.error());
+            return caches.match("/", { ignoreVary: true, ignoreSearch: true }).then((shell) => shell || Response.error());
           }
           return Response.error();
         });
