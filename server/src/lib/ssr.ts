@@ -21,6 +21,17 @@ export function getSiteSettings(): Record<string, string> {
   return map;
 }
 
+// Font CDN URLs — must stay in sync with client/src/shared/lib/fonts/index.ts
+const FONT_CDN_MAP: Record<string, string> = {
+  pretendard:
+    "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css",
+  "nanum-square-neo": "https://cdn.jsdelivr.net/gh/moonspam/NanumSquareNeo@1.0/nanumsquareneo.css",
+  "noto-sans-kr":
+    "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap",
+  "nanum-myeongjo":
+    "https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap",
+};
+
 interface SsrMeta {
   title: string;
   description?: string;
@@ -233,7 +244,14 @@ export function handleSsr(
   );
 
   const meta = buildPageMeta(pathname, url, blogTitle, seoDesc, seoImage, canonicalBase);
-  return indexHtmlTemplate.replace("<!--SSR_META-->", buildSsrTags(meta));
+
+  // Preload font CSS to break JS→API→font dependency chain
+  const fontCdn = FONT_CDN_MAP[settings.font_family ?? ""];
+  const fontPreload = fontCdn
+    ? `\n    <link rel="preload" as="style" href="${escapeHtml(fontCdn)}" crossorigin />`
+    : "";
+
+  return indexHtmlTemplate.replace("<!--SSR_META-->", buildSsrTags(meta) + fontPreload);
 }
 
 export function getSitemap(siteUrl: string) {
