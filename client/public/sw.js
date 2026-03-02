@@ -37,17 +37,24 @@ async function fetchAndCache(request) {
   return response;
 }
 
-// Network-first for cacheable API requests (cache used only as offline fallback)
-async function handleApiRequest(request) {
+// Stale-while-revalidate for cacheable API requests
+async function handleApiRequest(request, event) {
+  const cache = await caches.open(API_CACHE_NAME);
+  // ignoreVary is crucial because CORS adds Vary: Origin
+  // ignoreSearch is NOT used here because /api/posts?page=1 and /api/posts?page=2 are strictly different API responses.
+  const cached = await cache.match(request, { ignoreVary: true });
+
+  if (cached) {
+    // Background revalidate — update cache for next visit
+    event.waitUntil(fetchAndCache(request).catch(() => { }));
+    return cached;
+  }
+
+  // No cache — try network
   try {
     return await fetchAndCache(request);
   } catch {
-    // Offline — fall back to cache
-    const cache = await caches.open(API_CACHE_NAME);
-    // ignoreVary is crucial because CORS adds Vary: Origin
-    const cached = await cache.match(request, { ignoreVary: true });
-    if (cached) return cached;
-
+    // Offline with no cache — return 503 JSON with custom header to distinguish from true server 503
     return new Response(JSON.stringify({ error: "Offline", message: "No cached data available" }), {
       status: 503,
       headers: {
@@ -100,7 +107,7 @@ self.addEventListener("fetch", (event) => {
 
     if (request.method === "GET") {
       if (CACHEABLE_API_PATTERNS.some((pattern) => pattern.test(url.pathname))) {
-        event.respondWith(handleApiRequest(request));
+        event.respondWith(handleApiRequest(request, event));
       }
       return;
     }
