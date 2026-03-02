@@ -51,8 +51,8 @@ export function createApp() {
 
   app.use("/uploads/*", serveStatic({ root: "./" }));
   app.use("/assets/*", serveStatic({ root: CLIENT_DIST }));
-  app.use("/img/*", serveStatic({ root: CLIENT_DIST }));
   app.use("/favicons/*", serveStatic({ root: CLIENT_DIST }));
+  app.use("/images/*", serveStatic({ root: CLIENT_DIST }));
 
   // Dynamic PWA manifest
   app.get("/site.webmanifest", (c) => {
