@@ -23,6 +23,7 @@ import type {
   CreatePostRequest,
   PostTemplate,
 } from "@zlog/shared";
+import { processEditorShortcuts } from "@/features/markdown/lib/editor-shortcuts";
 
 type ViewMode = "edit" | "preview";
 
@@ -273,120 +274,23 @@ export default function PostEditorPage() {
       const textarea = textareaRef.current;
       if (!textarea) return;
 
-      const { selectionStart, selectionEnd, value } = textarea;
+      const result = processEditorShortcuts(
+        e.key,
+        e.shiftKey,
+        e.nativeEvent.isComposing,
+        e.ctrlKey,
+        e.metaKey,
+        textarea.selectionStart,
+        textarea.selectionEnd,
+        textarea.value,
+      );
 
-      // Enter key: auto-continue list items (skip during IME composition)
-      if (
-        e.key === "Enter" &&
-        !e.nativeEvent.isComposing &&
-        !e.shiftKey &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        selectionStart === selectionEnd
-      ) {
-        const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
-        const currentLine = value.slice(lineStart, selectionStart);
-        const listMatch = /^(\s*)([-*]|\d+\.)\s/.exec(currentLine);
-
-        if (listMatch) {
-          e.preventDefault();
-          const [, indent, marker] = listMatch;
-          const emptyMatch = /^(\s*)([-*]|\d+\.)\s*$/.exec(currentLine);
-
-          if (emptyMatch) {
-            // Empty list item — remove marker to end the list
-            const newValue = value.slice(0, lineStart) + "\n" + value.slice(selectionStart);
-            setContent(newValue);
-            const newCursor = lineStart + 1;
-            requestAnimationFrame(() => {
-              textarea.selectionStart = textarea.selectionEnd = newCursor;
-            });
-          } else {
-            // Continue list: always use "1." for ordered lists (markdown auto-numbers)
-            const nextMarker = /^\d+\./.test(marker ?? "") ? "1." : marker;
-            const insertion = `\n${indent}${nextMarker} `;
-            const newValue = value.slice(0, selectionStart) + insertion + value.slice(selectionEnd);
-            setContent(newValue);
-            const newCursor = selectionStart + insertion.length;
-            requestAnimationFrame(() => {
-              textarea.selectionStart = textarea.selectionEnd = newCursor;
-            });
-          }
-          return;
-        }
-      }
-
-      if (e.key !== "Tab") return;
-      e.preventDefault();
-
-      // Uniform 3-space indent for both ordered and unordered lists
-      const indent = "   ";
-
-      if (selectionStart === selectionEnd) {
-        // No selection — single cursor
-        const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
-        if (e.shiftKey) {
-          // Outdent: remove up to 3 leading spaces
-          const linePrefix = value.slice(lineStart, selectionStart);
-          const spacesToRemove = linePrefix.startsWith("   ")
-            ? 3
-            : linePrefix.startsWith("  ")
-              ? 2
-              : linePrefix.startsWith(" ")
-                ? 1
-                : 0;
-          if (spacesToRemove === 0) return;
-          const newValue = value.slice(0, lineStart) + value.slice(lineStart + spacesToRemove);
-          setContent(newValue);
-          const newCursor = selectionStart - spacesToRemove;
-          requestAnimationFrame(() => {
-            textarea.selectionStart = textarea.selectionEnd = newCursor;
-          });
-        } else {
-          // Indent: insert 3 spaces at line start
-          const newValue = value.slice(0, lineStart) + indent + value.slice(lineStart);
-          setContent(newValue);
-          const newCursor = selectionStart + indent.length;
-          requestAnimationFrame(() => {
-            textarea.selectionStart = textarea.selectionEnd = newCursor;
-          });
-        }
-      } else {
-        // Block selection — indent/outdent each line
-        const blockStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
-        const selectedText = value.slice(blockStart, selectionEnd);
-        const lines = selectedText.split("\n");
-        let offset = 0; // cumulative shift for selectionStart line
-        let totalOffset = 0;
-        const firstLineStart = blockStart;
-
-        const newLines = lines.map((line, i) => {
-          if (e.shiftKey) {
-            const spacesToRemove = line.startsWith("   ")
-              ? 3
-              : line.startsWith("  ")
-                ? 2
-                : line.startsWith(" ")
-                  ? 1
-                  : 0;
-            if (i === 0) offset = -spacesToRemove;
-            totalOffset -= spacesToRemove;
-            return line.slice(spacesToRemove);
-          } else {
-            if (i === 0) offset = indent.length;
-            totalOffset += indent.length;
-            return indent + line;
-          }
-        });
-
-        const newValue =
-          value.slice(0, firstLineStart) + newLines.join("\n") + value.slice(selectionEnd);
-        setContent(newValue);
-        const newStart = Math.max(firstLineStart, selectionStart + offset);
-        const newEnd = selectionEnd + totalOffset;
+      if (result) {
+        e.preventDefault();
+        setContent(result.newValue);
         requestAnimationFrame(() => {
-          textarea.selectionStart = newStart;
-          textarea.selectionEnd = newEnd;
+          textarea.selectionStart = result.newStart;
+          textarea.selectionEnd = result.newEnd;
         });
       }
     },
