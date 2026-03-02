@@ -14,6 +14,16 @@ export function Sidebar() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const { t } = useI18n();
 
+  const fetchProfile = useCallback(() => {
+    void api
+      .get<ProfileWithStats>("/profile")
+      .then(setProfile)
+      .catch(() => null)
+      .finally(() => {
+        setIsLoadingProfile(false);
+      });
+  }, []);
+
   const fetchCategories = useCallback(() => {
     void api
       .get<CategoryWithStats[]>("/categories")
@@ -25,26 +35,21 @@ export function Sidebar() {
   }, []);
 
   useEffect(() => {
-    void api
-      .get<ProfileWithStats>("/profile")
-      .then(setProfile)
-      .catch(() => null)
-      .finally(() => {
-        setIsLoadingProfile(false);
-      });
+    fetchProfile();
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchProfile, fetchCategories]);
 
-  // Re-fetch categories when they are modified in CategoryManager
+  // Re-fetch categories and profile stats when categories are modified
   useEffect(() => {
     const handler = () => {
       fetchCategories();
+      fetchProfile();
     };
     window.addEventListener("categories:changed", handler);
     return () => {
       window.removeEventListener("categories:changed", handler);
     };
-  }, [fetchCategories]);
+  }, [fetchCategories, fetchProfile]);
 
   return (
     <aside className="flex flex-col gap-4">
