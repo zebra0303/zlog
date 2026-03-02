@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo, lazy, Suspense } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
 import {
   Bold,
@@ -19,6 +19,7 @@ import {
   Table,
   Info,
   SmilePlus,
+  Sticker,
   HelpCircle,
   Copy,
   Check,
@@ -29,6 +30,13 @@ import { HexColorPicker } from "react-colorful";
 import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
 import { useI18n } from "../i18n";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
+
+// Lazy-load StickerPicker to keep it in a separate chunk
+const StickerPicker = lazy(() => import("./StickerPicker"));
+
+// GIPHY API key from env — sticker button only renders when set
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+const giphyApiKey = (import.meta.env.VITE_GIPHY_API_KEY ?? "") as string;
 
 interface MarkdownToolbarProps {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -304,6 +312,11 @@ export function MarkdownToolbar({
   const emojiRef = useRef<HTMLDivElement>(null);
   const emojiPopoverRef = useRef<HTMLDivElement>(null);
 
+  // Sticker picker state (only used when giphyApiKey is set)
+  const [stickerOpen, setStickerOpen] = useState(false);
+  const stickerRef = useRef<HTMLDivElement>(null);
+  const stickerPopoverRef = useRef<HTMLDivElement>(null);
+
   // Color picker state
   const [colorOpen, setColorOpen] = useState(false);
   const colorRef = useRef<HTMLDivElement>(null);
@@ -345,10 +358,17 @@ export function MarkdownToolbar({
     },
     [],
   );
+  const closeSticker = useMemo(
+    () => () => {
+      setStickerOpen(false);
+    },
+    [],
+  );
   useClickOutside(calloutRef, closeCallout, calloutOpen);
   useClickOutside(tableRef, closeTable, tableOpen);
   useClickOutside(emojiRef, closeEmoji, emojiOpen);
   useClickOutside(colorRef, closeColor, colorOpen);
+  useClickOutside(stickerRef, closeSticker, stickerOpen);
 
   // Shared helper: position a popover within viewport bounds
   const alignPopover = useCallback(
@@ -403,6 +423,12 @@ export function MarkdownToolbar({
       alignPopover(colorPopoverRef.current, colorRef.current);
     }
   }, [colorOpen, alignPopover]);
+
+  useEffect(() => {
+    if (stickerOpen) {
+      alignPopover(stickerPopoverRef.current, stickerRef.current);
+    }
+  }, [stickerOpen, alignPopover]);
 
   // Keyboard navigation for grid picker
   const handleGridKeyDown = useCallback(
@@ -521,6 +547,7 @@ export function MarkdownToolbar({
             setTableOpen(false);
             setCalloutOpen(false);
             setEmojiOpen(false);
+            setStickerOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -646,6 +673,7 @@ export function MarkdownToolbar({
             setCalloutOpen(false);
             setEmojiOpen(false);
             setColorOpen(false);
+            setStickerOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -773,6 +801,7 @@ export function MarkdownToolbar({
             setTableOpen(false);
             setEmojiOpen(false);
             setColorOpen(false);
+            setStickerOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -814,6 +843,7 @@ export function MarkdownToolbar({
             setCalloutOpen(false);
             setTableOpen(false);
             setColorOpen(false);
+            setStickerOpen(false);
           }}
           className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
         >
@@ -831,6 +861,49 @@ export function MarkdownToolbar({
           </div>
         )}
       </div>
+
+      {/* Sticker picker popover — only rendered when GIPHY API key is configured */}
+      {giphyApiKey && (
+        <div ref={stickerRef} className="relative">
+          <button
+            type="button"
+            title={t("toolbar_sticker")}
+            aria-label={t("toolbar_sticker")}
+            aria-expanded={stickerOpen}
+            aria-haspopup="true"
+            onClick={() => {
+              setStickerOpen((prev) => !prev);
+              setEmojiOpen(false);
+              setCalloutOpen(false);
+              setTableOpen(false);
+              setColorOpen(false);
+            }}
+            className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
+          >
+            <Sticker className="h-4 w-4" />
+          </button>
+          {stickerOpen && (
+            <div ref={stickerPopoverRef} className="absolute top-full z-50 mt-1">
+              <Suspense
+                fallback={
+                  <div className="border-border bg-surface rounded-lg border p-4 text-center text-xs shadow-lg">
+                    {t("loading")}
+                  </div>
+                }
+              >
+                <StickerPicker
+                  apiKey={giphyApiKey}
+                  isDark={isDark}
+                  onSelect={(url) => {
+                    applyInsert(`![sticker](${url})\n`);
+                    setStickerOpen(false);
+                  }}
+                />
+              </Suspense>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="ml-auto flex items-center">
         <div className="bg-border mx-1 h-5 w-px" role="separator" aria-hidden="true" />
