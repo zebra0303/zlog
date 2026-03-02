@@ -46,7 +46,7 @@ async function handleApiRequest(request, event) {
 
   if (cached) {
     // Background revalidate — update cache for next visit
-    event.waitUntil(fetchAndCache(request).catch(() => { }));
+    event.waitUntil(fetchAndCache(request).catch(() => {}));
     return cached;
   }
 
@@ -100,7 +100,7 @@ self.addEventListener("fetch", (event) => {
       ["POST", "PUT", "DELETE"].includes(request.method) &&
       !url.pathname.startsWith("/api/analytics/")
     ) {
-      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => { }));
+      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => {}));
       // Passthrough to network
       return;
     }

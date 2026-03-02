@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const apiTarget = `http://localhost:${apiPort}`;
 
   return {
+    envDir: path.resolve(__dirname, ".."),
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

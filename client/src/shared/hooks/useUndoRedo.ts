@@ -83,14 +83,14 @@ export function useUndoRedo(initialValue: string): UseUndoRedoReturn {
     if (indexRef.current <= 0) return null;
     indexRef.current -= 1;
     updateFlags();
-    return historyRef.current[indexRef.current];
+    return historyRef.current[indexRef.current] ?? null;
   }, [commit, updateFlags]);
 
   const redo = useCallback((): string | null => {
     if (indexRef.current >= historyRef.current.length - 1) return null;
     indexRef.current += 1;
     updateFlags();
-    return historyRef.current[indexRef.current];
+    return historyRef.current[indexRef.current] ?? null;
   }, [updateFlags]);
 
   return { push, undo, redo, canUndo, canRedo };

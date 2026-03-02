@@ -35,7 +35,6 @@ import { useThemeStore } from "@/features/toggle-theme/model/store";
 const StickerPicker = lazy(() => import("./StickerPicker"));
 
 // GIPHY API key from env — sticker button only renders when set
-// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 const giphyApiKey = (import.meta.env.VITE_GIPHY_API_KEY ?? "") as string;
 
 interface MarkdownToolbarProps {
@@ -228,7 +227,7 @@ export function MarkdownToolbar({
           if (onImageUpload) {
             onImageUpload();
           } else {
-            applyInsert("![alt](url)\n");
+            applyInsert("![alt|넓이|높이](url)\n");
           }
         },
       },
@@ -895,7 +894,7 @@ export function MarkdownToolbar({
                   apiKey={giphyApiKey}
                   isDark={isDark}
                   onSelect={(url) => {
-                    applyInsert(`![sticker](${url})\n`);
+                    applyInsert(`![sticker|180](${url})\n`);
                     setStickerOpen(false);
                   }}
                 />
@@ -935,6 +934,11 @@ export function MarkdownToolbar({
                   <span className="font-medium text-[var(--color-text)]">📎 이미지 업로드</span>
                   <br />
                   이미지 아이콘 클릭 또는 에디터 영역으로 드래그&amp;드롭
+                  <br />
+                  <code className="mt-1 inline-block rounded bg-[var(--color-background)] px-1">
+                    ![alt|100|200](url)
+                  </code>{" "}
+                  형식으로 넓이와 높이 지정 가능
                 </li>
                 <li>
                   <span className="font-medium text-[var(--color-text)]">

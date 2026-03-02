@@ -40,6 +40,7 @@ function getProcessor() {
         span: ["style"],
         td: ["style"],
         th: ["style"],
+        img: ["src", "alt", "title", "width", "height", "style", "class", "className"],
       },
     };
 
@@ -66,6 +67,28 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     mermaidBlocks.push(code.trim());
     return `MERMAID_BLOCK_${idx}_PLACEHOLDER`;
   });
+
+  // Custom image syntax: ![alt|width|height](url) or ![alt|width](url)
+  // Replaces the markdown image with an HTML <img> tag if | is present in alt text
+  processed = processed.replace(
+    /!\[([^\]|]*)(?:\|([^\]|]*))?(?:\|([^\]|]*))?\]\(([^)]+)\)/g,
+    (
+      match: string,
+      alt: string | undefined,
+      width: string | undefined,
+      height: string | undefined,
+      url: string,
+    ) => {
+      if (width !== undefined || height !== undefined) {
+        let imgTag = `<img src="${url}" alt="${alt?.trim() ?? ""}"`;
+        if (width?.trim()) imgTag += ` width="${width.trim()}"`;
+        if (height?.trim()) imgTag += ` height="${height.trim()}"`;
+        imgTag += ` />`;
+        return imgTag;
+      }
+      return match;
+    },
+  );
 
   // GitHub-style alerts: > [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING], > [!CAUTION]
   const calloutLabels: Record<string, string> = {
