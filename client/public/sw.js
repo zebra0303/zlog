@@ -1,6 +1,6 @@
-const CACHE_NAME = "zlog-v9";
-const API_CACHE_NAME = "zlog-api-v7";
-const PRECACHE_URLS = ["/", "/favicons/favicon.svg"];
+const CACHE_NAME = "zlog-v10";
+const API_CACHE_NAME = "zlog-api-v8";
+const PRECACHE_URLS = ["/", "/favicons/favicon.svg", "/images/offline.webp"];
 const API_CACHE_MAX = 50;
 
 // Cacheable GET API patterns for stale-while-revalidate
@@ -41,7 +41,7 @@ async function handleApiRequest(request, event) {
 
   if (cached) {
     // Background revalidate — update cache for next visit
-    event.waitUntil(fetchAndCache(request).catch(() => { }));
+    event.waitUntil(fetchAndCache(request).catch(() => {}));
     return cached;
   }
 
@@ -91,8 +91,11 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) {
     // If Mutation (POST/PUT/DELETE), invalidate the whole API cache so that the next GET gets fresh data.
     // However, exclude analytics POSTs (e.g., /api/analytics/visit) since they don't affect cached posts/categories.
-    if (["POST", "PUT", "DELETE"].includes(request.method) && !url.pathname.startsWith("/api/analytics/")) {
-      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => { }));
+    if (
+      ["POST", "PUT", "DELETE"].includes(request.method) &&
+      !url.pathname.startsWith("/api/analytics/")
+    ) {
+      event.waitUntil(caches.delete(API_CACHE_NAME).catch(() => {}));
       // Passthrough to network
       return;
     }
@@ -128,11 +131,13 @@ self.addEventListener("fetch", (event) => {
       .catch(() => {
         return caches.match(request, { ignoreVary: true }).then((cached) => {
           if (cached) return cached;
-          // HTML navigation falls back to cached SPA shell. 
+          // HTML navigation falls back to cached SPA shell.
           // ignoreSearch is required because the browser might request `/?page=1`
           // but our precache only stores the exact `/` without query params.
           if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
-            return caches.match("/", { ignoreVary: true, ignoreSearch: true }).then((shell) => shell || Response.error());
+            return caches
+              .match("/", { ignoreVary: true, ignoreSearch: true })
+              .then((shell) => shell || Response.error());
           }
           return Response.error();
         });

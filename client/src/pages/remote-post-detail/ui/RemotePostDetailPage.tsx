@@ -10,6 +10,7 @@ import {
   Skeleton,
   LazyImage,
   useToast,
+  OfflineFallback,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -102,7 +103,10 @@ export default function RemotePostDetailPage() {
       </div>
     );
 
-  if (error || !post)
+  if (error || !post) {
+    if (error === "Offline") {
+      return <OfflineFallback />;
+    }
     return (
       <div className="py-20 text-center">
         <p className="text-lg text-[var(--color-text-secondary)]">{error ?? t("post_not_found")}</p>
@@ -114,6 +118,7 @@ export default function RemotePostDetailPage() {
         </Button>
       </div>
     );
+  }
 
   return (
     <article className="min-w-0 overflow-x-hidden">

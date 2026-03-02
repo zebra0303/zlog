@@ -141,10 +141,13 @@ export const en = {
   login_submit: "Login",
   login_logging_in: "Logging in...",
 
-  // Not Found
+  // Not Found & Offline
   not_found_title: "Page Not Found",
-  not_found_description: "The page you requested does not exist or has been moved.",
-  not_found_go_home: "Go Home",
+  not_found_description: "The page you are looking for does not exist or has been moved.",
+  not_found_go_home: "Go back home",
+  offline_title: "Oops, you are offline",
+  offline_message: "Your internet connection was lost. Please check your network and try again.",
+  offline_go_back: "Go Back",
 
   // Comments
   comment_title: "Comments",

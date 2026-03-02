@@ -145,10 +145,13 @@ export const ko: Record<TranslationKeys, string> = {
   login_submit: "로그인",
   login_logging_in: "로그인 중...",
 
-  // Not Found
+  // Not Found & Offline
   not_found_title: "페이지를 찾을 수 없습니다",
   not_found_description: "요청하신 페이지가 존재하지 않거나 이동되었습니다.",
   not_found_go_home: "홈으로 돌아가기",
+  offline_title: "앗, 오프라인 상태입니다",
+  offline_message: "인터넷 연결이 끊어졌어요. 네트워크 상태를 확인 후 다시 시도해주세요.",
+  offline_go_back: "뒤로가기",
 
   // Comments
   comment_title: "댓글",

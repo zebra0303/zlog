@@ -4,7 +4,7 @@ import { Search, X, Rss, Info, ExternalLink, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
-import { Input, Button, Pagination, SEOHead, Skeleton } from "@/shared/ui";
+import { Input, Button, Pagination, SEOHead, Skeleton, OfflineFallback } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
@@ -142,7 +142,12 @@ export default function HomePage() {
     queryFn: () => api.get<CategoryWithStats[]>("/categories"),
   });
 
-  const { data: posts, isLoading } = useQuery({
+  const {
+    data: posts,
+    isLoading,
+    isError,
+    error: postsError,
+  } = useQuery({
     queryKey: ["posts", currentPage, currentCategory, currentTag, currentSearch],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -365,6 +370,8 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      ) : isError && postsError.message === "Offline" ? (
+        <OfflineFallback />
       ) : posts && posts.items.length > 0 ? (
         <>
           <div className="flex flex-col gap-4">

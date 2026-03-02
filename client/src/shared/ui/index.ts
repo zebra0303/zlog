@@ -17,3 +17,4 @@ export * from "./ToastContainer";
 export * from "./useToast";
 export * from "./useConfirm";
 export * from "./ConfirmModal";
+export * from "./OfflineFallback";

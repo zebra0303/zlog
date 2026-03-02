@@ -24,6 +24,7 @@ import {
   LazyImage,
   useToast,
   useConfirm,
+  OfflineFallback,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
@@ -127,7 +128,10 @@ export default function PostDetailPage() {
         <Skeleton className="h-64 w-full" />
       </div>
     );
-  if (error || !post)
+  if (error || !post) {
+    if (error === "Offline") {
+      return <OfflineFallback />;
+    }
     return (
       <div className="py-20 text-center">
         <p className="text-lg text-[var(--color-text-secondary)]">{error ?? t("post_not_found")}</p>
@@ -139,6 +143,7 @@ export default function PostDetailPage() {
         </Button>
       </div>
     );
+  }
 
   const postUrl = `${window.location.origin}/posts/${post.slug}`;
 
