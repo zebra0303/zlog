@@ -63,6 +63,7 @@ export function CategoryManager() {
       setIsAdding(false);
       showToast(t("success"), "success");
       fetchCategories();
+      notifyCategoryChange();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_cat_create_failed")));
     }
@@ -83,20 +84,20 @@ export function CategoryManager() {
       setEditingId(null);
       showToast(t("success"), "success");
       fetchCategories();
+      notifyCategoryChange();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_cat_update_failed")));
     }
   };
 
+  // Notify sidebar and other components when categories change
+  const notifyCategoryChange = () => {
+    window.dispatchEvent(new CustomEvent("categories:changed"));
+  };
+
   const handleDelete = async (id: string, name: string) => {
     const cat = categories.find((c) => c.id === id);
     if (!cat) return;
-
-    // Guard: last category with posts cannot be deleted
-    if (cat.postCount > 0 && categories.length <= 1) {
-      showToast(t("admin_cat_delete_last_has_posts"), "error");
-      return;
-    }
 
     // If posts exist, show inline move-target UI instead of deleting immediately
     if (cat.postCount > 0) {
@@ -114,6 +115,7 @@ export function CategoryManager() {
       await api.delete(`/categories/${id}`);
       showToast(t("success"), "success");
       fetchCategories();
+      notifyCategoryChange();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_cat_delete_failed")));
     }
@@ -128,6 +130,7 @@ export function CategoryManager() {
       setMoveTargetId("");
       showToast(t("success"), "success");
       fetchCategories();
+      notifyCategoryChange();
     } catch (err) {
       setError(getErrorMessage(err, t("admin_cat_delete_failed")));
     }
@@ -306,14 +309,17 @@ export function CategoryManager() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(cat.id, cat.name)}
-                          aria-label={t("delete")}
-                        >
-                          <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
-                        </Button>
+                        {/* Hide delete button when only one category remains */}
+                        {categories.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(cat.id, cat.name)}
+                            aria-label={t("delete")}
+                          >
+                            <Trash2 className="h-4 w-4 text-[var(--color-destructive)]" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                     {/* Inline UI: select target category before deleting */}

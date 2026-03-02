@@ -135,7 +135,8 @@ describe("Categories API", () => {
   });
 
   describe("DELETE /api/categories/:id", () => {
-    it("should delete category without posts", async () => {
+    it("should delete category without posts when other categories exist", async () => {
+      createTestCategory({ name: "Other", slug: "other" });
       const cat = createTestCategory({ name: "Empty", slug: "empty" });
 
       const res = await app.request(`/api/categories/${cat.id}`, {
@@ -145,9 +146,8 @@ describe("Categories API", () => {
       expect(res.status).toBe(200);
     });
 
-    it("should return 400 when deleting last category with posts", async () => {
+    it("should return 400 when deleting the last remaining category", async () => {
       const cat = createTestCategory({ name: "Last", slug: "last" });
-      createTestPost({ categoryId: cat.id });
 
       const res = await app.request(`/api/categories/${cat.id}`, {
         method: "DELETE",
@@ -155,7 +155,7 @@ describe("Categories API", () => {
       });
       expect(res.status).toBe(400);
       const data = (await res.json()) as { code: string };
-      expect(data.code).toBe("LAST_CATEGORY_HAS_POSTS");
+      expect(data.code).toBe("LAST_CATEGORY");
     });
 
     it("should return 409 when posts exist but no targetCategoryId provided", async () => {

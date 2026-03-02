@@ -224,7 +224,7 @@ export const ko: Record<TranslationKeys, string> = {
     '"{name}" 카테고리를 삭제하시겠습니까?\n이 카테고리에 속한 게시글은 카테고리 없음 상태가 됩니다.',
   admin_cat_empty: "카테고리가 없습니다. 위의 추가 버튼으로 생성하세요.",
   admin_cat_posts_count: "개",
-  admin_cat_delete_last_has_posts: "마지막 카테고리에 글이 있어 삭제할 수 없습니다.",
+  admin_cat_delete_last_has_posts: "마지막 카테고리는 삭제할 수 없습니다.",
   admin_cat_delete_move_posts:
     "이 카테고리에 {count}개의 글이 있습니다. 글을 이동할 카테고리를 선택하세요.",
   admin_cat_move_target: "이동할 카테고리",

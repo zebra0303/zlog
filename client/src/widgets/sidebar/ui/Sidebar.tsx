@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Folder } from "lucide-react";
 import { Card, CardContent, DefaultAvatar, Badge, Skeleton } from "@/shared/ui";
@@ -14,14 +14,7 @@ export function Sidebar() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const { t } = useI18n();
 
-  useEffect(() => {
-    void api
-      .get<ProfileWithStats>("/profile")
-      .then(setProfile)
-      .catch(() => null)
-      .finally(() => {
-        setIsLoadingProfile(false);
-      });
+  const fetchCategories = useCallback(() => {
     void api
       .get<CategoryWithStats[]>("/categories")
       .then(setCategories)
@@ -30,6 +23,28 @@ export function Sidebar() {
         setIsLoadingCategories(false);
       });
   }, []);
+
+  useEffect(() => {
+    void api
+      .get<ProfileWithStats>("/profile")
+      .then(setProfile)
+      .catch(() => null)
+      .finally(() => {
+        setIsLoadingProfile(false);
+      });
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Re-fetch categories when they are modified in CategoryManager
+  useEffect(() => {
+    const handler = () => {
+      fetchCategories();
+    };
+    window.addEventListener("categories:changed", handler);
+    return () => {
+      window.removeEventListener("categories:changed", handler);
+    };
+  }, [fetchCategories]);
 
   return (
     <aside className="flex flex-col gap-4">

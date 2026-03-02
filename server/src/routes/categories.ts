@@ -197,6 +197,16 @@ categoriesRoute.delete("/:id", authMiddleware, async (c) => {
     return c.json({ error: "Category not found." }, 404);
   }
 
+  // Guard: cannot delete the last remaining category
+  const totalCategories =
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.categories)
+      .get()?.count ?? 0;
+  if (totalCategories <= 1) {
+    return c.json({ error: "Cannot delete the last category.", code: "LAST_CATEGORY" }, 400);
+  }
+
   // Count posts in this category (all statuses, not just published)
   const postCount =
     db
@@ -206,19 +216,6 @@ categoriesRoute.delete("/:id", authMiddleware, async (c) => {
       .get()?.count ?? 0;
 
   if (postCount > 0) {
-    // Guard: cannot delete the last remaining category if it has posts
-    const totalCategories =
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(schema.categories)
-        .get()?.count ?? 0;
-    if (totalCategories <= 1) {
-      return c.json(
-        { error: "Cannot delete the last category with posts.", code: "LAST_CATEGORY_HAS_POSTS" },
-        400,
-      );
-    }
-
     // Require targetCategoryId to move posts before deletion
     const body = (await c.req.json().catch(() => ({}))) as { targetCategoryId?: string };
     const targetCategoryId = body.targetCategoryId;
