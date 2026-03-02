@@ -26,13 +26,17 @@ import {
   Undo2,
   Redo2,
 } from "lucide-react";
-import { HexColorPicker } from "react-colorful";
-import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
+import type { EmojiClickData } from "emoji-picker-react";
+import { Theme } from "emoji-picker-react";
 import { useI18n } from "../i18n";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 
-// Lazy-load StickerPicker to keep it in a separate chunk
+// Lazy-load pickers to keep them in separate chunks and reduce initial bundle size
 const StickerPicker = lazy(() => import("./StickerPicker"));
+const HexColorPicker = lazy(() =>
+  import("react-colorful").then((m) => ({ default: m.HexColorPicker })),
+);
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 // GIPHY API key from env — sticker button only renders when set
 const giphyApiKey = (import.meta.env.VITE_GIPHY_API_KEY ?? "") as string;
@@ -621,11 +625,19 @@ export function MarkdownToolbar({
 
             {/* Custom color picker */}
             <div className="border-border border-t pt-2">
-              <HexColorPicker
-                color={customColor}
-                onChange={setCustomColor}
-                style={{ width: "100%" }}
-              />
+              <Suspense
+                fallback={
+                  <div className="bg-surface text-text-secondary p-4 text-center text-sm">
+                    Loading color picker...
+                  </div>
+                }
+              >
+                <HexColorPicker
+                  color={customColor}
+                  onChange={setCustomColor}
+                  style={{ width: "100%" }}
+                />
+              </Suspense>
               <div className="mt-2 flex items-center gap-1.5">
                 <button
                   type="button"
@@ -850,13 +862,19 @@ export function MarkdownToolbar({
         </button>
         {emojiOpen && (
           <div ref={emojiPopoverRef} className="absolute top-full z-50 mt-1 shadow-lg">
-            <EmojiPicker
-              onEmojiClick={onEmojiClick}
-              theme={isDark ? Theme.DARK : Theme.LIGHT}
-              lazyLoadEmojis={true}
-              searchDisabled={true}
-              skinTonesDisabled={true}
-            />
+            <Suspense
+              fallback={
+                <div className="bg-surface text-text-secondary p-4 text-sm">Loading...</div>
+              }
+            >
+              <EmojiPicker
+                onEmojiClick={onEmojiClick}
+                theme={isDark ? Theme.DARK : Theme.LIGHT}
+                lazyLoadEmojis={true}
+                searchDisabled={true}
+                skinTonesDisabled={true}
+              />
+            </Suspense>
           </div>
         )}
       </div>

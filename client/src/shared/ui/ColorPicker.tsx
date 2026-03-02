@@ -1,6 +1,9 @@
-import { useState, useRef, useCallback } from "react";
-import { HexColorPicker } from "react-colorful";
+import { useState, useRef, useCallback, lazy, Suspense } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
+
+const HexColorPicker = lazy(() =>
+  import("react-colorful").then((m) => ({ default: m.HexColorPicker })),
+);
 
 interface ColorPickerProps {
   value: string;
@@ -30,7 +33,13 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
       />
       {open && (
         <div className="absolute top-10 left-0 z-50 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-lg">
-          <HexColorPicker color={value || "#ffffff"} onChange={onChange} />
+          <Suspense
+            fallback={
+              <div className="h-[200px] w-[200px] animate-pulse rounded-md bg-[var(--color-background)]" />
+            }
+          >
+            <HexColorPicker color={value || "#ffffff"} onChange={onChange} />
+          </Suspense>
         </div>
       )}
     </div>
