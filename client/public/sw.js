@@ -1,4 +1,4 @@
-const CACHE_NAME = "zlog-v11";
+const CACHE_NAME = "zlog-v12";
 const API_CACHE_NAME = "zlog-api-v8";
 const PRECACHE_URLS = ["/", "/favicons/favicon.svg", "/images/offline.webp"];
 const API_CACHE_MAX = 50;
@@ -62,7 +62,24 @@ async function handleApiRequest(request, event) {
 
 // Install: precache core assets
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const url of PRECACHE_URLS) {
+        try {
+          // Use cache: 'reload' to avoid getting a stale opaque response or an SPA fallback
+          const req = new Request(url, { cache: "reload" });
+          const res = await fetch(req);
+          if (res.ok) {
+            await cache.put(req, res);
+          } else {
+            console.error(`[SW] Failed to precache ${url}: ${res.status}`);
+          }
+        } catch (err) {
+          console.error(`[SW] Network error precaching ${url}:`, err);
+        }
+      }
+    })
+  );
   self.skipWaiting();
 });
 
