@@ -24,6 +24,7 @@ import type {
   PostTemplate,
 } from "@zlog/shared";
 import { processEditorShortcuts } from "@/features/markdown/lib/editor-shortcuts";
+import { useUndoRedo } from "@/shared/hooks/useUndoRedo";
 
 type ViewMode = "edit" | "preview";
 
@@ -85,6 +86,28 @@ export default function PostEditorPage() {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const toolbarFileRef = useRef<HTMLInputElement>(null);
+
+  // Undo/redo history for editor content
+  const { push: pushHistory, undo, redo, canUndo, canRedo } = useUndoRedo("");
+
+  // Wrapper that updates content and pushes to undo history
+  const setContentWithHistory = useCallback(
+    (val: string) => {
+      setContent(val);
+      pushHistory(val);
+    },
+    [pushHistory],
+  );
+
+  const handleUndo = useCallback(() => {
+    const prev = undo();
+    if (prev !== null) setContent(prev);
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    const next = redo();
+    if (next !== null) setContent(next);
+  }, [redo]);
 
   // Queries
   const { data: categories = [] } = useQuery({
@@ -268,11 +291,25 @@ export default function PostEditorPage() {
     }
   }, []);
 
-  // Tab / Shift+Tab indent/outdent + Enter auto-continue list handler
+  // Tab / Shift+Tab indent/outdent + Enter auto-continue list handler + Undo/Redo shortcuts
   const handleTextareaKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       const textarea = textareaRef.current;
       if (!textarea) return;
+
+      const mod = e.metaKey || e.ctrlKey;
+
+      // Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z = redo
+      if (mod && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+      if (mod && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
 
       const result = processEditorShortcuts(
         e.key,
@@ -287,14 +324,14 @@ export default function PostEditorPage() {
 
       if (result) {
         e.preventDefault();
-        setContent(result.newValue);
+        setContentWithHistory(result.newValue);
         requestAnimationFrame(() => {
           textarea.selectionStart = result.newStart;
           textarea.selectionEnd = result.newEnd;
         });
       }
     },
-    [setContent],
+    [setContentWithHistory, handleUndo, handleRedo],
   );
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -596,14 +633,18 @@ export default function PostEditorPage() {
             <MarkdownToolbar
               textareaRef={textareaRef}
               value={content}
-              onChange={setContent}
+              onChange={setContentWithHistory}
               onImageUpload={() => toolbarFileRef.current?.click()}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
             />
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => {
-                setContent(e.target.value);
+                setContentWithHistory(e.target.value);
               }}
               onKeyDown={handleTextareaKeyDown}
               onPaste={handlePaste}

@@ -10,6 +10,7 @@ import {
   Image,
   List,
   ListOrdered,
+  ListTodo,
   Quote,
   Code,
   FileCode,
@@ -21,6 +22,8 @@ import {
   HelpCircle,
   Copy,
   Check,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { HexColorPicker } from "react-colorful";
 import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
@@ -32,6 +35,10 @@ interface MarkdownToolbarProps {
   value: string;
   onChange: (value: string) => void;
   onImageUpload?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 // Generate markdown table string with given rows and cols
@@ -72,6 +79,10 @@ export function MarkdownToolbar({
   value,
   onChange,
   onImageUpload,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }: MarkdownToolbarProps) {
   const { t } = useI18n();
   const { isDark } = useThemeStore();
@@ -134,7 +145,27 @@ export function MarkdownToolbar({
   );
 
   // Buttons array — table removed, rendered separately below
-  const buttons: { icon: React.ReactNode; label: string; action: () => void }[][] = [
+  const buttons: {
+    icon: React.ReactNode;
+    label: string;
+    action: () => void;
+    disabled?: boolean;
+  }[][] = [
+    // Undo / Redo group
+    [
+      {
+        icon: <Undo2 className="h-4 w-4" />,
+        label: t("toolbar_undo"),
+        action: () => onUndo?.(),
+        disabled: !canUndo,
+      },
+      {
+        icon: <Redo2 className="h-4 w-4" />,
+        label: t("toolbar_redo"),
+        action: () => onRedo?.(),
+        disabled: !canRedo,
+      },
+    ],
     [
       {
         icon: <Bold className="h-4 w-4" />,
@@ -207,6 +238,13 @@ export function MarkdownToolbar({
         label: t("toolbar_numbered_list"),
         action: () => {
           applyLinePrefix("1. ");
+        },
+      },
+      {
+        icon: <ListTodo className="h-4 w-4" />,
+        label: t("toolbar_task_list"),
+        action: () => {
+          applyLinePrefix("- [ ] ");
         },
       },
       {
@@ -453,8 +491,13 @@ export function MarkdownToolbar({
               type="button"
               title={btn.label}
               aria-label={btn.label}
+              disabled={btn.disabled}
               onClick={btn.action}
-              className="text-text-secondary hover:text-text hover:bg-background rounded p-1.5 transition-colors"
+              className={`rounded p-1.5 transition-colors ${
+                btn.disabled
+                  ? "cursor-not-allowed opacity-30"
+                  : "text-text-secondary hover:text-text hover:bg-background"
+              }`}
             >
               {btn.icon}
             </button>
