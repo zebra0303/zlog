@@ -123,6 +123,7 @@ export const en = {
   cat_subscribe_local_cat_desc: "Select which category on your blog to sync posts into.",
   cat_subscribe_select_category: "Select category to subscribe",
   cat_subscribe_select_placeholder: "Select a category",
+  cat_subscribe_select_from_list: "Select a category to subscribe",
 
   // Profile
   profile_not_found: "Profile not found.",

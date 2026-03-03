@@ -127,6 +127,7 @@ export const ko: Record<TranslationKeys, string> = {
   cat_subscribe_local_cat_desc: "구독한 글이 동기화될 내 블로그의 카테고리를 선택하세요.",
   cat_subscribe_select_category: "구독할 카테고리 선택",
   cat_subscribe_select_placeholder: "카테고리를 선택하세요",
+  cat_subscribe_select_from_list: "구독할 카테고리를 선택하세요",
 
   // Profile
   profile_not_found: "프로필을 찾을 수 없습니다.",

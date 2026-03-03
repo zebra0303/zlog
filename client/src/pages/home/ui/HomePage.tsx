@@ -14,29 +14,35 @@ import type { PostWithCategory, CategoryWithStats, PaginatedResponse } from "@zl
 // ============ Subscribe Dialog ============
 function SubscribeDialog({
   category,
+  categories,
   onClose,
 }: {
-  category: CategoryWithStats;
+  category?: CategoryWithStats; // optional: when omitted, show category selector first
+  categories: CategoryWithStats[];
   onClose: () => void;
 }) {
   const [blogUrl, setBlogUrl] = useState("");
+  const [selectedCat, setSelectedCat] = useState<CategoryWithStats | null>(category ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
 
+  // Focus input when category is already selected
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (selectedCat) {
+      inputRef.current?.focus();
+    }
+  }, [selectedCat]);
 
   const handleSubscribe = () => {
-    if (!normalizedBlogUrl) return;
+    if (!normalizedBlogUrl || !selectedCat) return;
     const remoteSiteUrl = window.location.origin;
     const params = new URLSearchParams({
       action: "subscribe",
       remoteUrl: remoteSiteUrl,
-      remoteCatId: category.id,
-      remoteCatName: category.name,
-      remoteCatSlug: category.slug,
+      remoteCatId: selectedCat.id,
+      remoteCatName: selectedCat.name,
+      remoteCatSlug: selectedCat.slug,
     });
     const adminUrl = `${normalizedBlogUrl}/admin?${params.toString()}`;
     window.open(adminUrl, "_blank", "noopener");
@@ -59,7 +65,14 @@ function SubscribeDialog({
         <div className="border-border flex items-center justify-between border-b p-4">
           <h2 className="text-text flex items-center gap-2 text-lg font-semibold">
             <Rss className="text-primary h-5 w-5" />
-            {t("cat_subscribe_title")} &quot;{category.name}&quot; {t("cat_subscribe_category")}
+            {selectedCat ? (
+              <>
+                {t("cat_subscribe_title")} &quot;{selectedCat.name}&quot;{" "}
+                {t("cat_subscribe_category")}
+              </>
+            ) : (
+              t("cat_subscribe_select_from_list")
+            )}
           </h2>
           <button
             type="button"
@@ -86,6 +99,33 @@ function SubscribeDialog({
             </div>
           </div>
           <div className="flex flex-col gap-3">
+            {/* Category selector: shown when no category was pre-selected */}
+            {!category && (
+              <div>
+                <label className="text-text mb-1 block text-sm font-medium">
+                  {t("cat_subscribe_select_category")}
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedCat?.id ?? ""}
+                    onChange={(e) => {
+                      const cat = categories.find((c) => c.id === e.target.value) ?? null;
+                      setSelectedCat(cat);
+                    }}
+                    className="border-border bg-surface text-text focus:border-primary w-full cursor-pointer appearance-none rounded-md border py-2 pr-9 pl-3 text-sm transition-colors focus:outline-none"
+                    aria-label={t("cat_subscribe_select_category")}
+                  >
+                    <option value="">{t("cat_subscribe_select_placeholder")}</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="text-text-secondary pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
+                </div>
+              </div>
+            )}
             <div>
               <label className="text-text mb-1 block text-sm font-medium">
                 {t("cat_subscribe_blog_url")}
@@ -100,6 +140,7 @@ function SubscribeDialog({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSubscribe();
                 }}
+                disabled={!selectedCat}
               />
             </div>
             {normalizedBlogUrl && (
@@ -111,7 +152,11 @@ function SubscribeDialog({
               </div>
             )}
             <div className="flex justify-end">
-              <Button size="sm" onClick={handleSubscribe} disabled={!normalizedBlogUrl}>
+              <Button
+                size="sm"
+                onClick={handleSubscribe}
+                disabled={!normalizedBlogUrl || !selectedCat}
+              >
                 <ExternalLink className="mr-1 h-4 w-4" />
                 {t("cat_subscribe_go_admin")}
               </Button>
@@ -257,7 +302,8 @@ export default function HomePage() {
           <Rss className="h-3.5 w-3.5" />
           RSS
         </a>
-        {selectedCategory && !isAuthenticated && (
+        {/* Subscribe button: always shown for unauthenticated users */}
+        {!isAuthenticated && (
           <button
             type="button"
             className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
@@ -298,7 +344,8 @@ export default function HomePage() {
           <Rss className="h-3.5 w-3.5" />
           RSS
         </a>
-        {selectedCategory && !isAuthenticated && (
+        {/* Subscribe button: always shown for unauthenticated users */}
+        {!isAuthenticated && (
           <button
             type="button"
             className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
@@ -411,9 +458,10 @@ export default function HomePage() {
         </div>
       )}
 
-      {showSubscribe && selectedCategory && (
+      {showSubscribe && (
         <SubscribeDialog
-          category={selectedCategory}
+          category={selectedCategory ?? undefined}
+          categories={categories}
           onClose={() => {
             setShowSubscribe(false);
           }}
