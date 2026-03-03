@@ -6,14 +6,14 @@ import { useAuthStore } from "@/features/auth/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
-import { api } from "@/shared/api/client";
-import type { ProfileWithStats } from "@zlog/shared";
+import { useProfile } from "@/shared/api/queries";
 
 const glass = "backdrop-blur-md bg-surface/70 rounded-xl px-3 py-1";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [profile, setProfile] = useState<ProfileWithStats | null>(null);
+  // Shared hook — deduplicates /profile request with Sidebar via react-query cache
+  const { data: profile } = useProfile();
   const { isAuthenticated, logout } = useAuthStore();
   const { isDark, toggle } = useThemeStore();
   const { getHeaderStyle, settings } = useSiteSettingsStore();
@@ -26,13 +26,6 @@ export function Header() {
     void navigate("/");
   };
   const headerRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    void api
-      .get<ProfileWithStats>("/profile")
-      .then(setProfile)
-      .catch(() => null);
-  }, []);
 
   const blogTitle = profile?.blogTitle ?? settings.blog_title ?? "zlog";
 

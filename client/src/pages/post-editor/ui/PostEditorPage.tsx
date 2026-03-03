@@ -13,16 +13,13 @@ import {
   useToast,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
+import { useCategories } from "@/shared/api/queries";
+import { queryKeys } from "@/shared/api/queryKeys";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
-import type {
-  PostWithCategory,
-  CategoryWithStats,
-  CreatePostRequest,
-  PostTemplate,
-} from "@zlog/shared";
+import type { PostWithCategory, CreatePostRequest, PostTemplate } from "@zlog/shared";
 import { processEditorShortcuts } from "@/features/markdown/lib/editor-shortcuts";
 import { useUndoRedo } from "@/shared/hooks/useUndoRedo";
 
@@ -109,24 +106,21 @@ export default function PostEditorPage() {
     if (next !== null) setContent(next);
   }, [redo]);
 
-  // Queries
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => api.get<CategoryWithStats[]>("/categories"),
-  });
+  // Queries — shared hook for categories, centralized keys for the rest
+  const { data: categories = [] } = useCategories();
 
   const { data: allTags = [] } = useQuery({
-    queryKey: ["tags"],
+    queryKey: queryKeys.tags.all,
     queryFn: () => api.get<string[]>("/posts/tags").catch(() => []),
   });
 
   const { data: templates = [] } = useQuery({
-    queryKey: ["templates"],
+    queryKey: queryKeys.templates.all,
     queryFn: () => api.get<PostTemplate[]>("/templates").catch(() => []),
   });
 
   const { data: post } = useQuery({
-    queryKey: ["post", id],
+    queryKey: queryKeys.posts.detail(id ?? ""),
     queryFn: () => api.get<PostWithCategory>(`/posts/${id}`),
     enabled: !!id,
   });
@@ -359,7 +353,7 @@ export default function PostEditorPage() {
   const createMutation = useMutation({
     mutationFn: (payload: CreatePostRequest) => api.post<{ slug: string }>("/posts", payload),
     onSuccess: (data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       showToast(t("post_saved_success") || "Post saved successfully.", "success");
       if (variables.status === "published" && data.slug) {
         void navigate(`/posts/${data.slug}`, { state: { from: listFrom } });
@@ -375,8 +369,8 @@ export default function PostEditorPage() {
   const updateMutation = useMutation({
     mutationFn: (payload: CreatePostRequest) => api.put<{ slug: string }>(`/posts/${id}`, payload),
     onSuccess: (data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ["posts"] });
-      void queryClient.invalidateQueries({ queryKey: ["post", id] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(id ?? "") });
       showToast(t("post_saved_success") || "Post updated successfully.", "success");
       if (variables.status === "published" && data.slug) {
         void navigate(`/posts/${data.slug}`, { state: { from: listFrom } });

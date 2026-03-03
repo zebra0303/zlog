@@ -6,6 +6,8 @@ import { PostCard } from "@/entities/post/ui/PostCard";
 import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
 import { Input, Button, Pagination, SEOHead, Skeleton, OfflineFallback } from "@/shared/ui";
 import { api } from "@/shared/api/client";
+import { useCategories } from "@/shared/api/queries";
+import { queryKeys } from "@/shared/api/queryKeys";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
@@ -183,11 +185,8 @@ export default function HomePage() {
   const { lazy_load_images } = useSiteSettingsStore((s) => s.settings);
   const { t } = useI18n();
 
-  // Queries
-  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => api.get<CategoryWithStats[]>("/categories"),
-  });
+  // Queries — useCategories shared hook deduplicates with Sidebar
+  const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
 
   const {
     data: posts,
@@ -195,7 +194,12 @@ export default function HomePage() {
     isError,
     error: postsError,
   } = useQuery({
-    queryKey: ["posts", currentPage, currentCategory, currentTag, currentSearch],
+    queryKey: queryKeys.posts.list({
+      page: currentPage,
+      category: currentCategory || undefined,
+      tag: currentTag || undefined,
+      search: currentSearch || undefined,
+    }),
     queryFn: () => {
       const params = new URLSearchParams();
       params.set("page", String(currentPage));

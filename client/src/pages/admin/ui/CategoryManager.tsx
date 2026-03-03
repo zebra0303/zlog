@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Folder, Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Input,
@@ -11,6 +12,7 @@ import {
   useToast,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
+import { queryKeys } from "@/shared/api/queryKeys";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import type { CategoryWithStats } from "@zlog/shared";
@@ -31,6 +33,7 @@ export function CategoryManager() {
   const { t } = useI18n();
   const { confirm } = useConfirm();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   const fetchCategories = useCallback(() => {
     void api
@@ -90,9 +93,10 @@ export function CategoryManager() {
     }
   };
 
-  // Notify sidebar and other components when categories change
+  // Invalidate react-query caches so Sidebar/Header refresh automatically
   const notifyCategoryChange = () => {
-    window.dispatchEvent(new CustomEvent("categories:changed"));
+    void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
   };
 
   const handleDelete = async (id: string, name: string) => {

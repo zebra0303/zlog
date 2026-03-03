@@ -1,55 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Folder } from "lucide-react";
 import { Card, CardContent, DefaultAvatar, Badge, Skeleton } from "@/shared/ui";
-import { api } from "@/shared/api/client";
+import { useCategories, useProfile } from "@/shared/api/queries";
 import { useI18n } from "@/shared/i18n";
 import { VisitorStats } from "@/features/visitor-analytics/ui";
-import type { CategoryWithStats, ProfileWithStats } from "@zlog/shared";
 
 export function Sidebar() {
-  const [profile, setProfile] = useState<ProfileWithStats | null>(null);
-  const [categories, setCategories] = useState<CategoryWithStats[]>([]);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  // Shared hooks — deduplicate /profile and /categories requests via react-query cache
+  const { data: profile, isLoading: isLoadingProfile } = useProfile();
+  const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
   const { t } = useI18n();
-
-  const fetchProfile = useCallback(() => {
-    void api
-      .get<ProfileWithStats>("/profile")
-      .then(setProfile)
-      .catch(() => null)
-      .finally(() => {
-        setIsLoadingProfile(false);
-      });
-  }, []);
-
-  const fetchCategories = useCallback(() => {
-    void api
-      .get<CategoryWithStats[]>("/categories")
-      .then(setCategories)
-      .catch(() => [])
-      .finally(() => {
-        setIsLoadingCategories(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchProfile();
-    fetchCategories();
-  }, [fetchProfile, fetchCategories]);
-
-  // Re-fetch categories and profile stats when categories are modified
-  useEffect(() => {
-    const handler = () => {
-      fetchCategories();
-      fetchProfile();
-    };
-    window.addEventListener("categories:changed", handler);
-    return () => {
-      window.removeEventListener("categories:changed", handler);
-    };
-  }, [fetchCategories, fetchProfile]);
 
   return (
     <aside className="flex flex-col gap-4">
