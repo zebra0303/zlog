@@ -113,7 +113,15 @@ describe("OAuth API", () => {
         );
       vi.stubGlobal("fetch", fetchSpy);
 
-      const res = await app.request("/api/oauth/github/callback?code=test-code");
+      // First request the auth URL to get a state cookie
+      const authRes = await app.request("/api/oauth/github");
+      const setCookieHeader = authRes.headers.get("Set-Cookie") ?? "";
+      const stateMatch = /zlog_oauth_state=([^;]+)/.exec(setCookieHeader);
+      const state = stateMatch?.[1] ?? "";
+
+      const res = await app.request(`/api/oauth/github/callback?code=test-code&state=${state}`, {
+        headers: { Cookie: `zlog_oauth_state=${state}` },
+      });
       expect(res.status).toBe(302);
       const location = res.headers.get("Location");
       expect(location).toContain("/oauth-callback");
@@ -156,7 +164,15 @@ describe("OAuth API", () => {
         );
       vi.stubGlobal("fetch", fetchSpy);
 
-      const res = await app.request("/api/oauth/google/callback?code=test-code");
+      // First request the auth URL to get a state cookie
+      const authRes = await app.request("/api/oauth/google");
+      const setCookieHeader = authRes.headers.get("Set-Cookie") ?? "";
+      const stateMatch = /zlog_oauth_state=([^;]+)/.exec(setCookieHeader);
+      const state = stateMatch?.[1] ?? "";
+
+      const res = await app.request(`/api/oauth/google/callback?code=test-code&state=${state}`, {
+        headers: { Cookie: `zlog_oauth_state=${state}` },
+      });
       expect(res.status).toBe(302);
       const location = res.headers.get("Location");
       expect(location).toContain("/oauth-callback");

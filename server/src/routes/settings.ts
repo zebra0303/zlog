@@ -189,6 +189,24 @@ settingsRoute.put("/profile/social-links", authMiddleware, async (c) => {
   const body = await c.req.json<{
     links: { platform: string; url: string; label?: string; sortOrder?: number }[];
   }>();
+
+  // Validate each URL has safe protocol (http/https only)
+  for (const link of body.links) {
+    try {
+      const parsed = new URL(link.url);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        return c.json(
+          {
+            error: `Invalid URL protocol for "${link.platform}". Only http and https are allowed.`,
+          },
+          400,
+        );
+      }
+    } catch {
+      return c.json({ error: `Invalid URL for "${link.platform}".` }, 400);
+    }
+  }
+
   db.delete(schema.socialLinks).run();
   for (const [i, link] of body.links.entries()) {
     db.insert(schema.socialLinks)
@@ -302,10 +320,52 @@ settingsRoute.post("/settings/test-slack", authMiddleware, async (c) => {
   }
 });
 
+// Whitelist of allowed setting keys to prevent arbitrary data injection
+const ALLOWED_SETTING_KEYS = new Set([
+  "blog_title",
+  "canonical_url",
+  "seo_description",
+  "seo_og_image",
+  "posts_per_page",
+  "comments_per_page",
+  "comment_mode",
+  "default_language",
+  "default_theme",
+  "font_family",
+  "lazy_load_images",
+  "header_bg_color_dark",
+  "header_bg_color_light",
+  "header_bg_image_dark",
+  "header_bg_image_light",
+  "header_image_alignment_dark",
+  "header_image_alignment_light",
+  "header_height",
+  "footer_bg_color_dark",
+  "footer_bg_color_light",
+  "footer_bg_image_dark",
+  "footer_bg_image_light",
+  "footer_image_alignment_dark",
+  "footer_image_alignment_light",
+  "footer_height",
+  "body_bg_color_dark",
+  "body_bg_color_light",
+  "body_bg_gradient_to_dark",
+  "body_bg_gradient_to_light",
+  "body_bg_gradient_direction_dark",
+  "body_bg_gradient_direction_light",
+  "body_bg_gradient_midpoint_dark",
+  "body_bg_gradient_midpoint_light",
+  "notification_slack_webhook",
+  "webhook_sync_interval",
+]);
+
 settingsRoute.put("/settings", authMiddleware, async (c) => {
   const body = await c.req.json<Record<string, string>>();
   const now = new Date().toISOString();
   for (const [key, value] of Object.entries(body)) {
+    // Skip keys not in whitelist or invalid values
+    if (!ALLOWED_SETTING_KEYS.has(key)) continue;
+    if (typeof value !== "string" || value.length > 2000) continue;
     const existing = db
       .select()
       .from(schema.siteSettings)

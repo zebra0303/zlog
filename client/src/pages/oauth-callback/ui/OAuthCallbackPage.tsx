@@ -27,7 +27,9 @@ export default function OAuthCallbackPage() {
 
     const returnUrl = localStorage.getItem("zlog_oauth_return") ?? "/";
     localStorage.removeItem("zlog_oauth_return");
-    window.location.href = returnUrl;
+    // Prevent open redirect — only allow relative paths starting with /
+    const isSafe = returnUrl.startsWith("/") && !returnUrl.startsWith("//");
+    window.location.href = isSafe ? returnUrl : "/";
   }, [searchParams]);
 
   return (

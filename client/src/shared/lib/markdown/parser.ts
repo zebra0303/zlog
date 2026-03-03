@@ -1,5 +1,15 @@
 import { formatCode, isFormattable } from "./codeFormatter";
 
+// Escape HTML special characters to prevent XSS in pre-sanitization contexts
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Lazy-loaded unified processor (loaded once on first call)
 let processorPromise: Promise<{
   process: (input: string) => Promise<{ toString: () => string }>;
@@ -123,7 +133,8 @@ export async function parseMarkdown(markdown: string): Promise<string> {
     (_match, type: string, body: string) => {
       const key = type.toUpperCase();
       const label = calloutLabels[key] ?? key;
-      const content = body.replace(/^> ?/gm, "").trim().replace(/\n/g, "<br/>");
+      // Escape body to prevent XSS, then convert newlines to <br/>
+      const content = escapeHtml(body.replace(/^> ?/gm, "").trim()).replace(/\n/g, "<br/>");
       return `<div class="callout callout-${key.toLowerCase()}"><div class="callout-title">${label}</div><div class="callout-body">${content}</div></div>\n`;
     },
   );

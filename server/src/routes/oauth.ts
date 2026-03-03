@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { setCookie, getCookie } from "hono/cookie";
+import { randomBytes } from "crypto";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
@@ -11,14 +13,31 @@ oauthRoute.get("/github", (c) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   if (!clientId) return c.json({ error: "GitHub OAuth is not configured." }, 500);
 
+  // CSRF protection: generate state token and store in cookie
+  const state = randomBytes(16).toString("hex");
+  setCookie(c, "zlog_oauth_state", state, {
+    httpOnly: true,
+    sameSite: "Lax",
+    maxAge: 600,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/github/callback`;
-  const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user user:email`;
+  const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user user:email&state=${state}`;
   return c.redirect(url);
 });
 
 oauthRoute.get("/github/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) return c.json({ error: "Authorization code is missing." }, 400);
+
+  // Verify OAuth state to prevent CSRF
+  const stateQuery = c.req.query("state");
+  const stateCookie = getCookie(c, "zlog_oauth_state");
+  if (!stateQuery || !stateCookie || stateQuery !== stateCookie) {
+    return c.json({ error: "Invalid OAuth state. Please try again." }, 403);
+  }
 
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
@@ -101,14 +120,31 @@ oauthRoute.get("/google", (c) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) return c.json({ error: "Google OAuth is not configured." }, 500);
 
+  // CSRF protection: generate state token and store in cookie
+  const state = randomBytes(16).toString("hex");
+  setCookie(c, "zlog_oauth_state", state, {
+    httpOnly: true,
+    sameSite: "Lax",
+    maxAge: 600,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/google/callback`;
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent("openid email profile")}&access_type=offline`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent("openid email profile")}&access_type=offline&state=${state}`;
   return c.redirect(url);
 });
 
 oauthRoute.get("/google/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) return c.json({ error: "Authorization code is missing." }, 400);
+
+  // Verify OAuth state to prevent CSRF
+  const stateQuery = c.req.query("state");
+  const stateCookie = getCookie(c, "zlog_oauth_state");
+  if (!stateQuery || !stateCookie || stateQuery !== stateCookie) {
+    return c.json({ error: "Invalid OAuth state. Please try again." }, 403);
+  }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;

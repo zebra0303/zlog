@@ -199,12 +199,12 @@ describe("Settings & Profile API", () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ posts_per_page: "20", custom_setting: "value" }),
+        body: JSON.stringify({ posts_per_page: "20", default_language: "ko" }),
       });
       expect(res.status).toBe(200);
       const data = (await res.json()) as Record<string, string>;
       expect(data.posts_per_page).toBe("20");
-      expect(data.custom_setting).toBe("value");
+      expect(data.default_language).toBe("ko");
 
       // Restore
       db.update(schema.siteSettings)

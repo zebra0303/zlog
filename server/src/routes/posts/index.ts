@@ -659,9 +659,15 @@ postsRoute.post("/:id/like", async (c) => {
 postsRoute.post("/", authMiddleware, async (c) => {
   // Legacy implementation - to be migrated to OpenAPI
   const body = await c.req.json<z.infer<typeof CreatePostSchema>>();
-  // ... (rest of the logic same as before)
   if (!body.title || !body.content) {
     return c.json({ error: "Title and content are required." }, 400);
+  }
+  // Input length validation to prevent abuse
+  if (body.title.length > 500) {
+    return c.json({ error: "Title must not exceed 500 characters." }, 400);
+  }
+  if (body.content.length > 500_000) {
+    return c.json({ error: "Content must not exceed 500,000 characters." }, 400);
   }
 
   const baseSlug = createSlug(body.title);
@@ -736,6 +742,14 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
   const existing = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
   if (!existing) {
     return c.json({ error: "Post not found." }, 404);
+  }
+
+  // Input length validation to prevent abuse
+  if (body.title !== undefined && body.title.length > 500) {
+    return c.json({ error: "Title must not exceed 500 characters." }, 400);
+  }
+  if (body.content !== undefined && body.content.length > 500_000) {
+    return c.json({ error: "Content must not exceed 500,000 characters." }, 400);
   }
 
   const now = new Date().toISOString();

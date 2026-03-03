@@ -6,6 +6,7 @@ import { cors } from "hono/cors";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { apiReference } from "@scalar/hono-api-reference";
 import { errorHandler } from "../middleware/errorHandler.js";
+import { rateLimit } from "../middleware/rateLimit.js";
 import auth from "../routes/auth.js";
 import postsRoute from "../routes/posts/index.js";
 import categoriesRoute from "../routes/categories.js";
@@ -31,12 +32,35 @@ const getEnv = (key: string, defaultVal = "") => process.env[key] ?? defaultVal;
 export function createApp() {
   const app = new OpenAPIHono();
 
+  // Security headers (before CORS, skip CSP/X-Frame-Options for federation)
+  app.use("*", async (c, next) => {
+    await next();
+    c.header("X-Content-Type-Options", "nosniff");
+    c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+    c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+
+    const isFederation = c.req.path.startsWith("/api/federation/");
+    if (!isFederation) {
+      c.header("X-Frame-Options", "SAMEORIGIN");
+      c.header(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; frame-src https://www.youtube-nocookie.com https://codepen.io https://codesandbox.io; connect-src 'self' https:; object-src 'none'; base-uri 'self'",
+      );
+    }
+
+    // HSTS only when behind TLS
+    if (process.env.NODE_ENV === "production") {
+      c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+  });
+
   app.use(
     "/api/federation/*",
     cors({
       origin: "*",
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization"],
+      // Only allow methods actually used by federation endpoints
+      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization", "X-Zlog-Subscriber-Url"],
     }),
   );
 
@@ -118,6 +142,18 @@ export function createApp() {
   });
 
   app.get("/sw.js", serveStatic({ root: CLIENT_DIST, path: "sw.js" }));
+
+  // Rate limiting per endpoint pattern
+  app.use("/api/auth/login", rateLimit("auth-login", { max: 5, windowMs: 60_000 }));
+  app.use(
+    "/api/posts/:postId/comments",
+    rateLimit("comments-create", { max: 10, windowMs: 60_000 }),
+  );
+  app.use("/api/comments/:id/like", rateLimit("comment-like", { max: 30, windowMs: 60_000 }));
+  app.use("/api/posts/:id/like", rateLimit("post-like", { max: 30, windowMs: 60_000 }));
+  app.use("/api/federation/webhook", rateLimit("fed-webhook", { max: 60, windowMs: 60_000 }));
+  app.use("/api/federation/subscribe", rateLimit("fed-subscribe", { max: 10, windowMs: 60_000 }));
+  app.use("/api/upload/*", rateLimit("upload", { max: 20, windowMs: 60_000 }));
 
   // Mount Routes
   app.route("/api/auth", auth);

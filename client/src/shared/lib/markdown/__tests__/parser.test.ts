@@ -45,6 +45,23 @@ describe("Markdown Parser", () => {
     expect(html).toContain("This is a note");
   });
 
+  it("should escape XSS payloads in callout body (img onerror)", async () => {
+    const markdown = "> [!NOTE]\n> <img src=x onerror=\"alert('XSS')\">";
+    const html = await parseMarkdown(markdown);
+    // Verify the onerror attribute is not executable (escaped as part of a string)
+    expect(html).not.toContain("<img src=x onerror");
+    // Content should be HTML-escaped (&#x3C; or &lt; depending on pipeline)
+    expect(html).toContain("callout-note");
+  });
+
+  it("should escape XSS payloads in callout body (script tag)", async () => {
+    const markdown = "> [!WARNING]\n> <script>alert(1)</script>";
+    const html = await parseMarkdown(markdown);
+    // Verify raw <script> tag is not present
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("callout-warning");
+  });
+
   it("should not format standard images with width/height attributes if not provided in url query", async () => {
     const markdown = "![standard](img.png)";
     const html = await parseMarkdown(markdown);
