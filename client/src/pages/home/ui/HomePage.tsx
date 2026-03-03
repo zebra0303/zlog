@@ -26,6 +26,8 @@ function SubscribeDialog({
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
+  // Validate URL starts with http:// or https://
+  const isValidUrl = /^https?:\/\/.+/.test(normalizedBlogUrl);
 
   // Focus input when category is already selected
   useEffect(() => {
@@ -35,7 +37,7 @@ function SubscribeDialog({
   }, [selectedCat]);
 
   const handleSubscribe = () => {
-    if (!normalizedBlogUrl || !selectedCat) return;
+    if (!isValidUrl || !selectedCat) return;
     const remoteSiteUrl = window.location.origin;
     const params = new URLSearchParams({
       action: "subscribe",
@@ -142,6 +144,10 @@ function SubscribeDialog({
                 }}
                 disabled={!selectedCat}
               />
+              {/* URL validation hint */}
+              {normalizedBlogUrl && !isValidUrl && (
+                <p className="mt-1 text-xs text-red-500">{t("cat_subscribe_invalid_url")}</p>
+              )}
             </div>
             {normalizedBlogUrl && (
               <div className="bg-background text-text-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
@@ -152,11 +158,7 @@ function SubscribeDialog({
               </div>
             )}
             <div className="flex justify-end">
-              <Button
-                size="sm"
-                onClick={handleSubscribe}
-                disabled={!normalizedBlogUrl || !selectedCat}
-              >
+              <Button size="sm" onClick={handleSubscribe} disabled={!isValidUrl || !selectedCat}>
                 <ExternalLink className="mr-1 h-4 w-4" />
                 {t("cat_subscribe_go_admin")}
               </Button>

@@ -111,7 +111,8 @@ export const ko: Record<TranslationKeys, string> = {
     "아래에 여러분의 블로그 URL을 입력하면, 콜백 URL이 자동 생성되어 웹훅으로 새 글 알림을 받게 됩니다.",
   cat_subscribe_desc3_v2:
     "아래에 내 블로그 URL을 입력하면, 내 블로그 관리자 페이지로 이동하여 안전하게 구독을 완료할 수 있습니다.",
-  cat_subscribe_blog_url: "내 블로그 URL",
+  cat_subscribe_blog_url: "내 zlog URL",
+  cat_subscribe_invalid_url: "http:// 또는 https://로 시작하는 URL을 입력하세요.",
   cat_subscribe_callback: "콜백 URL (자동 생성)",
   cat_subscribe_redirect_desc: "{url}/admin 으로 이동하여 구독을 확인합니다.",
   cat_subscribe_go_admin: "내 관리자 페이지로 이동",
