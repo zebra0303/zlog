@@ -601,6 +601,28 @@ postsRoute.get("/:param", async (c) => {
     isLikedByMe = !!existing;
   }
 
+  // Prev/next post navigation (same category, by createdAt)
+  const navConditions: SQL[] = [eq(schema.posts.status, "published" as const)];
+  if (post.categoryId) navConditions.push(eq(schema.posts.categoryId, post.categoryId));
+
+  const prevPost =
+    db
+      .select({ id: schema.posts.id, title: schema.posts.title, slug: schema.posts.slug })
+      .from(schema.posts)
+      .where(and(...navConditions, sql`${schema.posts.createdAt} < ${post.createdAt}`))
+      .orderBy(desc(schema.posts.createdAt))
+      .limit(1)
+      .get() ?? null;
+
+  const nextPost =
+    db
+      .select({ id: schema.posts.id, title: schema.posts.title, slug: schema.posts.slug })
+      .from(schema.posts)
+      .where(and(...navConditions, sql`${schema.posts.createdAt} > ${post.createdAt}`))
+      .orderBy(schema.posts.createdAt)
+      .limit(1)
+      .get() ?? null;
+
   return c.json({
     ...post,
     viewCount,
@@ -609,6 +631,8 @@ postsRoute.get("/:param", async (c) => {
     commentCount,
     likeCount,
     isLikedByMe,
+    prevPost,
+    nextPost,
   });
 });
 

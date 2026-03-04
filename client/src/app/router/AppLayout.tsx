@@ -4,6 +4,7 @@ import { Header } from "@/widgets/header/ui/Header";
 import { Footer } from "@/widgets/footer/ui/Footer";
 import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
 import { ToastContainer } from "@/shared/ui/ToastContainer";
+import { ScrollToTop } from "@/shared/ui/ScrollToTop";
 import { ConfirmModal } from "@/shared/ui/ConfirmModal";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
@@ -276,6 +277,7 @@ export function AppLayout() {
       <Footer />
       <ConfirmModal />
       <ToastContainer />
+      <ScrollToTop />
     </div>
   );
 }

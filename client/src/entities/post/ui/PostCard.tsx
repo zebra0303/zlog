@@ -4,6 +4,7 @@ import { Calendar, Eye, Folder, Globe, ExternalLink, MessageCircle, Heart } from
 import { Card, CardContent, Badge, LazyImage } from "@/shared/ui";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
+import { estimateReadingTime } from "@/shared/lib/readingTime";
 import type { PostWithCategory } from "@zlog/shared";
 
 interface PostCardProps {
@@ -102,6 +103,10 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
                 {post.likeCount.toLocaleString()}
               </span>
             )}
+            {/* Estimated reading time */}
+            <span className="flex items-center gap-1">
+              {t("reading_time_min", { min: String(estimateReadingTime(post.content)) })}
+            </span>
             {post.tags.map((tag) => {
               const tagParams = new URLSearchParams(location.search);
               tagParams.set("tag", tag.slug);

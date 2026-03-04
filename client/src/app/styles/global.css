@@ -630,6 +630,23 @@ pre code.hljs {
   opacity: 0.9;
 }
 
+/* Heading anchor links */
+.prose h2[id],
+.prose h3[id] {
+  scroll-margin-top: 4rem;
+  position: relative;
+}
+
+.prose h2[id]:hover::before,
+.prose h3[id]:hover::before {
+  content: "#";
+  position: absolute;
+  margin-left: -1.2em;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+  font-weight: 400;
+}
+
 /* ============ Print styles ============ */
 @media print {
   :root,

@@ -12,6 +12,8 @@ import {
   Check,
   MessageCircle,
   Heart,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import {
@@ -35,7 +37,19 @@ import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useAuthStore } from "@/features/auth/model/store";
 import { CommentSection } from "@/features/comment/ui/CommentSection";
 import { useI18n } from "@/shared/i18n";
+import { estimateReadingTime } from "@/shared/lib/readingTime";
 import type { PostWithCategory } from "@zlog/shared";
+
+// Extended post type with prev/next navigation from server
+interface PostNav {
+  id: string;
+  title: string;
+  slug: string;
+}
+type PostWithNav = PostWithCategory & {
+  prevPost?: PostNav | null;
+  nextPost?: PostNav | null;
+};
 
 export default function PostDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -45,7 +59,7 @@ export default function PostDetailPage() {
   const { t } = useI18n();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
-  const [post, setPost] = useState<PostWithCategory | null>(null);
+  const [post, setPost] = useState<PostWithNav | null>(null);
   const [localCommentCount, setLocalCommentCount] = useState(0);
   const [localLikeCount, setLocalLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -54,6 +68,11 @@ export default function PostDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Reading progress bar state
+  const [readingProgress, setReadingProgress] = useState(0);
+  // TOC state
+  const [tocItems, setTocItems] = useState<{ id: string; text: string; level: number }[]>([]);
+  const [activeTocId, setActiveTocId] = useState("");
 
   const navigate = useNavigate();
 
@@ -62,7 +81,7 @@ export default function PostDetailPage() {
     setIsLoading(true);
     const referrer = document.referrer;
     void api
-      .get<PostWithCategory>(
+      .get<PostWithNav>(
         `/posts/${slug}?visitorId=${getVisitorId()}`,
         referrer ? { "X-Referrer": referrer } : undefined,
       )
@@ -79,6 +98,69 @@ export default function PostDetailPage() {
         setIsLoading(false);
       });
   }, [slug, t]);
+
+  // Reading progress bar — tracks scroll position within article
+  useEffect(() => {
+    const article = document.querySelector("article");
+    if (!article) return;
+    let rafId = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const rect = article.getBoundingClientRect();
+        const total = rect.height - window.innerHeight;
+        if (total <= 0) {
+          setReadingProgress(100);
+          return;
+        }
+        const progress = Math.min(100, Math.max(0, (-rect.top / total) * 100));
+        setReadingProgress(progress);
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, [htmlContent]);
+
+  // Extract TOC from rendered HTML
+  useEffect(() => {
+    if (!htmlContent) return;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, "text/html");
+    const headings = doc.querySelectorAll("h2, h3");
+    const items: { id: string; text: string; level: number }[] = [];
+    headings.forEach((h) => {
+      const id = h.getAttribute("id");
+      if (id) {
+        items.push({ id, text: h.textContent || "", level: h.tagName === "H2" ? 2 : 3 });
+      }
+    });
+    setTocItems(items);
+  }, [htmlContent]);
+
+  // IntersectionObserver for active TOC section
+  useEffect(() => {
+    if (tocItems.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveTocId(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-80px 0px -80% 0px", threshold: 0 },
+    );
+    for (const item of tocItems) {
+      const el = document.getElementById(item.id);
+      if (el) observer.observe(el);
+    }
+    return () => {
+      observer.disconnect();
+    };
+  }, [tocItems]);
 
   const handleDelete = async () => {
     if (!post) return;
@@ -143,6 +225,11 @@ export default function PostDetailPage() {
 
   return (
     <article className="min-w-0 overflow-x-hidden">
+      {/* Reading progress bar */}
+      <div
+        className="fixed top-0 left-0 z-50 h-0.5 transition-[width] duration-150"
+        style={{ width: `${readingProgress}%`, backgroundColor: "var(--color-primary)" }}
+      />
       <SEOHead
         title={post.title}
         description={post.excerpt ?? undefined}
@@ -271,11 +358,22 @@ export default function PostDetailPage() {
             <Eye className="h-4 w-4" />
             {post.viewCount.toLocaleString()}
           </span>
+          {/* Estimated reading time */}
+          <span className="flex items-center gap-1">
+            {t("reading_time_min", { min: String(estimateReadingTime(post.content)) })}
+          </span>
+          {/* Comment count — click to scroll to comments section */}
           {localCommentCount > 0 && (
-            <span className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() =>
+                document.getElementById("comments")?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
+            >
               <MessageCircle className="h-4 w-4" />
               {localCommentCount.toLocaleString()}
-            </span>
+            </button>
           )}
           {localLikeCount > 0 && (
             <span className="flex items-center gap-1">
@@ -347,9 +445,69 @@ export default function PostDetailPage() {
           </div>
         </CardContent>
       </Card>
-      <div className="mt-8" data-print-hide>
+      {/* Prev/Next post navigation */}
+      {(post.prevPost ?? post.nextPost) && (
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          {post.prevPost ? (
+            <Link
+              to={`/posts/${post.prevPost.slug}`}
+              className="group flex items-center gap-2 rounded-lg border border-[var(--color-border)] p-3 transition-colors hover:border-[var(--color-primary)]"
+            >
+              <ChevronLeft className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)]" />
+              <div className="min-w-0">
+                <p className="text-xs text-[var(--color-text-secondary)]">{t("post_prev")}</p>
+                <p className="truncate text-sm font-medium text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
+                  {post.prevPost.title}
+                </p>
+              </div>
+            </Link>
+          ) : (
+            <div />
+          )}
+          {post.nextPost ? (
+            <Link
+              to={`/posts/${post.nextPost.slug}`}
+              className="group flex items-center justify-end gap-2 rounded-lg border border-[var(--color-border)] p-3 text-right transition-colors hover:border-[var(--color-primary)]"
+            >
+              <div className="min-w-0">
+                <p className="text-xs text-[var(--color-text-secondary)]">{t("post_next")}</p>
+                <p className="truncate text-sm font-medium text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
+                  {post.nextPost.title}
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)]" />
+            </Link>
+          ) : (
+            <div />
+          )}
+        </div>
+      )}
+      <div className="mt-8" id="comments" data-print-hide>
         <CommentSection postId={post.id} onCountChange={handleCommentCountChange} />
       </div>
+      {/* Desktop TOC sidebar */}
+      {tocItems.length > 2 && (
+        <nav
+          className="fixed top-20 right-[max(1rem,calc((100vw-72rem)/2-14rem))] hidden max-h-[calc(100vh-6rem)] w-56 overflow-y-auto xl:block"
+          aria-label="Table of contents"
+        >
+          <p className="mb-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase">
+            {t("toc_title")}
+          </p>
+          <ul className="flex flex-col gap-0.5">
+            {tocItems.map((item) => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  className={`block truncate py-0.5 text-xs transition-colors ${item.level === 3 ? "pl-3" : ""} ${activeTocId === item.id ? "font-medium text-[var(--color-primary)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"}`}
+                >
+                  {item.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
     </article>
   );
 }

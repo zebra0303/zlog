@@ -237,6 +237,17 @@ export async function parseMarkdown(markdown: string): Promise<string> {
   // Add target="_blank" to all links so they open in a new tab
   html = html.replace(/<a\s+(href="[^"]*")/g, '<a target="_blank" rel="noopener noreferrer" $1');
 
+  // Add slugified id attributes to h2/h3 for TOC anchors
+  html = html.replace(/<(h[23])>(.*?)<\/\1>/g, (_match, tag: string, content: string) => {
+    const text = content.replace(/<[^>]*>/g, "").trim();
+    const slug = text
+      .toLowerCase()
+      .replace(/[^\w\s가-힣-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+    return `<${tag} id="${slug}">${content}</${tag}>`;
+  });
+
   // Replace mermaid placeholders with rendering divs
   // After passing through the unified pipeline, they remain as <p>MERMAID_BLOCK_0_PLACEHOLDER</p>
   for (let i = 0; i < mermaidBlocks.length; i++) {
