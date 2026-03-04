@@ -946,44 +946,54 @@ export function MarkdownToolbar({
           </button>
           {helpOpen && (
             <div className="border-border absolute top-full right-0 z-50 mt-1 w-72 rounded-lg border bg-[var(--color-surface)] p-3 text-xs text-[var(--color-text)] shadow-lg">
-              <p className="mb-2 font-semibold text-[var(--color-text)]">에디터 사용 안내</p>
+              <p className="mb-2 font-semibold text-[var(--color-text)]">
+                {t("editor_help_title")}
+              </p>
               <ul className="flex flex-col gap-2 text-[var(--color-text-secondary)]">
                 <li>
-                  <span className="font-medium text-[var(--color-text)]">📎 이미지 업로드</span>
+                  <span className="font-medium text-[var(--color-text)]">
+                    {t("editor_help_image_title")}
+                  </span>
                   <br />
-                  이미지 아이콘 클릭 또는 에디터 영역으로 드래그&amp;드롭
+                  {t("editor_help_image_desc")}
                   <br />
                   <code className="mt-1 inline-block rounded bg-[var(--color-background)] px-1">
                     ![alt](url?width=100&height=200)
                   </code>{" "}
-                  형식으로 넓이와 높이 지정 가능
+                  {t("editor_help_image_format")}
                 </li>
                 <li>
                   <span className="font-medium text-[var(--color-text)]">
-                    ▶ YouTube 자동 임베드
+                    {t("editor_help_youtube_title")}
                   </span>
                   <br />
-                  YouTube URL을 단독 줄에 입력하면 동영상으로 자동 변환
+                  {t("editor_help_youtube_desc")}
                 </li>
                 <li>
-                  <span className="font-medium text-[var(--color-text)]">🔗 링크</span>
+                  <span className="font-medium text-[var(--color-text)]">
+                    {t("editor_help_link_title")}
+                  </span>
                   <br />
                   <code className="rounded bg-[var(--color-background)] px-1">
-                    [텍스트](URL)
+                    [text](URL)
                   </code>{" "}
-                  또는 텍스트 선택 후 링크 아이콘 클릭
+                  {t("editor_help_link_desc")}
                 </li>
                 <li>
-                  <span className="font-medium text-[var(--color-text)]">💬 콜아웃</span>
+                  <span className="font-medium text-[var(--color-text)]">
+                    {t("editor_help_callout_title")}
+                  </span>
                   <br />
                   <code className="rounded bg-[var(--color-background)] px-1">{`> [!NOTE]`}</code>{" "}
-                  형식. NOTE · TIP · WARNING 등 지원
+                  {t("editor_help_callout_desc")}
                 </li>
                 <li>
-                  <span className="font-medium text-[var(--color-text)]">💻 코드 블록</span>
+                  <span className="font-medium text-[var(--color-text)]">
+                    {t("editor_help_code_title")}
+                  </span>
                   <br />
-                  <code className="rounded bg-[var(--color-background)] px-1">```js</code> 처럼
-                  언어명 입력 시 신택스 하이라이팅 지원
+                  <code className="rounded bg-[var(--color-background)] px-1">```js</code>{" "}
+                  {t("editor_help_code_desc")}
                 </li>
               </ul>
             </div>

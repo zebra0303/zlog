@@ -84,6 +84,16 @@ export default function PostEditorPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const toolbarFileRef = useRef<HTMLInputElement>(null);
 
+  // Track unsaved changes without causing re-renders
+  const isDirtyRef = useRef(false);
+  const savedSnapshot = useRef({
+    title: "",
+    content: "",
+    categoryId: "",
+    tags: "",
+    coverImage: "",
+  });
+
   // Undo/redo history for editor content
   const { push: pushHistory, undo, redo, canUndo, canRedo } = useUndoRedo("");
 
@@ -140,14 +150,22 @@ export default function PostEditorPage() {
     setContent(template.content);
   };
 
-  // Sync post data to form
+  // Sync post data to form and update saved snapshot
   useEffect(() => {
     if (post) {
-      setTitle(post.title);
-      setContent(post.content);
-      setCategoryId(post.categoryId ?? "");
-      setCoverImage(post.coverImage ?? "");
-      setTags(post.tags.map((tg) => tg.name).join(", "));
+      const t = post.title;
+      const c = post.content;
+      const catId = post.categoryId ?? "";
+      const ci = post.coverImage ?? "";
+      const tg = post.tags.map((tg) => tg.name).join(", ");
+      setTitle(t);
+      setContent(c);
+      setCategoryId(catId);
+      setCoverImage(ci);
+      setTags(tg);
+      // Store snapshot of saved state for dirty-checking
+      savedSnapshot.current = { title: t, content: c, categoryId: catId, tags: tg, coverImage: ci };
+      isDirtyRef.current = false;
     }
   }, [post]);
 
@@ -157,6 +175,30 @@ export default function PostEditorPage() {
       void navigate("/login");
     }
   }, [isAuthenticated, navigate]);
+
+  // Warn user before leaving with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirtyRef.current) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+    };
+  }, []);
+
+  // Track dirty state by comparing current form values to saved snapshot
+  useEffect(() => {
+    const s = savedSnapshot.current;
+    isDirtyRef.current =
+      title !== s.title ||
+      content !== s.content ||
+      categoryId !== s.categoryId ||
+      tags !== s.tags ||
+      coverImage !== s.coverImage;
+  }, [title, content, categoryId, tags, coverImage]);
 
   // Tag suggestions
   useEffect(() => {
@@ -353,6 +395,7 @@ export default function PostEditorPage() {
   const createMutation = useMutation({
     mutationFn: (payload: CreatePostRequest) => api.post<{ slug: string }>("/posts", payload),
     onSuccess: (data, variables) => {
+      isDirtyRef.current = false; // Reset dirty flag on successful save
       void queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       showToast(t("post_saved_success") || "Post saved successfully.", "success");
       if (variables.status === "published" && data.slug) {
@@ -369,6 +412,7 @@ export default function PostEditorPage() {
   const updateMutation = useMutation({
     mutationFn: (payload: CreatePostRequest) => api.put<{ slug: string }>(`/posts/${id}`, payload),
     onSuccess: (data, variables) => {
+      isDirtyRef.current = false; // Reset dirty flag on successful save
       void queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(id ?? "") });
       showToast(t("post_saved_success") || "Post updated successfully.", "success");
@@ -425,6 +469,11 @@ export default function PostEditorPage() {
           variant="ghost"
           size="sm"
           onClick={() => {
+            // Confirm before navigating away with unsaved changes
+            if (isDirtyRef.current) {
+              const confirmed = window.confirm(t("editor_unsaved_confirm"));
+              if (!confirmed) return;
+            }
             void navigate(-1);
           }}
         >

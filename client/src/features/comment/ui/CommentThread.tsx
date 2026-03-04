@@ -175,6 +175,13 @@ export function CommentThread({
                 maxLength={2000}
                 rows={3}
               />
+              {/* Character counter for edit comment length feedback */}
+              <div className="text-right text-xs text-[var(--color-text-secondary)]">
+                <span className={editContent.length > 1800 ? "text-[var(--color-accent)]" : ""}>
+                  {editContent.length}
+                </span>
+                /2000
+              </div>
               {isAnonComment && !isSsoOwner && (
                 <Input
                   type="password"

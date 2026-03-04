@@ -162,6 +162,76 @@ describe("processEditorShortcuts", () => {
     });
   });
 
+  describe("Ctrl+B (bold)", () => {
+    test("wraps selected text with **", () => {
+      // "Hello text here" — "text" is at indices 6..10
+      const result = processEditorShortcuts(
+        "b",
+        false,
+        false,
+        true,
+        false,
+        6,
+        10,
+        "Hello text here",
+      );
+      expect(result).toEqual({
+        newValue: "Hello **text** here",
+        newStart: 8,
+        newEnd: 12,
+      });
+    });
+
+    test("inserts bold placeholder when no selection", () => {
+      const result = processEditorShortcuts("b", false, false, true, false, 5, 5, "Hello");
+      expect(result).toEqual({
+        newValue: "Hello**bold**",
+        newStart: 7,
+        newEnd: 11,
+      });
+    });
+  });
+
+  describe("Ctrl+I (italic)", () => {
+    test("wraps selected text with *", () => {
+      const result = processEditorShortcuts("i", false, false, true, false, 0, 5, "Hello world");
+      expect(result).toEqual({
+        newValue: "*Hello* world",
+        newStart: 1,
+        newEnd: 6,
+      });
+    });
+
+    test("inserts italic placeholder when no selection", () => {
+      const result = processEditorShortcuts("i", false, false, true, false, 0, 0, "");
+      expect(result).toEqual({
+        newValue: "*italic*",
+        newStart: 1,
+        newEnd: 7,
+      });
+    });
+  });
+
+  describe("Ctrl+K (link)", () => {
+    test("wraps selected text as link", () => {
+      const result = processEditorShortcuts("k", false, false, true, false, 0, 5, "Hello world");
+      expect(result).toEqual({
+        newValue: "[Hello](url) world",
+        newStart: 1,
+        newEnd: 6,
+      });
+    });
+
+    test("inserts link placeholder when no selection", () => {
+      const result = processEditorShortcuts("k", false, false, true, false, 0, 0, "");
+      expect(result).toEqual({
+        newValue: "[link text](url)",
+        newStart: 1,
+        newEnd: 10,
+      });
+    });
+  });
+
   describe("Other keys", () => {
     test("ignores random keys", () => {
       const result = processEditorShortcuts("A", false, false, false, false, 0, 0, "test");

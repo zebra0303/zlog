@@ -52,6 +52,44 @@ export function processEditorShortcuts(
     }
   }
 
+  // Ctrl/Cmd+B: bold, Ctrl/Cmd+I: italic, Ctrl/Cmd+K: link
+  const mod = ctrlKey || metaKey;
+  if (mod && !shiftKey) {
+    if (key === "b") {
+      const selected = value.slice(selectionStart, selectionEnd);
+      const text = selected || "bold";
+      const newValue =
+        value.slice(0, selectionStart) + "**" + text + "**" + value.slice(selectionEnd);
+      return {
+        newValue,
+        newStart: selectionStart + 2,
+        newEnd: selectionStart + 2 + text.length,
+      };
+    }
+    if (key === "i") {
+      const selected = value.slice(selectionStart, selectionEnd);
+      const text = selected || "italic";
+      const newValue =
+        value.slice(0, selectionStart) + "*" + text + "*" + value.slice(selectionEnd);
+      return {
+        newValue,
+        newStart: selectionStart + 1,
+        newEnd: selectionStart + 1 + text.length,
+      };
+    }
+    if (key === "k") {
+      const selected = value.slice(selectionStart, selectionEnd);
+      const text = selected || "link text";
+      const newValue =
+        value.slice(0, selectionStart) + "[" + text + "](url)" + value.slice(selectionEnd);
+      return {
+        newValue,
+        newStart: selectionStart + 1,
+        newEnd: selectionStart + 1 + text.length,
+      };
+    }
+  }
+
   if (key !== "Tab") return null;
 
   // Uniform 3-space indent for both ordered and unordered lists

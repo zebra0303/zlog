@@ -162,6 +162,13 @@ export function CommentForm({
             maxLength={2000}
             rows={3}
           />
+          {/* Character counter for comment length feedback */}
+          <div className="text-right text-xs text-[var(--color-text-secondary)]">
+            <span className={content.length > 1800 ? "text-[var(--color-accent)]" : ""}>
+              {content.length}
+            </span>
+            /2000
+          </div>
           {error && <p className="text-sm text-[var(--color-destructive)]">{error}</p>}
           <div className="flex justify-end gap-2">
             {onCancel && (
