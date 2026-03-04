@@ -36,7 +36,8 @@ export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  // Use typed message to distinguish success/error color
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [testingSlack, setTestingSlack] = useState(false);
   const [slackTestResult, setSlackTestResult] = useState<"ok" | "error" | null>(null);
 
@@ -168,9 +169,9 @@ export default function AdminPage() {
     try {
       await api.put("/settings", settings);
       await refreshSiteSettings();
-      setMessage(useI18n.getState().t("admin_saved"));
+      setMessage({ text: useI18n.getState().t("admin_saved"), type: "success" });
     } catch {
-      setMessage(useI18n.getState().t("admin_save_failed"));
+      setMessage({ text: useI18n.getState().t("admin_save_failed"), type: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -238,9 +239,16 @@ export default function AdminPage() {
           {isSaving ? t("admin_saving") : t("admin_save")}
         </Button>
       </div>
+      {/* Show save result with color based on success/error type */}
       {message && (
-        <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20">
-          {message}
+        <div
+          className={`rounded-lg p-3 text-sm ${
+            message.type === "success"
+              ? "bg-green-50 text-green-600 dark:bg-green-900/20"
+              : "bg-[var(--color-destructive-light)] text-[var(--color-destructive)]"
+          }`}
+        >
+          {message.text}
         </div>
       )}
 

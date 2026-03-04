@@ -29,7 +29,8 @@ export default function SettingsPage() {
   >([]);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  // Use typed message to distinguish success/error color
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [currentEmail, setCurrentEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -143,9 +144,9 @@ export default function SettingsPage() {
     try {
       const r = await api.upload<{ avatarUrl: string }>("/profile/avatar", fd);
       setAvatarPreview(r.avatarUrl);
-      setMessage(t("settings_saved"));
+      setMessage({ text: t("settings_saved"), type: "success" });
     } catch (err) {
-      setMessage(getErrorMessage(err, t("upload_failed")));
+      setMessage({ text: getErrorMessage(err, t("upload_failed")), type: "error" });
     }
   };
 
@@ -155,9 +156,9 @@ export default function SettingsPage() {
     try {
       await api.put("/profile", form);
       await api.put("/profile/social-links", { links: socialLinks.filter((l) => l.url.trim()) });
-      setMessage(t("settings_saved"));
+      setMessage({ text: t("settings_saved"), type: "success" });
     } catch {
-      setMessage(t("admin_save_failed"));
+      setMessage({ text: t("admin_save_failed"), type: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -238,9 +239,16 @@ export default function SettingsPage() {
           {isSaving ? t("settings_saving") : t("settings_save")}
         </Button>
       </div>
+      {/* Show save result with color based on success/error type */}
       {message && (
-        <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20">
-          {message}
+        <div
+          className={`rounded-lg p-3 text-sm ${
+            message.type === "success"
+              ? "bg-green-50 text-green-600 dark:bg-green-900/20"
+              : "bg-[var(--color-destructive-light)] text-[var(--color-destructive)]"
+          }`}
+        >
+          {message.text}
         </div>
       )}
       <Card>
@@ -274,7 +282,7 @@ export default function SettingsPage() {
                       await api.delete("/profile/avatar");
                       setAvatarPreview(null);
                     } catch {
-                      setMessage(t("request_failed"));
+                      setMessage({ text: t("request_failed"), type: "error" });
                     }
                   }}
                 >

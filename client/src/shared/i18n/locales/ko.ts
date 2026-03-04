@@ -472,4 +472,30 @@ export const ko: Record<TranslationKeys, string> = {
   editor_template_select: "템플릿 선택",
   editor_template_none: "선택 안 함",
   editor_template_confirm: "템플릿을 적용하면 현재 입력된 내용이 덮어씌워집니다. 계속하시겠습니까?",
+
+  // Error feedback
+  comment_load_failed: "댓글을 불러오지 못했습니다.",
+  comment_retry: "다시 시도",
+  admin_post_load_failed: "게시글을 불러오지 못했습니다.",
+
+  // Editor unsaved changes & help tooltip (Phase 2)
+  editor_unsaved_confirm: "저장하지 않은 변경사항이 있습니다. 정말 나가시겠습니까?",
+  editor_help_title: "에디터 사용 안내",
+  editor_help_image_title: "이미지 업로드",
+  editor_help_image_desc: "이미지 아이콘 클릭 또는 에디터 영역으로 드래그&드롭",
+  editor_help_image_format: "형식으로 넓이와 높이 지정 가능",
+  editor_help_youtube_title: "YouTube 자동 임베드",
+  editor_help_youtube_desc: "YouTube URL을 단독 줄에 입력하면 동영상으로 자동 변환",
+  editor_help_link_title: "링크",
+  editor_help_link_desc: "또는 텍스트 선택 후 링크 아이콘 클릭",
+  editor_help_callout_title: "콜아웃",
+  editor_help_callout_desc: "형식. NOTE · TIP · WARNING 등 지원",
+  editor_help_code_title: "코드 블록",
+  editor_help_code_desc: "처럼 언어명 입력 시 신택스 하이라이팅 지원",
+
+  // Phase 3: Reading time, TOC, post navigation
+  reading_time_min: "{min}분 소요",
+  post_prev: "이전 글",
+  post_next: "다음 글",
+  toc_title: "목차",
 };

@@ -31,6 +31,8 @@ type PostStatus = "all" | "published" | "draft";
 export function PostManager() {
   const [posts, setPosts] = useState<PostWithCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Track fetch failure to show error UI with retry
+  const [fetchError, setFetchError] = useState(false);
   const [filter, setFilter] = useState<PostStatus>("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -72,6 +74,7 @@ export function PostManager() {
 
   const fetchPosts = useCallback((status: PostStatus, pg: number, search: string) => {
     setIsLoading(true);
+    setFetchError(false);
     const params = new URLSearchParams();
     params.set("status", status);
     params.set("page", String(pg));
@@ -84,6 +87,7 @@ export function PostManager() {
         setIsLoading(false);
       })
       .catch(() => {
+        setFetchError(true);
         setIsLoading(false);
       });
   }, []);
@@ -178,10 +182,34 @@ export function PostManager() {
           )}
         </div>
 
+        {/* Skeleton loading UI for post list */}
         {isLoading ? (
-          <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">
-            {t("loading")}
-          </p>
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3"
+              >
+                <div className="flex-1">
+                  <div className="mb-1 h-5 w-2/3 animate-pulse rounded bg-[var(--color-border)]" />
+                  <div className="h-3 w-1/4 animate-pulse rounded bg-[var(--color-border)]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : fetchError ? (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <p className="text-sm text-[var(--color-destructive)]">{t("admin_post_load_failed")}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                fetchPosts(filter, page, debouncedSearch);
+              }}
+            >
+              {t("comment_retry")}
+            </Button>
+          </div>
         ) : posts.length === 0 ? (
           <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">
             {t("admin_post_empty")}

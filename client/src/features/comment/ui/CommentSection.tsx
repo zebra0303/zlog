@@ -21,6 +21,8 @@ export function CommentSection({
 }) {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Track fetch failure to show retry UI
+  const [fetchError, setFetchError] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [providers, setProviders] = useState<{ github: boolean; google: boolean }>({
@@ -34,6 +36,7 @@ export function CommentSection({
 
   const fetchComments = useCallback(
     (currentPage = 1, isRefresh = false) => {
+      setFetchError(false);
       void api
         .get<PaginatedResponse<CommentWithReplies> | CommentWithReplies[]>(
           `/posts/${postId}/comments?visitorId=${getVisitorId()}&page=${currentPage}`,
@@ -51,6 +54,7 @@ export function CommentSection({
           setIsLoading(false);
         })
         .catch(() => {
+          setFetchError(true);
           setIsLoading(false);
         });
     },
@@ -58,6 +62,8 @@ export function CommentSection({
   );
 
   useEffect(() => {
+    // Initial fetch on mount — safe to call setState here as it runs once per postId change
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchComments(1, true);
   }, [fetchComments]);
   useEffect(() => {
@@ -218,7 +224,22 @@ export function CommentSection({
           />
         ))}
       </div>
-      {!isLoading && comments.filter(hasVisibleComments).length === 0 && (
+      {/* Show error state with retry button when comment fetch fails */}
+      {fetchError && (
+        <div className="mt-4 flex flex-col items-center gap-2 py-4">
+          <p className="text-sm text-[var(--color-destructive)]">{t("comment_load_failed")}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              fetchComments(1, true);
+            }}
+          >
+            {t("comment_retry")}
+          </Button>
+        </div>
+      )}
+      {!isLoading && !fetchError && comments.filter(hasVisibleComments).length === 0 && (
         <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">
           {t("comment_no_comments")}
         </p>

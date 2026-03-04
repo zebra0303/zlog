@@ -467,6 +467,32 @@ export const en = {
   editor_template_select: "Use Template",
   editor_template_none: "No Template",
   editor_template_confirm: "Applying this template will overwrite your current content. Continue?",
+
+  // Error feedback
+  comment_load_failed: "Failed to load comments.",
+  comment_retry: "Retry",
+  admin_post_load_failed: "Failed to load posts.",
+
+  // Editor unsaved changes & help tooltip (Phase 2)
+  editor_unsaved_confirm: "You have unsaved changes. Are you sure you want to leave?",
+  editor_help_title: "Editor Help",
+  editor_help_image_title: "Image Upload",
+  editor_help_image_desc: "Click the image icon or drag & drop into the editor area.",
+  editor_help_image_format: "Use the format to specify width and height.",
+  editor_help_youtube_title: "YouTube Auto-embed",
+  editor_help_youtube_desc: "Paste a YouTube URL on its own line to auto-embed the video.",
+  editor_help_link_title: "Links",
+  editor_help_link_desc: "Or select text and click the link icon.",
+  editor_help_callout_title: "Callouts",
+  editor_help_callout_desc: "format. Supports NOTE, TIP, WARNING, etc.",
+  editor_help_code_title: "Code Blocks",
+  editor_help_code_desc: "Add a language name for syntax highlighting.",
+
+  // Phase 3: Reading time, TOC, post navigation
+  reading_time_min: "{min} min read",
+  post_prev: "Previous",
+  post_next: "Next",
+  toc_title: "Contents",
 };
 
 export type TranslationKeys = keyof typeof en;
