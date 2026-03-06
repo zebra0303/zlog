@@ -26,7 +26,7 @@ import {
   Undo2,
   Redo2,
 } from "lucide-react";
-import type { EmojiClickData } from "emoji-picker-react";
+import type { EmojiClickData, Theme } from "emoji-picker-react";
 import { useI18n } from "../i18n";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 
@@ -868,7 +868,7 @@ export function MarkdownToolbar({
             >
               <EmojiPicker
                 onEmojiClick={onEmojiClick}
-                theme={isDark ? "dark" : "light"}
+                theme={(isDark ? "dark" : "light") as Theme}
                 lazyLoadEmojis={true}
                 searchDisabled={true}
                 skinTonesDisabled={true}
