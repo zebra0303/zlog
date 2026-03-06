@@ -16,7 +16,6 @@ import {
 import { api } from "@/shared/api/client";
 import { useCategories } from "@/shared/api/queries";
 import { queryKeys } from "@/shared/api/queryKeys";
-import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
 import type { PostWithCategory, CategoryWithStats, PaginatedResponse } from "@zlog/shared";
@@ -38,6 +37,10 @@ function SubscribeDialog({
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
   // Validate URL starts with http:// or https://
   const isValidUrl = /^https?:\/\/.+/.test(normalizedBlogUrl);
+  // Block subscribing to own blog
+  const isSelfUrl =
+    isValidUrl &&
+    normalizedBlogUrl.replace(/\/$/, "") === window.location.origin.replace(/\/$/, "");
 
   // Focus input when category is already selected
   useEffect(() => {
@@ -47,7 +50,7 @@ function SubscribeDialog({
   }, [selectedCat]);
 
   const handleSubscribe = () => {
-    if (!isValidUrl || !selectedCat) return;
+    if (!isValidUrl || !selectedCat || isSelfUrl) return;
     const remoteSiteUrl = window.location.origin;
     const params = new URLSearchParams({
       action: "subscribe",
@@ -154,9 +157,12 @@ function SubscribeDialog({
                 }}
                 disabled={!selectedCat}
               />
-              {/* URL validation hint */}
+              {/* URL validation hints */}
               {normalizedBlogUrl && !isValidUrl && (
                 <p className="mt-1 text-xs text-red-500">{t("cat_subscribe_invalid_url")}</p>
+              )}
+              {isSelfUrl && (
+                <p className="mt-1 text-xs text-red-500">{t("cat_subscribe_self_url")}</p>
               )}
             </div>
             {normalizedBlogUrl && (
@@ -168,7 +174,11 @@ function SubscribeDialog({
               </div>
             )}
             <div className="flex justify-end">
-              <Button size="sm" onClick={handleSubscribe} disabled={!isValidUrl || !selectedCat}>
+              <Button
+                size="sm"
+                onClick={handleSubscribe}
+                disabled={!isValidUrl || !selectedCat || isSelfUrl}
+              >
                 <ExternalLink className="mr-1 h-4 w-4" />
                 {t("cat_subscribe_go_admin")}
               </Button>
@@ -190,7 +200,6 @@ export default function HomePage() {
   const [showSubscribe, setShowSubscribe] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
   const { lazy_load_images } = useSiteSettingsStore((s) => s.settings);
   const { t } = useI18n();
 
@@ -317,19 +326,16 @@ export default function HomePage() {
           <Rss className="h-3.5 w-3.5" />
           RSS
         </a>
-        {/* Subscribe button: always shown for unauthenticated users */}
-        {!isAuthenticated && (
-          <button
-            type="button"
-            className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
-            onClick={() => {
-              setShowSubscribe(true);
-            }}
-          >
-            <Rss className="h-3.5 w-3.5" />
-            {t("cat_subscribe")}
-          </button>
-        )}
+        <button
+          type="button"
+          className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+          onClick={() => {
+            setShowSubscribe(true);
+          }}
+        >
+          <Rss className="h-3.5 w-3.5" />
+          {t("cat_subscribe")}
+        </button>
       </div>
 
       {/* Desktop: category badges */}
@@ -359,19 +365,16 @@ export default function HomePage() {
           <Rss className="h-3.5 w-3.5" />
           RSS
         </a>
-        {/* Subscribe button: always shown for unauthenticated users */}
-        {!isAuthenticated && (
-          <button
-            type="button"
-            className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
-            onClick={() => {
-              setShowSubscribe(true);
-            }}
-          >
-            <Rss className="h-3.5 w-3.5" />
-            {t("cat_subscribe")}
-          </button>
-        )}
+        <button
+          type="button"
+          className="border-border text-text-secondary hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
+          onClick={() => {
+            setShowSubscribe(true);
+          }}
+        >
+          <Rss className="h-3.5 w-3.5" />
+          {t("cat_subscribe")}
+        </button>
       </div>
 
       {/* Search */}

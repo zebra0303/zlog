@@ -14,7 +14,6 @@ import {
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
-import { useAuthStore } from "@/features/auth/model/store";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useI18n } from "@/shared/i18n";
 import type { CategoryWithStats, PostWithCategory, PaginatedResponse } from "@zlog/shared";
@@ -31,13 +30,18 @@ function SubscribeDialog({
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
   const normalizedBlogUrl = blogUrl.trim().replace(/\/$/, "");
+  const isValidUrl = /^https?:\/\/.+/.test(normalizedBlogUrl);
+  // Block subscribing to own blog
+  const isSelfUrl =
+    isValidUrl &&
+    normalizedBlogUrl.replace(/\/$/, "") === window.location.origin.replace(/\/$/, "");
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   const handleSubscribe = () => {
-    if (!normalizedBlogUrl) return;
+    if (!normalizedBlogUrl || isSelfUrl) return;
     const remoteSiteUrl = window.location.origin;
     const params = new URLSearchParams({
       action: "subscribe",
@@ -111,8 +115,11 @@ function SubscribeDialog({
                   if (e.key === "Enter") handleSubscribe();
                 }}
               />
+              {isSelfUrl && (
+                <p className="mt-1 text-xs text-red-500">{t("cat_subscribe_self_url")}</p>
+              )}
             </div>
-            {normalizedBlogUrl && (
+            {normalizedBlogUrl && !isSelfUrl && (
               <div className="bg-background text-text-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
                 <ExternalLink className="h-3 w-3 shrink-0" />
                 <span className="truncate">
@@ -122,7 +129,11 @@ function SubscribeDialog({
             )}
 
             <div className="flex justify-end">
-              <Button size="sm" onClick={handleSubscribe} disabled={!normalizedBlogUrl}>
+              <Button
+                size="sm"
+                onClick={handleSubscribe}
+                disabled={!normalizedBlogUrl || isSelfUrl}
+              >
                 <ExternalLink className="mr-1 h-4 w-4" />
                 {t("cat_subscribe_go_admin")}
               </Button>
@@ -145,7 +156,6 @@ export default function CategoryDetailPage() {
   const [descHtml, setDescHtml] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showSubscribe, setShowSubscribe] = useState(false);
-  const { isAuthenticated } = useAuthStore();
   const { lazy_load_images } = useSiteSettingsStore((s) => s.settings);
   const { t } = useI18n();
 
@@ -217,18 +227,16 @@ export default function CategoryDetailPage() {
                     <Rss className="h-4 w-4" />
                     RSS
                   </a>
-                  {!isAuthenticated && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShowSubscribe(true);
-                      }}
-                    >
-                      <Rss className="mr-1 h-4 w-4" />
-                      {t("cat_subscribe")}
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowSubscribe(true);
+                    }}
+                  >
+                    <Rss className="mr-1 h-4 w-4" />
+                    {t("cat_subscribe")}
+                  </Button>
                 </div>
               </div>
               {descHtml && (

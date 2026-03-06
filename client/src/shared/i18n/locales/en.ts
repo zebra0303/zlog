@@ -110,6 +110,7 @@ export const en = {
     "Enter your blog URL below. You will be redirected to your blog's admin page to complete the subscription securely.",
   cat_subscribe_blog_url: "My zlog URL",
   cat_subscribe_invalid_url: "Please enter a URL starting with http:// or https://.",
+  cat_subscribe_self_url: "You cannot subscribe to your own blog.",
   cat_subscribe_callback: "Callback URL (auto-generated)",
   cat_subscribe_redirect_desc: "You will be redirected to {url}/admin to confirm.",
   cat_subscribe_go_admin: "Go to My Admin",
