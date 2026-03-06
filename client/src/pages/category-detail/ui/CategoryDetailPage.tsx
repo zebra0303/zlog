@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router";
-import { Rss, Info, X, ExternalLink, Tag, ArrowLeft } from "lucide-react";
+import { Rss, Info, X, ExternalLink, Tag, ArrowLeft, Search } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import {
   Pagination,
@@ -152,6 +152,9 @@ export default function CategoryDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const currentTag = searchParams.get("tag") ?? "";
+  const currentSearch = searchParams.get("search") ?? "";
+  const [searchInput, setSearchInput] = useState(currentSearch);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [category, setCategory] = useState<CategoryWithStats | null>(null);
   const [posts, setPosts] = useState<PaginatedResponse<PostWithCategory> | null>(null);
   const [descHtml, setDescHtml] = useState("");
@@ -171,12 +174,12 @@ export default function CategoryDetailPage() {
 
   useEffect(() => {
     if (!slug) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const params = new URLSearchParams();
     params.set("category", slug);
     params.set("page", String(currentPage));
     if (currentTag) params.set("tag", currentTag);
+    if (currentSearch) params.set("search", currentSearch);
     void api
       .get<PaginatedResponse<PostWithCategory>>(`/posts?${params.toString()}`)
       .then((d) => {
@@ -186,7 +189,36 @@ export default function CategoryDetailPage() {
       .catch(() => {
         setIsLoading(false);
       });
-  }, [slug, currentPage, currentTag]);
+  }, [slug, currentPage, currentTag, currentSearch]);
+
+  // Sync searchInput when URL search param changes externally
+  useEffect(() => {
+    setSearchInput(currentSearch);
+  }, [currentSearch]);
+
+  const updateSearch = (value: string) => {
+    const ps = new URLSearchParams(searchParams);
+    if (value) {
+      ps.set("search", value);
+    } else {
+      ps.delete("search");
+    }
+    ps.set("page", "1");
+    setSearchParams(ps);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      updateSearch(value);
+    }, 300);
+  };
+
+  const clearSearch = () => {
+    setSearchInput("");
+    updateSearch("");
+  };
 
   if (!category && !isLoading)
     return <p className="text-text-secondary py-20 text-center">{t("cat_not_found")}</p>;
@@ -252,6 +284,31 @@ export default function CategoryDetailPage() {
         </>
       )}
 
+      {/* Search — only shown when posts exist or search is active */}
+      {(!isLoading && posts && posts.items.length > 0) || currentSearch ? (
+        <div className="relative mb-6">
+          <Search className="text-text-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Input
+            value={searchInput}
+            onChange={(e) => {
+              handleSearchChange(e.target.value);
+            }}
+            placeholder={t("home_search_placeholder")}
+            className="pr-8 pl-9"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="text-text-secondary hover:text-text absolute top-1/2 right-3 -translate-y-1/2"
+              aria-label={t("home_search_clear")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ) : null}
+
       {currentTag && (
         <div className="mb-4 flex items-center gap-2">
           <Tag className="text-text-secondary h-4 w-4" />
@@ -303,9 +360,22 @@ export default function CategoryDetailPage() {
             />
           </div>
         </>
+      ) : currentSearch ? (
+        <div className="py-20 text-center">
+          <p className="text-text-secondary text-lg">
+            {t("home_no_search_results", { query: currentSearch })}
+          </p>
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="text-primary mt-3 text-sm hover:underline"
+          >
+            {t("home_search_clear")}
+          </button>
+        </div>
       ) : (
         <div className="flex flex-col items-center gap-4 py-16">
-          {/* Empty state illustration — same as HomePage */}
+          {/* Empty state illustration */}
           <div className="relative mb-2 h-40 w-40 drop-shadow-lg md:h-52 md:w-52">
             <img
               src="/images/empty.webp"

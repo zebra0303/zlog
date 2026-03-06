@@ -269,6 +269,9 @@ export default function HomePage() {
   };
 
   const hasSearch = currentSearch.length > 0;
+  // Hide search bar when a category is selected with no posts and no active search
+  const hasPosts = !isLoading && !!posts && posts.items.length > 0;
+  const showSearch = hasPosts || hasSearch || !currentCategory;
 
   return (
     <div>
@@ -377,28 +380,30 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="text-text-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <Input
-          value={searchInput}
-          onChange={(e) => {
-            handleSearchChange(e.target.value);
-          }}
-          placeholder={t("home_search_placeholder")}
-          className="pr-8 pl-9"
-        />
-        {searchInput && (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="text-text-secondary hover:text-text absolute top-1/2 right-3 -translate-y-1/2"
-            aria-label={t("home_search_clear")}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+      {/* Search — hidden when category selected with no posts */}
+      {showSearch && (
+        <div className="relative mb-6">
+          <Search className="text-text-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Input
+            value={searchInput}
+            onChange={(e) => {
+              handleSearchChange(e.target.value);
+            }}
+            placeholder={t("home_search_placeholder")}
+            className="pr-8 pl-9"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="text-text-secondary hover:text-text absolute top-1/2 right-3 -translate-y-1/2"
+              aria-label={t("home_search_clear")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {currentTag && (
         <div className="mb-4 flex items-center gap-2">
