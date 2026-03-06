@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router";
-import { Rss, Info, X, ExternalLink, Tag } from "lucide-react";
+import { useParams, useSearchParams, useNavigate } from "react-router";
+import { Rss, Info, X, ExternalLink, Tag, ArrowLeft } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import {
   Pagination,
@@ -11,6 +11,7 @@ import {
   Badge,
   Button,
   Input,
+  ZlogLogo,
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -156,6 +157,7 @@ export default function CategoryDetailPage() {
   const [descHtml, setDescHtml] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showSubscribe, setShowSubscribe] = useState(false);
+  const navigate = useNavigate();
   const { lazy_load_images } = useSiteSettingsStore((s) => s.settings);
   const { t } = useI18n();
 
@@ -302,7 +304,24 @@ export default function CategoryDetailPage() {
           </div>
         </>
       ) : (
-        <p className="text-text-secondary py-10 text-center">{t("cat_no_posts")}</p>
+        <div className="flex flex-col items-center gap-4 py-16">
+          {/* Empty state illustration — same as HomePage */}
+          <div className="relative mb-2 h-40 w-40 drop-shadow-lg md:h-52 md:w-52">
+            <img
+              src="/images/empty.webp"
+              alt="Quzi mascot"
+              className="h-full w-full rounded-2xl object-contain drop-shadow-md"
+            />
+            <div className="absolute -right-3 -bottom-3 rounded-full bg-[var(--color-surface)] p-1.5 shadow-md">
+              <ZlogLogo size={28} />
+            </div>
+          </div>
+          <p className="text-text-secondary text-lg font-medium">{t("cat_no_posts")}</p>
+          <Button onClick={() => navigate(-1)} className="mt-2 fill-white stroke-white text-white">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("home_go_back")}
+          </Button>
+        </div>
       )}
 
       {showSubscribe && category && (
