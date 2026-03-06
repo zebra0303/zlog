@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
-import { Search, X, Rss, Info, ExternalLink, ChevronDown } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router";
+import { Search, X, Rss, Info, ExternalLink, ChevronDown, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/entities/post/ui/PostCard";
 import { CategoryBadge } from "@/entities/category/ui/CategoryBadge";
-import { Input, Button, Pagination, SEOHead, Skeleton, OfflineFallback } from "@/shared/ui";
+import {
+  Input,
+  Button,
+  Pagination,
+  SEOHead,
+  Skeleton,
+  OfflineFallback,
+  ZlogLogo,
+} from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useCategories } from "@/shared/api/queries";
 import { queryKeys } from "@/shared/api/queryKeys";
@@ -181,6 +189,7 @@ export default function HomePage() {
   const [searchInput, setSearchInput] = useState(currentSearch);
   const [showSubscribe, setShowSubscribe] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const { lazy_load_images } = useSiteSettingsStore((s) => s.settings);
   const { t } = useI18n();
@@ -458,9 +467,24 @@ export default function HomePage() {
           </button>
         </div>
       ) : (
-        <div className="py-20 text-center">
-          <p className="text-text-secondary text-lg">{t("home_no_posts")}</p>
-          <p className="text-text-secondary mt-2 text-sm">{t("home_write_first")}</p>
+        <div className="flex flex-col items-center gap-4 py-16">
+          {/* Empty state illustration — reuses the quzi mascot from 404 page */}
+          <div className="relative mb-2 h-40 w-40 drop-shadow-lg md:h-52 md:w-52">
+            <img
+              src="/images/notfound.webp"
+              alt="Quzi mascot"
+              className="h-full w-full rounded-2xl object-contain drop-shadow-md"
+            />
+            <div className="absolute -right-3 -bottom-3 rounded-full bg-[var(--color-surface)] p-1.5 shadow-md">
+              <ZlogLogo size={28} />
+            </div>
+          </div>
+          <p className="text-text-secondary text-lg font-medium">{t("home_no_posts")}</p>
+          <p className="text-text-secondary text-sm">{t("home_write_first")}</p>
+          <Button onClick={() => navigate(-1)} variant="outline" className="mt-2">
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            {t("home_go_back")}
+          </Button>
         </div>
       )}
 

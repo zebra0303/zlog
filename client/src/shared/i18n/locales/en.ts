@@ -39,8 +39,9 @@ export const en = {
   // Home
   home_title: "Home",
   home_all: "All",
-  home_no_posts: "No posts yet.",
-  home_write_first: "Write your first post!",
+  home_no_posts: "Stay tuned!",
+  home_write_first: "New posts are coming soon.",
+  home_go_back: "Go back",
   home_search_placeholder: "Search posts...",
   home_no_search_results: 'No posts found for "{query}".',
   home_search_clear: "Clear search",

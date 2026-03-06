@@ -41,8 +41,9 @@ export const ko: Record<TranslationKeys, string> = {
   // Home
   home_title: "홈",
   home_all: "전체",
-  home_no_posts: "게시글이 없습니다.",
-  home_write_first: "첫 번째 글을 작성해보세요!",
+  home_no_posts: "조금만 기다려 주세요.",
+  home_write_first: "새로운 글이 곧 찾아옵니다.",
+  home_go_back: "뒤로가기",
   home_search_placeholder: "글 검색...",
   home_no_search_results: '"{query}"에 대한 검색 결과가 없습니다.',
   home_search_clear: "검색 초기화",
