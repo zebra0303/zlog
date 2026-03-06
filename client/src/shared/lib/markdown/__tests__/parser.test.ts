@@ -67,4 +67,39 @@ describe("Markdown Parser", () => {
     const html = await parseMarkdown(markdown);
     expect(html).toContain('<img src="img.png" alt="standard"');
   });
+
+  it("should render code blocks with syntax highlighting and preserve original formatting", async () => {
+    // Use irregular spacing to verify no auto-formatting (Prettier would normalize it)
+    const code = "const   x=1;\n  if(x){console.log( x )}";
+    const markdown = "```javascript\n" + code + "\n```";
+    const html = await parseMarkdown(markdown);
+
+    // Should have highlight.js language class
+    expect(html).toContain('class="hljs language-javascript"');
+    // Should have code block wrapper with copy button
+    expect(html).toContain("code-block-wrapper");
+    expect(html).toContain("code-block-copy");
+    // highlight.js wraps tokens in <span> but preserves whitespace between them
+    // Verify the irregular spacing is preserved (Prettier would normalize "const   x=1" to "const x = 1")
+    expect(html).toContain("const</span>   x=");
+  });
+
+  it("should render code blocks for multiple languages without errors", async () => {
+    const markdown = [
+      "```typescript",
+      "const x: number = 1;",
+      "```",
+      "",
+      "```css",
+      ".foo { color: red; }",
+      "```",
+    ].join("\n");
+    const html = await parseMarkdown(markdown);
+
+    expect(html).toContain('language-typescript"');
+    expect(html).toContain('language-css"');
+    // Content is present with highlight.js spans wrapping tokens
+    expect(html).toContain("number");
+    expect(html).toContain("color");
+  });
 });
