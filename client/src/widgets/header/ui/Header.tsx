@@ -1,18 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
-import {
-  Menu,
-  X,
-  Sun,
-  Moon,
-  PenSquare,
-  Settings,
-  LogOut,
-  Home,
-  User,
-  LogIn,
-  Search,
-} from "lucide-react";
+import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut, Home, User, LogIn } from "lucide-react";
 import { Button, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
@@ -147,16 +135,6 @@ export function Header() {
                 </Button>
               </>
             )}
-            {/* Global search button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => void navigate("/?search=true")}
-              aria-label={t("search")}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -225,17 +203,6 @@ export function Header() {
                 >
                   <User className="text-text-secondary h-4 w-4" />
                   {t("nav_profile")}
-                </Link>
-                {/* Mobile search link */}
-                <Link
-                  to="/?search=true"
-                  className="text-text hover:bg-background/80 flex items-center gap-2 px-4 py-2 text-sm font-medium"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <Search className="text-text-secondary h-4 w-4" />
-                  {t("search")}
                 </Link>
                 {isAuthenticated && (
                   <>
