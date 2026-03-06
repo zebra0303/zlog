@@ -247,8 +247,9 @@ export function handleSsr(
 
   // Preload font CSS to break JS→API→font dependency chain
   const fontCdn = FONT_CDN_MAP[settings.font_family ?? ""];
+  // Preload + stylesheet for font CSS: eliminates JS→API→font waterfall
   const fontPreload = fontCdn
-    ? `\n    <link rel="preload" as="style" href="${escapeHtml(fontCdn)}" crossorigin />`
+    ? `\n    <link rel="preload" as="style" href="${escapeHtml(fontCdn)}" crossorigin />\n    <link rel="stylesheet" href="${escapeHtml(fontCdn)}" crossorigin />`
     : "";
 
   return indexHtmlTemplate.replace("<!--SSR_META-->", buildSsrTags(meta) + fontPreload);

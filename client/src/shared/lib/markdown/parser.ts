@@ -1,5 +1,3 @@
-import { formatCode, isFormattable } from "./codeFormatter";
-
 // Escape HTML special characters to prevent XSS in pre-sanitization contexts
 function escapeHtml(str: string): string {
   return str
@@ -201,24 +199,6 @@ export async function parseMarkdown(markdown: string): Promise<string> {
       return _match;
     }
   });
-
-  // Auto-format code blocks: find ```lang ... ``` patterns and format with Prettier
-  const codeBlockRegex = /```(\w+)\n([\s\S]*?)```/g;
-  const matches = [...processed.matchAll(codeBlockRegex)];
-  if (matches.length > 0) {
-    const formatPromises = matches
-      .filter((m) => m[1] && isFormattable(m[1]))
-      .map(async (m) => {
-        const lang = m[1] ?? "";
-        const code = m[2] ?? "";
-        const formatted = await formatCode(code, lang);
-        return { original: m[0], formatted: `\`\`\`${lang}\n${formatted}\n\`\`\`` };
-      });
-    const results = await Promise.all(formatPromises);
-    for (const { original, formatted } of results) {
-      processed = processed.replace(original, formatted);
-    }
-  }
 
   const processor = await getProcessor();
   const result = await processor.process(processed);
