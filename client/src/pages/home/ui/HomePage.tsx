@@ -468,10 +468,10 @@ export default function HomePage() {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-4 py-16">
-          {/* Empty state illustration — reuses the quzi mascot from 404 page */}
+          {/* Empty state illustration */}
           <div className="relative mb-2 h-40 w-40 drop-shadow-lg md:h-52 md:w-52">
             <img
-              src="/images/notfound.webp"
+              src="/images/empty.webp"
               alt="Quzi mascot"
               className="h-full w-full rounded-2xl object-contain drop-shadow-md"
             />
@@ -481,8 +481,8 @@ export default function HomePage() {
           </div>
           <p className="text-text-secondary text-lg font-medium">{t("home_no_posts")}</p>
           <p className="text-text-secondary text-sm">{t("home_write_first")}</p>
-          <Button onClick={() => navigate(-1)} variant="outline" className="mt-2">
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
+          <Button onClick={() => navigate(-1)} className="mt-2 fill-white stroke-white text-white">
+            <ArrowLeft className="mr-2 h-4 w-4" />
             {t("home_go_back")}
           </Button>
         </div>
