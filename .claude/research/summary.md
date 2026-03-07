@@ -1,6 +1,7 @@
 # ZLOG — Comprehensive Architecture & Codebase Report
 
-**Date:** 2026-03-02
+**Date:** 2026-03-07
+**Commit:** 216806f (main)
 **Scope:** Full-depth analysis of the entire zlog codebase
 
 ---
@@ -12,7 +13,8 @@
 - **Repository:** `/Users/larry/Git/zlog`
 - **Version:** 1.0.0 (Private)
 - **Architecture:** npm workspaces monorepo (3 workspaces: client, server, shared)
-- **Tech Stack:** React 19 + Vite 7 + TypeScript (Frontend) | Hono 4 + SQLite + Drizzle ORM (Backend)
+- **Tech Stack:** React 19 + Vite 7 + TypeScript 5.9 (Frontend) | Hono 4 + SQLite + Drizzle ORM (Backend)
+- **Source Files:** 95 client (.ts/.tsx) + 66 server (.ts) + shared types (353 lines)
 
 ---
 
@@ -22,694 +24,689 @@
 zlog/
 ├── client/          # @zlog/client — React 19 + Vite 7 + Tailwind CSS v4
 ├── server/          # @zlog/server — Hono 4 + SQLite (WAL) + Drizzle ORM
-├── shared/          # @zlog/shared — 336+ lines of shared TypeScript interfaces
-├── Dockerfile       # Multi-stage build (client-build → server-build → production)
+├── shared/          # @zlog/shared — 353 lines of shared TypeScript interfaces
+├── Dockerfile       # Multi-stage build (client-build -> server-build -> production)
 ├── docker-compose.yml  # zlog + caddy + backup services
 ├── Caddyfile        # Reverse proxy with HTTPS/SSL, cache headers
 ├── CLAUDE.md        # AI development guidelines
 └── .ai-vitals.md    # Current Core Web Vitals metrics
 ```
 
-### Build Pipeline
+### Root Scripts
 
-```bash
-npm run build       # shared → client → server (sequential)
-npm run dev         # client (port 5173) + server (port 3000) concurrently
-npm run lint        # ESLint across all workspaces
-npm run test        # Vitest for both server and client
-```
+| Command          | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| `npm run dev`    | Runs client (5173) + server (3000) concurrently              |
+| `npm run build`  | Sequential: shared -> client (tsc -b + vite) -> server (tsc) |
+| `npm run lint`   | ESLint across all workspaces                                 |
+| `npm run test`   | Vitest (server + client)                                     |
+| `npm run format` | Prettier formatting                                          |
 
----
+### TypeScript Base Config (`tsconfig.base.json`)
 
-## 3. Shared Types (`shared/types/`)
+- Target: ES2022 modules, bundler resolution
+- Strict mode enabled (noUncheckedIndexedAccess, noImplicitOverride)
+- Declaration maps + source maps
 
-The `@zlog/shared` workspace defines all domain interfaces consumed by both client and server:
+### Linting & Formatting
 
-| Type                             | Key Fields                                                                                                              |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `Owner` / `PublicOwner`          | id, email, blogHandle, siteUrl, displayName, bio, avatarUrl, blogTitle                                                  |
-| `Category` / `CategoryWithStats` | id, name, slug, isPublic, postCount, followerCount                                                                      |
-| `Post` / `PostWithCategory`      | id, slug, title, content, excerpt, coverImage, coverImageWidth/Height, status, viewCount, tags, commentCount, likeCount |
-| `Comment` / `CommentWithReplies` | id, postId, commenterId, authorName, content, parentId, likeCount, replies[]                                            |
-| `Commenter`                      | id, provider (github\|google), providerId, displayName, avatarUrl                                                       |
-| `RemoteBlog`                     | id, siteUrl, displayName, blogTitle, avatarUrl, lastFetchedAt                                                           |
-| `RemotePost`                     | id, remoteUri, remoteBlogId, localCategoryId, title, content, coverImage, remoteStatus                                  |
-| `CategorySubscription`           | id, localCategoryId, remoteCategoryId, isActive, lastSyncedAt                                                           |
-| `Subscriber`                     | id, categoryId, subscriberUrl, callbackUrl, isActive                                                                    |
-| `PostStatus`                     | "draft" \| "published" \| "deleted"                                                                                     |
-| `RemotePostStatus`               | "published" \| "draft" \| "deleted" \| "unreachable"                                                                    |
-| `SocialPlatform`                 | Enum of supported social platforms with metadata                                                                        |
+- **ESLint:** TypeScript ESLint strict + stylistic, prettier integration
+- **Prettier:** `{ semi: true, singleQuote: false, tabWidth: 2, printWidth: 100, tailwindcss plugin }`
+- **Husky:** Pre-commit (lint-staged: prettier + eslint), Pre-push (Lighthouse vitals measurement)
 
 ---
 
-## 4. Server Architecture (`server/`)
+## 3. Shared Module (`@zlog/shared`)
 
-### 4.1 Entry Point & Initialization
+**Path:** `shared/types/index.ts` (336 lines) + `socialPlatform.ts` (17 lines)
 
-**`server/src/index.ts`:**
+### Domain Types
 
-1. Loads `.env` via `dotenv`
-2. Calls `bootstrap()` — creates tables, FTS5 indexes, triggers, admin account, default settings
-3. Starts `syncWorker` — background federation sync (default 15 min interval)
-4. Starts Hono server on port 3000
+| Type                             | Key Fields                                                                  |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `Owner` / `PublicOwner`          | id, email, blogHandle, siteUrl, displayName, bio, avatarUrl                 |
+| `SocialLink`                     | id, platform, url, label, sortOrder                                         |
+| `Category` / `CategoryWithStats` | id, name, slug, isPublic, coverImage, postCount, followerCount              |
+| `Post` / `PostWithCategory`      | id, slug, title, content, excerpt, coverImage, status, tags[], commentCount |
+| `Tag`                            | id, name, slug                                                              |
+| `Comment` / `CommentWithReplies` | id, postId, commenterId, authorName, content, parentId, replies[]           |
+| `RemoteBlog`                     | id, siteUrl, displayName, blogTitle, avatarUrl                              |
+| `RemotePost`                     | id, remoteUri, remoteBlogId, localCategoryId, content, remoteStatus         |
+| `CategorySubscription`           | id, localCategoryId, remoteCategoryId, isActive, lastSyncedAt               |
+| `Subscriber`                     | id, categoryId, subscriberUrl, callbackUrl, isActive                        |
+| `PostTemplate`                   | id, name, content                                                           |
 
-### 4.2 Application Setup (`lib/create-app.ts`)
+### Enums
 
-**Framework:** Hono with `@hono/zod-openapi`
+- `PostStatus` = "draft" | "published" | "deleted"
+- `RemotePostStatus` = "published" | "draft" | "deleted" | "unreachable"
 
-**Middleware Stack:**
+### Social Platforms
 
-- CORS (separate configs for federation vs general API)
-- Static file serving (`/uploads`, `/assets`, `/img`, `/favicons`)
-- PWA manifest (`/site.webmanifest`)
-- Service worker (`/sw.js`)
-
-**Static Routes:**
-
-- `/robots.txt` — SEO configuration
-- `/sitemap.xml` — XML sitemap generation
-- `/rss.xml` — Full blog RSS feed
-- `/category/:slug/rss.xml` — Category-specific RSS
-- `/reference` — OpenAPI docs (dev only)
-
-**SSR Fallback:** All unmatched routes serve SSR-rendered HTML from client dist
-
-### 4.3 Database Architecture
-
-**Primary DB:** `zlog.db` (SQLite with WAL mode)
-**Analytics DB:** `analytics.db` (SQLite, separate for performance)
-
-#### Core Tables (17+ tables total)
-
-**Content Management:**
-| Table | Purpose |
-|-------|---------|
-| `owner` | Single-record blog owner profile (email, password, displayName, bio, avatar, etc.) |
-| `socialLinks` | Social media links (platform, url, sortOrder) |
-| `categories` | Post categories (slug, name, isPublic, coverImage, sortOrder) |
-| `posts` | Blog posts (slug, title, content, excerpt, coverImage, coverImageWidth/Height, status, viewCount) |
-| `tags` / `postTags` | Tag system with junction table |
-| `postLikes` | Post engagement (postId, visitorId) |
-| `postTemplates` | Saved editor templates |
-
-**Comments:**
-| Table | Purpose |
-|-------|---------|
-| `commenters` | OAuth users (provider: github\|google, providerId, displayName, avatarUrl) |
-| `comments` | Post comments (postId, commenterId, authorName, content, password, parentId, isEdited) |
-| `commentLikes` | Comment engagement (commentId, visitorId) |
-
-**Federation:**
-| Table | Purpose |
-|-------|---------|
-| `remoteBlogs` | Cached profile info of followed blogs |
-| `remoteCategories` | Metadata about remote categories |
-| `categorySubscriptions` | Local-to-remote category mapping (isActive, lastSyncedAt) |
-| `remotePosts` | Cached posts from subscribed blogs (remoteUri, remoteStatus, coverImageWidth/Height) |
-| `subscribers` | External instances following your categories (callbackUrl) |
-
-**Analytics & Security:**
-| Table | Purpose |
-|-------|---------|
-| `failedLogins` | Brute-force protection (IP-based, 24hr window) |
-| `postAccessLogs` | Per-post visitor logs (IP, country, browser, OS, referer) — 10 most recent kept |
-| `visitorLogs` | Rolling 24hr window (probabilistic cleanup: 5% chance per visit) |
-| `siteSettings` | Key-value store (posts_per_page, comment_mode, theme colors, webhook_sync_interval, etc.) |
-
-**Full-Text Search:**
-
-- FTS5 virtual table `posts_fts` on title + content
-- Auto-synced via INSERT/UPDATE/DELETE triggers
-
-#### Strategic Indexes
-
-- Posts: status, categoryId, createdAt, composite (status+createdAt), composite (categoryId+status+createdAt)
-- Comments: postId, parentId, composite (postId+parentId+createdAt)
-- Remote posts: composite (remoteStatus+localCategoryId+remoteCreatedAt)
-
-### 4.4 API Routes (30+ endpoints)
-
-#### Authentication (`/api/auth`)
-
-| Method | Path     | Auth | Description                                                                          |
-| ------ | -------- | ---- | ------------------------------------------------------------------------------------ |
-| POST   | `/login` | No   | Email + password with brute-force protection (escalating lockout: 5/10/20+ failures) |
-| GET    | `/me`    | Yes  | Current owner profile                                                                |
-
-#### Posts (`/api/posts`)
-
-| Method | Path               | Auth     | Description                                                                           |
-| ------ | ------------------ | -------- | ------------------------------------------------------------------------------------- |
-| GET    | `/`                | Optional | Paginated list with category/tags/counts; merges local + federated posts; FTS5 search |
-| GET    | `/:param`          | No       | By ID or slug; increments view count (excludes admin); logs IP/country/UA             |
-| GET    | `/tags`            | No       | All tags in blog                                                                      |
-| GET    | `/:id/access-logs` | Yes      | Last 10 access logs                                                                   |
-| POST   | `/`                | Yes      | Create post; auto-slug; webhook to subscribers if published                           |
-| PUT    | `/:id`             | Yes      | Update post; manages tags, cover image dimensions; webhook on status change           |
-| DELETE | `/:id`             | Yes      | Soft delete; webhook to subscribers                                                   |
-| POST   | `/:id/like`        | No       | Toggle like via visitorId (admin excluded)                                            |
-
-#### Categories (`/api/categories`)
-
-| Method | Path     | Auth     | Description                                                           |
-| ------ | -------- | -------- | --------------------------------------------------------------------- |
-| GET    | `/`      | Optional | List with post count + follower count; non-public hidden unless admin |
-| GET    | `/:slug` | No       | Specific category with stats                                          |
-| POST   | `/`      | Yes      | Create with auto-unique slug                                          |
-| PUT    | `/:id`   | Yes      | Update name, description, sortOrder, visibility                       |
-| DELETE | `/:id`   | Yes      | Soft delete (nullifies posts.categoryId first)                        |
-
-#### Comments (`/api`)
-
-| Method | Path                      | Auth     | Description                                                                              |
-| ------ | ------------------------- | -------- | ---------------------------------------------------------------------------------------- |
-| GET    | `/posts/:postId/comments` | No       | Paginated tree (max 3 nesting levels via recursive CTE); batch-loaded likes              |
-| POST   | `/posts/:postId/comments` | No       | Create; comment mode enforcement; anonymous password hashed (scrypt); Slack notification |
-| PUT    | `/comments/:id`           | No       | Edit: commenterId match (SSO) or password verify (anon); marks isEdited                  |
-| DELETE | `/comments/:id`           | Optional | Soft delete; admin can always delete; content cleared                                    |
-| POST   | `/comments/:id/like`      | No       | Toggle like via visitorId                                                                |
-
-#### Federation (`/api/federation`)
-
-| Method | Path                         | Auth | Description                                                                        |
-| ------ | ---------------------------- | ---- | ---------------------------------------------------------------------------------- |
-| GET    | `/info`                      | No   | Blog metadata (siteUrl, displayName, blogTitle, avatarUrl)                         |
-| GET    | `/categories`                | No   | Public categories list                                                             |
-| GET    | `/categories/:id/posts`      | No   | Posts with `?since=` for incremental sync; X-Zlog-Subscriber-Url header            |
-| POST   | `/posts/:id/view`            | No   | Record federated view                                                              |
-| POST   | `/subscribe`                 | No   | Remote subscribes to local category; SSRF validation                               |
-| POST   | `/unsubscribe`               | No   | Deactivate subscription                                                            |
-| POST   | `/webhook`                   | No   | Receive WebhookEvent (post.published/updated/deleted); auto-creates remote records |
-| POST   | `/local-subscribe`           | Yes  | Subscribe to remote blog category                                                  |
-| POST   | `/local-unsubscribe`         | Yes  | Deactivate local subscription                                                      |
-| GET    | `/subscriptions`             | Yes  | All active subscriptions                                                           |
-| POST   | `/subscriptions/:id/sync`    | Yes  | Manual sync from remote                                                            |
-| PUT    | `/subscriptions/:id/toggle`  | Yes  | Toggle active status                                                               |
-| DELETE | `/subscriptions/:id`         | Yes  | Hard delete subscription                                                           |
-| GET    | `/remote-posts/:id`          | No   | Fetch with real-time freshness check                                               |
-| GET    | `/remote-posts/:id/comments` | No   | Proxy comments from remote                                                         |
-| GET    | `/remote-categories`         | Yes  | Proxy: fetch categories from remote blog URL                                       |
-| GET    | `/subscribers`               | Yes  | List inbound subscribers                                                           |
-| DELETE | `/subscribers/:id`           | Yes  | Delete subscriber                                                                  |
-
-#### OAuth (`/api/oauth`)
-
-| Method | Path               | Description                                         |
-| ------ | ------------------ | --------------------------------------------------- |
-| GET    | `/github`          | Redirect to GitHub OAuth                            |
-| GET    | `/github/callback` | Exchange code, upsert commenter, redirect with data |
-| GET    | `/google`          | Redirect to Google OAuth                            |
-| GET    | `/google/callback` | Exchange code, upsert commenter, redirect with data |
-| GET    | `/commenter/:id`   | Get commenter info                                  |
-| GET    | `/providers`       | Check enabled providers                             |
-
-#### Analytics, Upload, Settings, Templates
-
-| Method              | Path                       | Auth | Description                                                  |
-| ------------------- | -------------------------- | ---- | ------------------------------------------------------------ |
-| POST                | `/api/analytics/visit`     | No   | Record visitor (cookie dedup, admin excluded)                |
-| GET                 | `/api/analytics/visitors`  | Yes  | Last 24h count + 20 recent logs                              |
-| POST                | `/api/upload/image`        | Yes  | Image upload: Sharp → WebP, max 1920px, returns width/height |
-| GET                 | `/api/settings`            | No   | All site settings                                            |
-| PUT                 | `/api/settings`            | Yes  | Upsert settings                                              |
-| POST                | `/api/settings/test-slack` | Yes  | Test Slack webhook                                           |
-| GET/POST/PUT/DELETE | `/api/templates/*`         | Yes  | CRUD for post templates                                      |
-| GET                 | `/api/profile`             | No   | Public profile + social links + stats                        |
-| PUT                 | `/api/profile`             | Yes  | Update profile fields                                        |
-| POST                | `/api/profile/avatar`      | Yes  | Upload avatar (4 sizes: original, 256, 192, 64 → WebP)       |
-
-### 4.5 Middleware
-
-**Auth (`middleware/auth.ts`):**
-
-- JWT (HS256) via `jose` library, 7-day expiration
-- `authMiddleware` — requires valid Bearer token
-- `optionalAuthMiddleware` — sets context if token present
-
-**Error Handler (`middleware/errorHandler.ts`):**
-
-- Custom `AppError` class (statusCode + code)
-- ZodError handling (validation)
-- Structured JSON responses
-
-### 4.6 Services
-
-**Bootstrap (`services/bootstrap.ts`):**
-
-1. Create all tables + indexes + triggers (raw SQLite)
-2. Setup FTS5 with sync triggers
-3. Run column migrations for existing DBs
-4. Create admin account if none exists
-5. Create default "General" category
-6. Initialize default site settings
-7. Auto-repair missing image dimensions
-
-**Feed Service (`services/feedService.ts`):**
-
-- `sendWebhookToSubscribers(event, post, categoryId)` — fire-and-forget, 10s timeout
-
-**Sync Service (`services/syncService.ts`):**
-
-- `syncSubscription(sub)` — incremental pull via `?since=`, batch upsert (100 chunks), transactional
-- `syncAllSubscriptions()` — periodic sync with GC trigger after completion
-- `startSyncWorker()` — first sync 5s after start, then every N minutes (default 15)
-- `triggerStaleSync()` — on post list API query, syncs subscriptions older than 3 minutes (30s cooldown)
-
-### 4.7 Utility Libraries
-
-| Library              | Location                                                                       | Purpose |
-| -------------------- | ------------------------------------------------------------------------------ | ------- |
-| `password.ts`        | Scrypt hashing (N=16384, r=8, p=1) + legacy SHA-512 fallback                   |
-| `markdown.ts`        | `stripMarkdown()` — removes all formatting for plain text excerpts             |
-| `slug.ts`            | `createSlug()` / `createUniqueSlug()` — supports Korean Hangul                 |
-| `uuid.ts`            | UUIDv7 (time-sortable) via `uuidv7` library                                    |
-| `rss.ts`             | RSS 2.0 XML generation (blog-wide + per-category)                              |
-| `ssr.ts`             | SSR meta injection (OG tags, JSON-LD schema, sitemap)                          |
-| `remoteUrl.ts`       | SSRF prevention (blocks localhost, private IPs); URL rewriting for federation  |
-| `userAgent.ts`       | OS/browser detection from User-Agent                                           |
-| `image/processor.ts` | Sharp: resize (max 1920px), WebP (quality 80), thumbnail (400x400, quality 70) |
-| `i18n/`              | Server-side translations (en, ko)                                              |
-| `errors.ts`          | AppError, NotFoundError, UnauthorizedError, ForbiddenError, BadRequestError    |
-
-### 4.8 Environment Variables
-
-| Variable                  | Default               | Description                   |
-| ------------------------- | --------------------- | ----------------------------- |
-| `PORT`                    | 3000                  | Server port                   |
-| `SITE_URL`                | —                     | Canonical blog URL            |
-| `ADMIN_EMAIL`             | —                     | Initial admin email           |
-| `ADMIN_PASSWORD`          | (generated)           | Initial admin password        |
-| `JWT_SECRET`              | (generated)           | Token signing secret          |
-| `DB_PATH`                 | `./data/zlog.db`      | Main database path            |
-| `ANALYTICS_DB_PATH`       | `./data/analytics.db` | Analytics database path       |
-| `GITHUB_CLIENT_ID/SECRET` | —                     | GitHub OAuth (optional)       |
-| `GOOGLE_CLIENT_ID/SECRET` | —                     | Google OAuth (optional)       |
-| `ALLOW_LOCAL_FEDERATION`  | false                 | Allow localhost in federation |
-| `NODE_ENV`                | —                     | development \| production     |
+github, twitter, instagram, linkedin, youtube, facebook, threads, mastodon, bluesky, website, email, rss, custom
 
 ---
 
-## 5. Client Architecture (`client/`)
+## 4. Server Architecture
 
-### 5.1 FSD (Feature-Sliced Design) Structure
+### Entry Point & Boot Sequence (`server/src/index.ts`)
+
+1. Load environment variables (via tsx --env-file)
+2. Create Hono app via `createApp()`
+3. Run bootstrap (DB schema, default admin, default category, settings)
+4. Start sync worker (federation background sync)
+5. Serve on PORT (default 3000)
+
+### App Creation (`server/src/lib/create-app.ts`)
+
+**Middleware Stack (in order):**
+
+1. Security headers (X-Content-Type-Options, Referrer-Policy, Permissions-Policy, CSP, X-Frame-Options, HSTS)
+2. CORS: Federation (`/api/federation/*`) = `origin: *`; Others = `origin: SITE_URL`
+3. Static assets: `/uploads/*`, `/assets/*`, `/favicons/*`, `/images/*`
+4. Rate limiting (per-endpoint, IP-based, in-memory Map)
+5. Route mounting
+6. Dynamic endpoints: PWA manifest, robots.txt, sitemap.xml, RSS feeds
+7. OpenAPI docs (dev only via @scalar/hono-api-reference)
+8. SSR fallback (catch-all GET \*)
+9. Error handler + 404 handler
+
+### Database Architecture
+
+**Two SQLite databases (WAL mode):**
+
+- `zlog.db` — Content, auth, federation (17+ tables)
+- `analytics.db` — Visitor logs, access logs, failed logins
+
+**Schema Files:** `server/src/db/schema/`
+
+| File            | Tables                                                                         |
+| --------------- | ------------------------------------------------------------------------------ |
+| `auth.ts`       | owner, socialLinks                                                             |
+| `posts.ts`      | categories, posts, tags, postTags, postLikes, postTemplates, posts_fts (FTS5)  |
+| `comments.ts`   | commenters, comments, commentLikes                                             |
+| `federation.ts` | remoteBlogs, remoteCategories, categorySubscriptions, remotePosts, subscribers |
+| `settings.ts`   | siteSettings                                                                   |
+| `analytics.ts`  | postAccessLogs, visitorLogs, failedLogins                                      |
+
+**Key Indexes:**
+
+- Posts: status, categoryId, createdAt, (status+createdAt), (categoryId+status+createdAt)
+- Comments: postId, parentId, (postId+parentId+createdAt)
+- Remote posts: (remoteStatus+localCategoryId+remoteCreatedAt)
+- FTS5 virtual table on posts (title + content) with auto-sync triggers
+
+**Bootstrap Process** (`server/src/services/bootstrap.ts`):
+
+- Creates all tables via raw SQL + ALTER TABLE for migrations
+- Default admin account (ADMIN_EMAIL/ADMIN_PASSWORD env)
+- Default "General" category
+- Default site settings
+- Auto-repairs post cover image dimensions (sharp)
+
+### API Routes
+
+#### Authentication (`/api/auth`) — 2 endpoints
+
+| Method | Path   | Auth | Description                                                                |
+| ------ | ------ | ---- | -------------------------------------------------------------------------- |
+| POST   | /login | No   | Email+password login, brute force protection (IP-based escalating lockout) |
+| GET    | /me    | Yes  | Current owner info                                                         |
+
+#### Posts (`/api/posts`) — 8 endpoints
+
+| Method | Path             | Auth     | Description                                                                           |
+| ------ | ---------------- | -------- | ------------------------------------------------------------------------------------- |
+| GET    | /                | Optional | List with pagination, FTS5 search, category/tag/status filters, includes remote posts |
+| GET    | /tags            | No       | All tag names                                                                         |
+| GET    | /:param          | Optional | Single post (by ID or slug), view counting with 24h cookie dedup                      |
+| GET    | /:id/access-logs | Yes      | Per-post access analytics                                                             |
+| POST   | /                | Yes      | Create post, auto-slug, auto-excerpt, webhook to subscribers                          |
+| PUT    | /:id             | Yes      | Update post, webhook on status change                                                 |
+| DELETE | /:id             | Yes      | Soft delete, webhook post.deleted event                                               |
+| POST   | /:id/like        | No       | Toggle like (visitorId-based)                                                         |
+
+#### Categories (`/api/categories`) — 5 endpoints
+
+| Method | Path   | Auth     | Description                                                       |
+| ------ | ------ | -------- | ----------------------------------------------------------------- |
+| GET    | /      | Optional | List with postCount + followerCount (batch queries)               |
+| GET    | /:slug | Optional | Single category with stats                                        |
+| POST   | /      | Yes      | Create with auto-slug                                             |
+| PUT    | /:id   | Yes      | Update, re-slug on name change                                    |
+| DELETE | /:id   | Yes      | Delete with post migration (targetCategoryId), cannot delete last |
+
+#### Comments (`/api/comments`) — 5 endpoints
+
+| Method | Path                    | Auth  | Description                                                       |
+| ------ | ----------------------- | ----- | ----------------------------------------------------------------- |
+| GET    | /posts/:postId/comments | No    | Paginated tree (max 3 depth), batch likes                         |
+| POST   | /posts/:postId/comments | No    | Create (sso_only / anonymous / disabled mode), Slack notification |
+| PUT    | /comments/:id           | Mixed | Edit (verify by commenterId or password)                          |
+| DELETE | /comments/:id           | Mixed | Soft delete (admin or owner)                                      |
+| POST   | /comments/:id/like      | No    | Toggle like                                                       |
+
+#### Federation (`/api/federation`) — 15+ endpoints
+
+**Public Endpoints (other blogs call these):**
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /info | Blog metadata (siteUrl, displayName, blogTitle, avatarUrl) |
+| GET | /categories | Public categories for remote discovery |
+| GET | /categories/:id/posts | Posts feed with `since` param for delta sync |
+| GET | /posts/:id | Single post with absolute URLs |
+| POST | /posts/:id/view | Record federated view |
+| POST | /subscribe | Remote blog subscribes to our category |
+| POST | /unsubscribe | Remote blog unsubscribes |
+| POST | /webhook | Receive push events (post.published/updated/deleted) |
+
+**Admin Endpoints (local blog owner):**
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /local-subscribe | Subscribe to remote blog category |
+| POST | /local-unsubscribe | Unsubscribe from remote |
+| GET | /subscriptions | List all subscriptions with stats |
+| POST | /subscriptions/:id/sync | Manual pull-sync |
+| PUT | /subscriptions/:id/toggle | Toggle active/inactive |
+| DELETE | /subscriptions/:id | Delete subscription |
+| GET | /remote-categories?url= | Discover remote blog categories |
+| GET | /remote-posts/:id | Federated post detail with live verification |
+| GET | /remote-posts/:id/comments | Proxy comments from remote blog |
+| GET | /subscribers | Inbound subscriber list |
+| DELETE | /subscribers/:id | Remove subscriber |
+
+#### OAuth (`/api/oauth`) — 6 endpoints
+
+| Method | Path             | Description                           |
+| ------ | ---------------- | ------------------------------------- |
+| GET    | /github          | GitHub OAuth redirect                 |
+| GET    | /github/callback | GitHub callback (upsert commenter)    |
+| GET    | /google          | Google OAuth redirect                 |
+| GET    | /google/callback | Google callback                       |
+| GET    | /commenter/:id   | Commenter info                        |
+| GET    | /providers       | Enabled providers (based on env vars) |
+
+#### Settings & Profile — 9 endpoints
+
+| Method | Path                  | Auth | Description                                            |
+| ------ | --------------------- | ---- | ------------------------------------------------------ |
+| GET    | /profile              | No   | Owner + social links + stats                           |
+| PUT    | /profile              | Yes  | Update profile fields                                  |
+| POST   | /profile/avatar       | Yes  | Upload avatar (JPEG/PNG/WebP/GIF, max 5MB, multi-size) |
+| DELETE | /profile/avatar       | Yes  | Remove avatar                                          |
+| GET    | /profile/social-links | No   | Social links                                           |
+| PUT    | /profile/social-links | Yes  | Replace all social links                               |
+| PUT    | /profile/account      | Yes  | Change email/password                                  |
+| GET    | /settings             | No   | All site settings                                      |
+| PUT    | /settings             | Yes  | Update settings (whitelist enforced)                   |
+| POST   | /settings/test-slack  | Yes  | Test Slack webhook                                     |
+
+#### Analytics (`/api/analytics`) — 2 endpoints
+
+| Method | Path      | Auth | Description                                                        |
+| ------ | --------- | ---- | ------------------------------------------------------------------ |
+| POST   | /visit    | No   | Record visitor (24h cookie dedup, geoip, 5% probabilistic cleanup) |
+| GET    | /visitors | Yes  | 24h visitor count + recent 20 logs                                 |
+
+#### Templates (`/api/templates`) — 4 endpoints (all require auth)
+
+CRUD for markdown post templates.
+
+#### Upload (`/api/upload`) — 1 endpoint
+
+| Method | Path   | Auth | Description                                                       |
+| ------ | ------ | ---- | ----------------------------------------------------------------- |
+| POST   | /image | Yes  | Image upload (max 10MB, sharp processing, returns url+dimensions) |
+
+#### Static/Meta Routes
+
+- `GET /robots.txt` — Dynamic from settings
+- `GET /sitemap.xml` — All public posts + categories
+- `GET /rss.xml` — Full blog RSS 2.0 feed (20 recent posts)
+- `GET /category/:slug/rss.xml` — Category RSS feed
+- `GET /site.webmanifest` — Dynamic PWA manifest
+- `GET /sw.js` — Service worker
+- `GET /api/health` — Health check
+- `GET /reference` — OpenAPI docs (dev only)
+
+### Rate Limiting
+
+| Endpoint Pattern            | Limit    |
+| --------------------------- | -------- |
+| /api/auth/login             | 5 / 60s  |
+| /api/posts/:postId/comments | 10 / 60s |
+| /api/comments/:id/like      | 30 / 60s |
+| /api/posts/:id/like         | 30 / 60s |
+| /api/federation/webhook     | 60 / 60s |
+| /api/federation/subscribe   | 10 / 60s |
+| /api/upload/\*              | 20 / 60s |
+
+### Middleware
+
+**Auth** (`server/src/middleware/auth.ts`):
+
+- `authMiddleware` — Required JWT (HS256, 7d expiry), sets owner/ownerId context
+- `optionalAuthMiddleware` — Same but doesn't fail on missing token
+- JWT_SECRET from env or random 32-byte hex (warns if not set)
+
+**Error Handler** (`server/src/middleware/errorHandler.ts`):
+
+- Handles AppError, ZodError, generic Error
+- Response: `{ success: false, error: { code, message, details? } }`
+
+**Rate Limit** (`server/src/middleware/rateLimit.ts`):
+
+- In-memory Map per endpoint, IP-based, periodic cleanup every 60s
+- Returns 429 with Retry-After header, skipped in test environment
+
+### SSR & SEO (`server/src/lib/ssr.ts`)
+
+Server-side metadata injection for:
+
+- **Home page:** WebSite schema.org, canonical URL
+- **Post page:** BlogPosting schema.org (title, description, image, author, dates, JSON-LD)
+- **Category page:** CollectionPage schema.org
+- **Font preload:** Injects `<link rel="preload">` + `<link rel="stylesheet">` for configured font
+
+### Federation Sync System
+
+**Pull-Based (we pull from remote blogs):**
+
+1. Admin calls `POST /api/federation/local-subscribe`
+2. Creates remoteBlogs, remoteCategories, categorySubscriptions
+3. Background sync worker pulls new posts periodically
+4. Delta sync via `since=lastSyncedAt` parameter
+5. Stale sync trigger when remote posts appear in feed (30s cooldown)
+
+**Push-Based (remote blogs subscribe to us):**
+
+1. Remote blog calls `POST /api/federation/subscribe`
+2. When we publish/update/delete, webhook sent to callbackUrl
+3. Payload: `{ event, post, categoryId, siteUrl }`
+
+**Sync Worker** (`server/src/services/syncService.ts`):
+
+- First sync 5s after boot, then every `webhook_sync_interval` minutes (default 15)
+- Uses transactions for batch updates, handles 403 (revoked) gracefully
+- `triggerStaleSync()`: Non-blocking background sync for >3min stale subscriptions
+
+### Server Utilities
+
+| Utility    | File                     | Purpose                                  |
+| ---------- | ------------------------ | ---------------------------------------- |
+| UUID v7    | `lib/uuid.ts`            | Time-sortable IDs                        |
+| Password   | `lib/password.ts`        | Scrypt (N=16384, r=8, p=1) hashing       |
+| Slug       | `lib/slug.ts`            | Kebab-case with Korean Hangul support    |
+| Markdown   | `lib/markdown.ts`        | Strip markdown for excerpts              |
+| User Agent | `lib/userAgent.ts`       | OS/browser detection                     |
+| Remote URL | `lib/remoteUrl.ts`       | SSRF validation + URL rewriting          |
+| Image      | `lib/image/processor.ts` | Sharp processing (WebP, multi-size)      |
+| i18n       | `lib/i18n/`              | en/ko translations (Slack messages)      |
+| Errors     | `lib/errors.ts`          | AppError class                           |
+| RSS        | `lib/rss.ts`             | RSS 2.0 generation (full + per-category) |
+
+---
+
+## 5. Client Architecture
+
+### Entry Point & Initialization
+
+**`client/src/app/main.tsx`** — React 19 mounted to DOM root in StrictMode
+
+**`client/src/app/App.tsx`** — Root component initializes on mount:
+
+1. Theme (light/dark from localStorage or system preference)
+2. Locale (i18n language)
+3. Auth check (verify JWT, load user)
+4. Site settings (customization from backend)
+5. Visitor analytics recording
+
+Wrapped in: QueryClientProvider + HelmetProvider + ErrorBoundary
+
+### FSD Architecture
 
 ```
 client/src/
-├── app/                    # Layer 1: Global configuration
-│   ├── main.tsx           # ReactDOM entry + SW registration
-│   ├── App.tsx            # Root: auth/theme/settings/i18n init
-│   ├── ErrorBoundary.tsx  # Top-level error boundary
-│   ├── providers/         # React Query + Helmet providers
-│   ├── router/            # Route config + AppLayout
-│   └── styles/global.css  # Tailwind directives + theme CSS vars
-├── pages/                 # Layer 2: Route-level components (all lazy-loaded)
-│   ├── home/              # Post list with filtering + combined feed
-│   ├── post-detail/       # Single post + comments
-│   ├── post-editor/       # Markdown editor with live preview
-│   ├── category-detail/   # Category post list
-│   ├── remote-post-detail/# Federated post viewer
-│   ├── admin/             # Admin dashboard (4 tabs)
-│   ├── login/             # Admin login
-│   ├── settings-profile/  # Profile customization
-│   ├── profile/           # Public profile
-│   ├── oauth-callback/    # GitHub/Google OAuth callback
-│   └── not-found/         # 404 page
-├── widgets/               # Layer 3: Independent UI blocks
-│   ├── header/            # Sticky header with nav
-│   ├── sidebar/           # Profile + categories (desktop only)
-│   └── footer/            # Footer with compact scroll detection
-├── features/              # Layer 4: Business logic + interactions
-│   ├── auth/              # JWT auth (Zustand store)
-│   ├── comment/           # Comment form, thread, content display
-│   ├── toggle-theme/      # Dark/light mode (Zustand store)
-│   ├── site-settings/     # Global settings (Zustand store)
-│   └── visitor-analytics/ # Visitor tracking
-├── entities/              # Layer 5: Domain components
-│   ├── post/              # PostCard (memoized)
-│   └── category/          # CategoryBadge
-├── shared/                # Layer 6: Reusable primitives
-│   ├── ui/                # Button, Card, Input, Dialog (Radix UI + CVA)
-│   ├── api/client.ts      # Fetch-based API client with token management
-│   ├── hooks/             # Custom React hooks
-│   ├── lib/               # Utilities (markdown parser, slugs, etc.)
-│   ├── config/            # App constants
-│   └── i18n/              # English/Korean translations
-└── types/                 # Local TypeScript declarations
+├── app/           # Global setup, router, providers, styles
+├── pages/         # 11 lazy-loaded route components
+├── widgets/       # Header, Sidebar, Footer
+├── features/      # Auth, comments, theme, settings, markdown, analytics
+├── entities/      # Post (PostCard), Category (CategoryBadge)
+└── shared/        # UI components, API client, hooks, utilities, i18n, config
 ```
 
-### 5.2 Technology Stack
+### Routing (`client/src/app/router/index.tsx`)
 
-| Purpose           | Technology                                      |
-| ----------------- | ----------------------------------------------- |
-| Framework         | React 19, React Router 7                        |
-| Bundler           | Vite 7                                          |
-| Styling           | Tailwind CSS 4 + CVA (class-variance-authority) |
-| UI Primitives     | Radix UI (Dialog, Dropdown, Tabs, etc.)         |
-| State Management  | Zustand (Auth, Theme, Settings, I18n)           |
-| Server State      | TanStack React Query 5 (5 min staleTime)        |
-| Markdown          | unified + remark + rehype (sanitize, highlight) |
-| Code Highlighting | highlight.js via rehype-highlight               |
-| Icons             | lucide-react                                    |
-| Color Picker      | react-colorful                                  |
-| Emoji             | emoji-picker-react                              |
-| SEO/Meta          | react-helmet-async                              |
+| Route                  | Component            | Auth | SSR |
+| ---------------------- | -------------------- | ---- | --- |
+| `/`                    | HomePage             | No   | Yes |
+| `/posts/:slug`         | PostDetailPage       | No   | Yes |
+| `/remote-posts/:id`    | RemotePostDetailPage | No   | Yes |
+| `/profile`             | ProfilePage          | No   | Yes |
+| `/category/:slug`      | CategoryDetailPage   | No   | Yes |
+| `/write`, `/write/:id` | PostEditorPage       | Yes  | No  |
+| `/admin`               | AdminPage            | Yes  | No  |
+| `/settings`            | SettingsPage         | Yes  | No  |
+| `/login`               | LoginPage            | No   | No  |
+| `/oauth-callback`      | OAuthCallbackPage    | No   | No  |
+| `*`                    | NotFoundPage         | No   | Yes |
 
-### 5.3 Routing
+All pages use React.lazy() + Suspense with PageLoader skeleton.
 
-| Route               | Component             | Auth | SSR |
-| ------------------- | --------------------- | ---- | --- |
-| `/`                 | HomePage              | No   | Yes |
-| `/posts/:slug`      | PostDetailPage        | No   | Yes |
-| `/remote-posts/:id` | RemotePostDetailPage  | No   | Yes |
-| `/profile`          | ProfilePage           | No   | Yes |
-| `/category/:slug`   | CategoryDetailPage    | No   | Yes |
-| `/write`            | PostEditorPage        | Yes  | No  |
-| `/write/:id`        | PostEditorPage (edit) | Yes  | No  |
-| `/admin`            | AdminPage             | Yes  | No  |
-| `/settings`         | SettingsPage          | Yes  | No  |
-| `/login`            | LoginPage             | No   | No  |
-| `/oauth-callback`   | OAuthCallbackPage     | No   | No  |
-| `*`                 | NotFoundPage          | No   | Yes |
+### AppLayout (`client/src/app/router/AppLayout.tsx`)
 
-All pages are lazy-loaded via `React.lazy()` with Suspense + Skeleton loader.
+Wraps all routes with:
 
-### 5.4 State Management (Zustand Stores)
+- Header widget (sticky, responsive mobile menu)
+- Main content outlet
+- Sidebar widget (hidden on editor/post detail)
+- Footer widget
+- Toast container + Confirm modal + Scroll-to-top
+- **Mermaid rendering:** Lazy-loads mermaid, MutationObserver for SPA, fullscreen modal, theme-aware
+- **Code block copy:** Global event delegation, clipboard API, 2s feedback
+- **Custom styling:** CSS custom properties from site settings (colors, backgrounds, fonts)
+- **Skip-to-main-content** link (accessibility)
 
-**`useAuthStore`** (`features/auth/model/store.ts`)
+### State Management (Zustand)
 
-- `owner`, `isAuthenticated`, `isLoading`
-- `login(email, password)`, `logout()`, `checkAuth()`
+**Auth Store** (`features/auth/model/store.ts`):
 
-**`useThemeStore`** (`features/toggle-theme/model/store.ts`)
+- State: `owner`, `isAuthenticated`, `isLoading`
+- Methods: `login()`, `logout()`, `checkAuth()`
+- Global 401 interceptor via `zlog_unauthorized` event
 
-- `isDark`, `toggle()`, `setTheme()`, `initTheme()` (localStorage or system preference)
+**Theme Store** (`features/toggle-theme/model/store.ts`):
 
-**`useSiteSettingsStore`** (`features/site-settings/model/store.ts`)
+- State: `isDark`
+- Methods: `toggle()`, `setTheme()`, `initTheme()`
+- Persisted to localStorage, applies `.dark` class on `<html>`
 
-- `settings: Record<string, string>`, `isLoaded`
-- `fetchSettings()`, `getHeaderStyle()`, `getFooterStyle()`, `getBodyStyle()`
-- Theme color CSS variable management
+**Site Settings Store** (`features/site-settings/model/store.ts`):
 
-**`useI18n`** (`shared/i18n/index.ts`)
+- State: `settings` (Record<string, string>), `isLoaded`
+- Methods: `fetchSettings()`, `getHeaderStyle()`, `getFooterStyle()`, `getBodyStyle()`, `getCurrentFont()`
+- Computes dynamic CSS styles from backend settings
 
-- `locale: "en" | "ko"`, `t(key, params?)`, `setLocale()`, `initLocale()`
+**I18n Store** (`shared/i18n/index.ts`):
 
-### 5.5 API Client (`shared/api/client.ts`)
+- State: `locale` ("en" | "ko")
+- Methods: `t(key, params?)`, `setLocale()`, `initLocale()`
+- 100+ translation keys, persisted to localStorage
 
-- Pure `fetch` API (no Axios)
-- Methods: `get<T>`, `post<T>`, `put<T>`, `delete<T>`, `upload<T>` (FormData)
-- Token in localStorage as `zlog_token`, auto-injected in Authorization header
-- Error extraction from response JSON with HTTP status fallback
+### API Client (`shared/api/client.ts`)
 
-### 5.6 Markdown Processing Pipeline (`shared/lib/markdown/parser.ts`)
+Custom fetch-based ApiClient:
 
-1. **Extract** mermaid blocks → placeholders
-2. **Convert** GitHub-style alerts → CSS callout boxes
-3. **Embed** YouTube/CodePen/CodeSandbox URLs → iframes
-4. **Format** code blocks with Prettier (JS, TS, JSON, YAML, HTML, CSS)
-5. **Parse** with unified (remark-parse, remark-gfm)
-6. **Sanitize** with rehype-sanitize (strict schema allowing iframes)
-7. **Highlight** with rehype-highlight
-8. **Post-process:** language labels, copy buttons, external link targets, mermaid div restoration
-9. **Custom Image Styling:** Supports URL query parameters (`?align=left|right|center&width=W&height=H`) to automatically generate inline styles for float, margin, and exact dimensions, overriding global CSS resets.
+- No external HTTP library (native fetch)
+- Token management (localStorage)
+- Auto 401 handling (clears token, dispatches event)
+- Methods: `get<T>()`, `post<T>()`, `put<T>()`, `delete<T>()`, `upload<T>()`
 
-**Mermaid Rendering:**
+**React Query** (`shared/api/queries.ts`):
 
-- Dynamic import on first use
-- MutationObserver for new diagrams
-- Theme-aware (dark/light)
-- Fullscreen modal on click
-- Error fallback: raw code display
+- QueryClient: 1 retry, 5min stale time, no refetch on focus
+- Shared hooks: `useCategories()`, `useProfile()` (deduplicates across Header + Sidebar)
+- Query keys factory: `shared/api/queryKeys.ts`
 
-### 5.7 Comment System
+### Pages Overview
 
-**Components:** CommentSection → CommentForm + CommentThread → CommentContent
+| Page                     | Key Features                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| **HomePage**             | Post list with pagination, category/tag filtering, FTS search, subscribe dialog, RSS            |
+| **PostDetailPage**       | Markdown rendering, TOC (h2/h3), reading progress bar, like, comments, prev/next nav, share     |
+| **PostEditorPage**       | Rich markdown editor with toolbar, cover image upload, category/tag selection, auto-save        |
+| **CategoryDetailPage**   | Category posts, search, empty state with mascot, subscribe button                               |
+| **RemotePostDetailPage** | Federated post with original blog attribution, proxied comments                                 |
+| **AdminPage**            | Tab-based dashboard: posts, categories, templates, theme customizer, subscriptions, subscribers |
+| **SettingsPage**         | Profile, notifications, language/theme, social links, account                                   |
+| **ProfilePage**          | Public profile display, stats, post list                                                        |
+| **LoginPage**            | Email/password + OAuth buttons                                                                  |
 
-**Modes:** `sso_only`, `all`, `anonymous_only`, `disabled`
+### Widgets
+
+**Header:**
+
+- Logo + blog title, navigation, theme toggle, auth-aware items
+- Mobile hamburger drawer
+- Custom background (color + image with alignment)
+- Scroll-detection collapsing (RAF throttled)
+
+**Sidebar:**
+
+- Profile card (avatar, name, bio, stats)
+- Visitor stats (weekly chart)
+- Category list with post count badges
+
+**Footer:**
+
+- zlog logo + GitHub link
+- Custom background support
+- IntersectionObserver-based expansion (sentinel element)
+
+### Markdown Parser (`shared/lib/markdown/parser.ts`)
+
+Unified.js pipeline (lazy-loaded):
+
+1. Mermaid diagram extraction + placeholder
+2. Custom image syntax (`?width=W&height=H&align=`)
+3. GitHub-style alerts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`)
+4. YouTube embeds (`@[youtube](url)` + auto-detect standalone URLs)
+5. CodePen / CodeSandbox embeds
+6. remark-gfm (GitHub Flavored Markdown)
+7. rehype-highlight (syntax highlighting)
+8. rehype-raw + rehype-sanitize (XSS safe)
+9. Code block enhancement (language label + copy button)
+10. Link processing (target=\_blank, rel=noopener)
+11. Heading anchors (slugified h2/h3 for TOC)
+12. Mermaid placeholder restoration
+
+### Styling (`client/src/app/styles/global.css`)
+
+**Tailwind CSS v4** with `@theme` / `@custom-variant` syntax.
+
+**CSS Custom Properties (Light/Dark):**
+
+- `--color-primary`: #6c5ce7 (purple)
+- `--color-accent`: #ff6b6b (red)
+- Background, surface, text, border, destructive, success colors
+- Dark theme via `.dark` class override
 
 **Features:**
 
-- OAuth (GitHub, Google) — auto-focus on comment form after login
-- Anonymous with password for edit/delete
-- Nested replies (max 3 levels)
-- Like/unlike toggle
-- Image upload via drag-drop/paste
-- Expandable content (300 chars or 5 lines threshold)
-- Admin can delete any comment
+- Responsive typography (clamp())
+- CJK word-break: keep-all
+- highlight.js code blocks with dark theme overrides
+- Callout/alert styling (note, tip, important, warning, caution)
+- Horizontal scrollable tables on mobile
+- Print styles (force light, hide nav/sidebar/footer)
 
-### 5.8 Admin Panel (4 Tabs)
+### Vite Build Config (`client/vite.config.ts`)
 
-1. **General** — SEO, language, comment mode, notifications (Slack webhook)
-2. **Content** — Category/post/template management
-3. **Theme** — Live preview for colors, fonts, header/footer customization
-4. **Federation** — Subscribe to remotes, view subscribers, manual sync, interval config
+**Chunk Splitting:**
 
-### 5.9 Styling Architecture
-
-**Tailwind CSS v4** with semantic CSS variables:
-
-- `--color-primary`, `--color-text`, `--color-surface`, etc.
-- Light/dark mode via `.dark` class on `<html>`
-- Runtime color assignment in AppLayout via Zustand store
-- Responsive breakpoints: sm, md, lg
-
-**Global CSS Features:**
-
-- Code block wrappers with language labels + copy buttons
-- Mermaid diagram styling + fullscreen modal
-- GitHub-style callout/alert boxes
-- Table styling with horizontal scroll
-- Print-optimized styles
-- Focus-visible ring styling
-
-### 5.10 Image Handling
-
-**LazyImage Component (`shared/ui/LazyImage.tsx`):**
-
-- IntersectionObserver for lazy loading
-- `priority` prop to skip lazy loading (LCP optimization)
-- Configurable `objectFit` (cover, contain, contain-mobile)
-- Opacity transition on load
-- Async decoding
-
-**Uploads & Markdown Integration:**
-
-- Image uploads via drag-and-drop or toolbar automatically extract dimensions (width/height) from the server response and insert optimized markdown tags (`![alt](url?align=center&width=...&height=...)`).
-- **GIPHY Sticker Picker** integrated into the editor toolbar, which functions identically to images and auto-appends exact sizing via query params.
-
-**Cover Images:**
-
-- CSS `aspectRatio` from stored width/height
-- Fallback to 16:9 if dimensions unavailable
-
-### 5.11 Accessibility (WCAG 2.1)
-
-- Semantic HTML (`<article>`, `<header>`, `<nav>`, `<aside>`)
-- `aria-label` on icon buttons
-- `role="dialog"` + `aria-modal="true"` on modals
-- Focus-visible ring styling
-- Tab order management
-- Escape key to close modals
-- Skip-to-main-content link
-
-### 5.12 Internationalization
-
-- **Locales:** English (en), Korean (ko)
-- Parameter substitution: `t("key", { var: "value" })`
-- localStorage persistence
-- Default language from server settings
-- Hundreds of translation keys covering all UI surfaces
-
----
-
-## 6. Federation Protocol
-
-### 6.1 Core Concept
-
-Subscribe-and-Push protocol for decentralized blog networking. Each zlog instance can both publish and subscribe to other instances' categories.
-
-### 6.2 Subscription Handshake (3 Phases)
-
-1. **Discovery** — URL validation + metadata fetch (`/api/federation/info`)
-2. **Local Registration** — Create `remoteBlog`, `remoteCategories`, `categorySubscription` records
-3. **Remote Registration** — POST to remote's `/api/federation/subscribe` with callback URL
-
-### 6.3 Sync Models (Hybrid Push + Pull)
-
-**Push Model (Webhooks):**
-
-- Real-time delivery within seconds
-- Events: `post.published`, `post.updated`, `post.deleted`
-- `sendWebhookToSubscribers()` — fire-and-forget, 10s timeout per delivery
-- Includes coverImageWidth/Height
-
-**Pull Model (SyncService):**
-
-- Periodic sync (default 15 min, configurable via `webhook_sync_interval`)
-- Incremental updates via `?since=` timestamp
-- Batch inserts (100-item chunks) in transactions
-- First sync: 5 seconds after server start
-- Stale sync: triggered on post list API query for subscriptions >3 min old (30s cooldown)
-
-### 6.4 Content Handling
-
-- **Image URL Rewriting:** `fixRemoteContentUrls()` converts relative paths and wrong domains to correct absolute URLs
-- **Post Status Tracking:** published, deleted, unreachable
-- **Comment Proxying:** Real-time fetch from remote (not stored locally)
-- **Cover Image Dimensions:** Width/height stored for aspect ratio preservation
-
-### 6.5 Security
-
-- `X-Zlog-Subscriber-Url` header for identity verification
-- SSRF prevention: blocks localhost, private IPs (unless `ALLOW_LOCAL_FEDERATION=true`)
-- Loop prevention: blocks self-subscription
-- 10-15 second webhook timeouts
-- Public-only category discovery
-
----
-
-## 7. Performance & Optimization
-
-### 7.1 Current Web Vitals
-
-| Metric            | Value | Target  | Status               |
-| ----------------- | ----- | ------- | -------------------- |
-| Performance Score | 74    | —       | —                    |
-| LCP               | 4.1 s | <2.5 s  | ⚠️ Needs improvement |
-| CLS               | 0.198 | <0.1    | ⚠️ Needs improvement |
-| TBT               | 30 ms | <200 ms | ✅ Good              |
-| FCP               | 2.5 s | <1.8 s  | ⚠️ Needs improvement |
-
-### 7.2 Optimization Strategies
-
-**Code Splitting:**
-
-- All pages lazy-loaded with `React.lazy()` + Suspense
-- Vite `manualChunks` for vendor/framework separation
-- Dynamic Mermaid import (on-demand only)
-- Markdown processing engine as separate chunk (~300kB)
-- Bundle chunk limit: 500kB
-
-**Image Optimization:**
-
-- Server-side: Sharp → WebP conversion, max 1920px width
-- Client-side: LazyImage with IntersectionObserver (200px margin)
-- Priority loading for above-fold images (LCP)
-- Aspect ratio preservation from stored dimensions
-
-**Rendering:**
-
-- Memoized PostCard (`React.memo`)
-- Debounced search input (300ms)
-- RAF-throttled scroll listener (header collapse)
-- `useCallback` for stable function references
-
-**Data:**
-
-- React Query 5-minute staleTime
-- Batch loading for related data (categories, tags, comments, likes in single queries)
-- FTS5 for search performance
-- View count dedup via cookies (24hr)
-- SQLite WAL mode for concurrency
-
-**Analytics:**
-
-- Probabilistic cleanup (5% chance per visit) for visitor logs
-- SQL `COUNT()` optimization for high-traffic
-- Separate analytics DB to avoid main DB contention
-
----
-
-## 8. Deployment
-
-### 8.1 Docker Multi-Stage Build
-
-```dockerfile
-Stage 1: client-build (Node 22 Alpine) → npm run build (shared + client)
-Stage 2: server-build (Node 22 Alpine) → npm run build:server (tsc)
-Stage 3: production (Node 22 Alpine, ~150MB)
-  - Copies: server dist, client dist, node_modules, uploads
-  - Runs: node --expose-gc dist/index.js
+```
+react-vendor: react, react-dom, react-router (~99KB)
+ui-vendor: lucide-react, @radix-ui/* (~18KB)
+markdown-vendor: remark-*, rehype-* (~284KB)
+emoji-picker-react: dynamic import only (~309KB, NOT modulepreloaded)
+mermaid: external (CDN via importmap)
 ```
 
-### 8.2 Docker Compose Services
+**Dev Server Proxy:**
 
-| Service  | Purpose                                          |
-| -------- | ------------------------------------------------ |
-| `zlog`   | Main app (port 3000, restart: unless-stopped)    |
-| `caddy`  | Reverse proxy with auto-HTTPS/SSL, cache headers |
-| `backup` | SQLite database backup (profile: backup)         |
+- `/api` -> `http://localhost:3000`
+- `/uploads`, `/rss.xml`, `/site.webmanifest`, `/category` -> backend
 
-### 8.3 Caddy Configuration
+### Shared UI Components
 
-- Reverse proxy to `:3000`
-- Cache headers for `/uploads/*` and `/assets/*`
-- Zero-config SSL certificate management
+**Radix UI based:** Button, Input, Textarea, Card, Badge, Modal, Dialog, Dropdown Menu, Select, Tabs, Tooltip, Switch, Label, Separator
 
----
+**Custom:** Skeleton, LazyImage, Pagination, SEOHead, DefaultAvatar, ZlogLogo, ToastContainer, ConfirmModal, OfflineFallback, NotFoundFallback, MarkdownToolbar, StickerPicker, ColorPicker, ToggleSwitch, ScrollToTop
 
-## 9. Security Features
+### Shared Hooks
 
-| Feature                | Implementation                                                     |
-| ---------------------- | ------------------------------------------------------------------ |
-| Authentication         | JWT (HS256, 7-day expiry) via `jose`                               |
-| Password Hashing       | Scrypt (N=16384, r=8, p=1) + legacy SHA-512 fallback               |
-| Brute-force Protection | IP-based escalating lockout (5/10/20+ failures), 24hr window       |
-| XSS Prevention         | rehype-sanitize (strict schema), HTML entity encoding for comments |
-| SSRF Prevention        | URL validation blocking localhost + private IPs                    |
-| CORS                   | Separate configs for federation vs general API                     |
-| Admin Exclusion        | Analytics exclude admin via JWT validation                         |
-| Soft Deletes           | Posts and comments marked deleted (audit trail preserved)          |
-| OAuth                  | GitHub + Google with commenter upsert                              |
-| Cookie Security        | HttpOnly, 24hr expiry for analytics cookies                        |
+- `useClickOutside()` — Detect clicks outside element
+- `useUndoRedo()` — Undo/redo state management (editor)
+- `useToast()` — Toast notifications (success, error, info)
+- `useConfirm()` — Confirmation modal
 
----
+### Config Constants (`shared/config/index.ts`)
 
-## 10. Testing
+- MAX_COMMENT_DEPTH: 3
+- MAX_COMMENT_LENGTH: 2000
+- MAX_AVATAR_SIZE: 5MB
+- DEBOUNCE_MS: 150
+- DEFAULT_PER_PAGE: 10
+- LAZY_LOAD_MARGIN: "200px"
 
-| Workspace | Framework                       | Environment | Setup                    |
-| --------- | ------------------------------- | ----------- | ------------------------ |
-| Client    | Vitest + @testing-library/react | jsdom       | `src/__tests__/setup.ts` |
-| Server    | Vitest                          | node        | `src/__tests__/setup.ts` |
+### Testing
 
-**Test Focus Areas:**
-
-- Component unit tests (shared/ui components)
-- API integration tests (server routes)
-- Edge cases and error states prioritized per guidelines
+- **Framework:** Vitest with jsdom environment
+- **Libraries:** @testing-library/react, @testing-library/user-event, jest-dom
+- **Coverage:** Button, Badge, ConfirmModal, parser, useUndoRedo, editor shortcuts, API client
 
 ---
 
-## 11. Key Architectural Patterns
+## 6. Environment Variables
 
-1. **Monorepo + Shared Types** — Single source of truth for domain interfaces
-2. **FSD (Feature-Sliced Design)** — Strict layer hierarchy prevents circular imports
-3. **Batch Loading** — Single queries for related data (no N+1 problems)
-4. **Hybrid Federation** — Push (webhooks) + Pull (periodic sync) for reliability
-5. **Dual Database** — Analytics separated from main DB for performance isolation
-6. **SSR Meta Injection** — OG tags + JSON-LD schema for SEO without full SSR framework
-7. **Fire-and-Forget Webhooks** — Non-blocking delivery with timeout
-8. **Transactional Sync** — Federation syncs wrapped in SQLite transactions
-9. **Probabilistic Cleanup** — Visitor logs cleaned with 5% chance per visit (amortized cost)
-10. **Semantic CSS Tokens** — Runtime theme customization via CSS variables + Zustand
+### Server Configuration
+
+| Variable             | Default               | Description                           |
+| -------------------- | --------------------- | ------------------------------------- |
+| `PORT`               | 3000                  | Server port                           |
+| `SITE_URL`           | http://localhost:3000 | Canonical blog URL (CORS + meta tags) |
+| `ADMIN_EMAIL`        | admin@example.com     | Initial admin email                   |
+| `ADMIN_PASSWORD`     | changeme              | Initial admin password                |
+| `ADMIN_DISPLAY_NAME` | Blog Owner            | Display name                          |
+| `JWT_SECRET`         | random                | JWT signing secret                    |
+| `NODE_ENV`           | development           | development / production              |
+| `DB_PATH`            | ./data/zlog.db        | Main database path                    |
+| `ANALYTICS_DB_PATH`  | ./data/analytics.db   | Analytics database path               |
+
+### Federation
+
+| Variable                 | Default | Description                      |
+| ------------------------ | ------- | -------------------------------- |
+| `WEBHOOK_SYNC_INTERVAL`  | 15      | Minutes between background syncs |
+| `ALLOW_LOCAL_FEDERATION` | false   | Allow localhost/private IPs      |
+
+### OAuth (Optional)
+
+| Variable                                    | Description  |
+| ------------------------------------------- | ------------ |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
+
+### Client (Optional)
+
+| Variable             | Description          |
+| -------------------- | -------------------- |
+| `VITE_GIPHY_API_KEY` | GIPHY sticker picker |
 
 ---
 
-## 12. Notable Implementation Details
+## 7. Docker Deployment
 
-| Detail             | Description                                                                          |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| UUID v7            | Time-sortable UUIDs for all entity IDs                                               |
-| View Count Dedup   | Cookie-based 24hr deduplication per post                                             |
-| OAuth Flow         | Store return URL in localStorage → redirect → callback → auto-scroll to comment form |
-| Visitor ID         | UUID in localStorage (`zlog_visitor_id`) for anonymous likes/comments                |
-| Header Collapse    | RAF-throttled scroll listener with data attribute (not state) for smooth UX          |
-| Footer Compacting  | IntersectionObserver on sentinel element with min-height transition                  |
-| Stale Sync Trigger | Post list API query triggers background sync for subscriptions >3 min old            |
-| GC After Sync      | `global.gc()` called after large federation syncs (requires `--expose-gc`)           |
-| Image Dimensions   | Stored in DB for CLS prevention (aspect ratio preserved via CSS)                     |
-| Slug Generation    | Supports Korean Hangul characters                                                    |
+### Dockerfile (Multi-stage)
+
+1. **client-build** (Node 22 Alpine): Install + build client
+2. **server-build** (Node 22 Alpine): Install + build server (tsc)
+3. **production** (~150MB): Production deps + dist copies + upload dirs
+
+### docker-compose.yml
+
+| Service  | Image          | Purpose                                             |
+| -------- | -------------- | --------------------------------------------------- |
+| `zlog`   | Dockerfile     | Main app (port 3000, restart: unless-stopped)       |
+| `caddy`  | caddy:2-alpine | Reverse proxy with auto-HTTPS (profile: production) |
+| `backup` | alpine:3       | SQLite backup automation (profile: backup)          |
+
+### Caddyfile
+
+- Reverse proxy to zlog:3000
+- gzip encoding
+- Security headers (nosniff, DENY, HSTS preload)
+- Immutable cache for /uploads/_ and /assets/_ (1 year)
+
+### Volumes
+
+- `./docker-data/db:/app/data` — Database persistence
+- `./docker-data/uploads:/app/uploads` — User uploads
+- `caddy-data`, `caddy-config` — SSL certificates
+
+### Health Check
+
+- `wget --spider http://localhost:3000/api/health` every 30s
 
 ---
 
-_Report generated from comprehensive codebase analysis. All files in client/, server/, and shared/ workspaces were read and analyzed._
+## 8. Security Features
+
+| Feature                | Implementation                                                      |
+| ---------------------- | ------------------------------------------------------------------- |
+| Authentication         | JWT HS256 (7-day expiry) via jose                                   |
+| Password Hashing       | Scrypt (N=16384, r=8, p=1)                                          |
+| Brute-force Protection | IP-based escalating lockout (30s/5min/15min at 5/10/20+ fails)      |
+| XSS Prevention         | rehype-sanitize (client) + HTML entity encoding (server comments)   |
+| SSRF Prevention        | URL validation (blocks localhost + private IPs)                     |
+| CORS                   | Separate configs (federation: `origin: *`, others: SITE_URL)        |
+| Security Headers       | X-Content-Type-Options, X-Frame-Options, CSP, HSTS, Referrer-Policy |
+| Rate Limiting          | Per-endpoint IP-based in-memory store                               |
+| Soft Deletes           | Posts/comments marked deleted (audit trail)                         |
+| OAuth                  | GitHub + Google (commenter upsert, CSRF state token)                |
+| Comment Password       | bcrypt hashing for anonymous comment edit/delete                    |
+
+---
+
+## 9. Performance & Optimization
+
+### Current Core Web Vitals (2026-03-07)
+
+| Metric            | Value | Target |
+| ----------------- | ----- | ------ |
+| Performance Score | 80    | 95+    |
+| LCP               | 3.5s  | <2.5s  |
+| CLS               | 0.199 | <0.1   |
+| TBT               | 10ms  | <200ms |
+| FCP               | 2.0s  | <1.8s  |
+
+### Optimization Strategies
+
+- **Code splitting:** Pages lazy-loaded, vendor chunks (react/ui/markdown), mermaid CDN
+- **Image optimization:** Sharp (WebP, multi-size), LazyImage component
+- **Caching:** React Query (5min stale), immutable cache headers for assets
+- **Rendering:** Memoized PostCard, RAF-throttled scroll, debounced search (150ms)
+- **SSR:** Font preload + stylesheet injection, OG/JSON-LD meta injection
+- **Database:** WAL mode, FTS5 full-text search, batch loading (N+1 prevention), strategic indexes
+- **Bundle:** emoji-picker-react as dynamic-only chunk (not modulepreloaded), chunk limit 500KB
+
+### Key Architectural Patterns
+
+1. **Batch Loading** — Comments/posts batch-load related data to avoid N+1
+2. **Soft Deletes** — Posts/comments use deletedAt, not hard delete
+3. **Visitor Tracking** — Anonymous visitorId (localStorage UUID) for likes/analytics
+4. **Two-Phase Federation Sync** — Pull (background worker) + Push (webhooks)
+5. **Stale Sync Trigger** — Detects stale remote content, triggers async background sync
+6. **FTS5 + Pagination** — Combined full-text search with cursor-based pagination
+7. **Transaction-Based Sync** — Atomic batch updates for federation sync
+8. **Delta Sync** — `since` parameter for incremental pull from remote blogs
+
+---
+
+## 10. Testing Structure
+
+### Server Tests (`server/src/__tests__/`)
+
+- Vitest with in-memory SQLite
+- Test helpers: DB fixtures, mock auth
+- Coverage: auth, posts, comments, categories, federation, analytics, upload, SSR, OAuth, settings, templates
+
+### Client Tests (`client/src/*/__tests__/`)
+
+- Vitest + jsdom + @testing-library/react
+- Coverage: Button, Badge, ConfirmModal, markdown parser, useUndoRedo, editor shortcuts, API client
+
+### Pre-commit Workflow
+
+1. `npx lint-staged` — prettier --check + eslint --max-warnings=0
+2. Pre-push: Lighthouse measurement -> .ai-vitals.md auto-update
