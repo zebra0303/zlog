@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { createApp } from "../app.js";
 import { db, analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
@@ -33,6 +33,193 @@ describe("Federation & Sync Security", () => {
     seedTestAdmin();
     seedDefaultSettings();
     vi.restoreAllMocks();
+  });
+
+  describe("GET /api/federation/info", () => {
+    it("should return blog metadata", async () => {
+      const res = await app.request("/api/federation/info");
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as Record<string, unknown>;
+      expect(data.siteUrl).toBeDefined();
+      expect(data.displayName).toBeDefined();
+      expect(data.blogTitle).toBeDefined();
+      expect(data.blogHandle).toBeDefined();
+    });
+  });
+
+  describe("GET /api/federation/categories", () => {
+    it("should return only public categories", async () => {
+      createTestCategory({ name: "Public Cat", slug: "public-cat-fed", isPublic: true });
+      createTestCategory({ name: "Secret Cat", slug: "secret-cat-fed", isPublic: false });
+
+      const res = await app.request("/api/federation/categories");
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { name: string }[];
+      const names = data.map((c) => c.name);
+      expect(names).toContain("Public Cat");
+      expect(names).not.toContain("Secret Cat");
+    });
+  });
+
+  describe("GET /api/federation/posts/:id", () => {
+    it("should return a published post with resolved URLs", async () => {
+      const cat = createTestCategory();
+      const post = createTestPost({ categoryId: cat.id, status: "published" });
+
+      const res = await app.request(`/api/federation/posts/${post.id}`);
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as Record<string, unknown>;
+      expect(data.id).toBe(post.id);
+      expect(data.title).toBe(post.title);
+      expect(data.uri).toBeDefined();
+      expect(data.author).toBeDefined();
+    });
+
+    it("should return 404 for draft post", async () => {
+      const cat = createTestCategory();
+      const post = createTestPost({ categoryId: cat.id, status: "draft" });
+
+      const res = await app.request(`/api/federation/posts/${post.id}`);
+      expect(res.status).toBe(404);
+    });
+
+    it("should return 404 for non-existent post", async () => {
+      const res = await app.request("/api/federation/posts/non-existent-id");
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("POST /api/federation/unsubscribe", () => {
+    it("should deactivate an existing subscription", async () => {
+      const cat = createTestCategory();
+      const subUrl = "https://unsub-test.com";
+
+      db.insert(schema.subscribers)
+        .values({
+          id: "sub-unsub-1",
+          categoryId: cat.id,
+          subscriberUrl: subUrl,
+          callbackUrl: `${subUrl}/webhook`,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+        })
+        .run();
+
+      const res = await app.request("/api/federation/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryId: cat.id, subscriberUrl: subUrl }),
+      });
+      expect(res.status).toBe(200);
+
+      const sub = db
+        .select()
+        .from(schema.subscribers)
+        .where(eq(schema.subscribers.id, "sub-unsub-1"))
+        .get();
+      expect(sub?.isActive).toBe(false);
+    });
+
+    it("should return 404 when subscription does not exist", async () => {
+      const res = await app.request("/api/federation/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: "non-existent",
+          subscriberUrl: "https://nobody.com",
+        }),
+      });
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("POST /api/federation/webhook", () => {
+    let fetchSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      fetchSpy = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            displayName: "Remote Author",
+            blogTitle: "Remote Blog",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+      vi.stubGlobal("fetch", fetchSpy);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("should reject webhook with missing fields", async () => {
+      const res = await app.request("/api/federation/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "post.published" }), // missing post, categoryId, siteUrl
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("should accept a valid post.published webhook and store remote post", async () => {
+      const localCat = createTestCategory();
+      const remoteSiteUrl = "https://remote-webhook-test.example.com";
+
+      // Create remote blog + category + subscription so the webhook can map to localCat
+      const rb = createTestRemoteBlog({ siteUrl: remoteSiteUrl });
+      const rcId = "rc-wh-1";
+      db.insert(schema.remoteCategories)
+        .values({
+          id: rcId,
+          remoteBlogId: rb.id,
+          remoteId: "remote-cat-wh",
+          name: "WH Category",
+          slug: "wh-category",
+          createdAt: new Date().toISOString(),
+        })
+        .run();
+      db.insert(schema.categorySubscriptions)
+        .values({
+          id: "sub-wh-1",
+          localCategoryId: localCat.id,
+          remoteCategoryId: rcId,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+        })
+        .run();
+
+      const res = await app.request("/api/federation/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "post.published",
+          post: {
+            id: "remote-post-wh-1",
+            title: "Webhook Post",
+            slug: "webhook-post",
+            content: "# Hello from webhook",
+            excerpt: "Hello from webhook",
+            status: "published",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          categoryId: "remote-cat-wh",
+          siteUrl: remoteSiteUrl,
+        }),
+      });
+      expect(res.status).toBe(200);
+
+      // Verify the remote post was stored
+      const stored = db
+        .select()
+        .from(schema.remotePosts)
+        .where(eq(schema.remotePosts.remoteUri, `${remoteSiteUrl}/posts/remote-post-wh-1`))
+        .get();
+      expect(stored).toBeDefined();
+      expect(stored?.title).toBe("Webhook Post");
+      expect(stored?.localCategoryId).toBe(localCat.id);
+    });
   });
 
   describe("Provider Side: Subscriber Validation", () => {

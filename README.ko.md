@@ -299,12 +299,19 @@ erDiagram
 - **Federation 알림**: 외부 블로그가 내 카테고리를 구독할 때 즉시 알려줍니다.
 - **다국어 지원**: 블로그 기본 언어 설정(한/영)에 맞춰 알림 메시지가 자동으로 적용됩니다.
 
+### 보안
+
+- **JWT 인증** + **슬라이딩 세션**: 매일 접속 시 토큰이 자동 갱신되어, 활성 관리자는 로그인이 유지됩니다
+- **무차별 대입 방어**: 반복 로그인 실패 시 점진적 잠금 (30초 → 5분 → 15분)
+- **시크릿 카테고리**: 비밀번호로 보호되는 비공개 카테고리
+- **SSRF 방어**: Federation URL 검증으로 사설/내부 IP 차단
+- **XSS 방어**: 모든 사용자 입력에 대한 서버 측 HTML 정제
+
 ### 기술
 
 - **PWA**: 설치 가능, 서비스 워커로 오프라인 지원
 - **이미지 최적화**: Sharp 기반 리사이즈/압축 → WebP 변환
 - **SQLite**: 설정 불필요, 단일 파일 백업
-- **JWT 인증**: 관리자용
 - **RESTful API**: Hono 프레임워크
 - **백그라운드 동기화 워커**: 주기적 Federation 자동 동기화 + GC 최적화
 - **서버 프록시 Federation**: 모든 크로스 오리진 호출이 서버 간 통신 (CORS 의존성 없음)
@@ -427,10 +434,12 @@ npm run start
 | `JWT_SECRET`             | JWT 서명 비밀키             | `please-change-this`    |
 | `WEBHOOK_SYNC_INTERVAL`  | Federation 동기화 주기 (분) | `15`                    |
 | `ALLOW_LOCAL_FEDERATION` | 로컬/사설 IP 연합 허용 여부 | `false`                 |
+| `ADMIN_BLOG_HANDLE`      | 블로그 핸들 (URL 슬러그)    | —                       |
 | `GITHUB_CLIENT_ID`       | GitHub OAuth App Client ID  | —                       |
 | `GITHUB_CLIENT_SECRET`   | GitHub OAuth App Secret     | —                       |
 | `GOOGLE_CLIENT_ID`       | Google OAuth Client ID      | —                       |
 | `GOOGLE_CLIENT_SECRET`   | Google OAuth Client Secret  | —                       |
+| `VITE_GIPHY_API_KEY`     | GIPHY 스티커 API 키         | —                       |
 
 ---
 
@@ -513,7 +522,7 @@ ZLOG의 Federation과 통합하려는 개발자를 위한 안내:
 
 ## 링크
 
-- **라이브 데모**: [http://zlog.pe.kr](http://zlog.pe.kr)
+- **라이브 데모**: [https://zlog.pe.kr](https://zlog.pe.kr)
 - **GitHub**: [https://github.com/zebra0303/zlog](https://github.com/zebra0303/zlog)
 - **라이선스**: MIT
 

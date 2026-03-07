@@ -299,12 +299,19 @@ erDiagram
 - **Federation Alerts**: Instantly know when another blog subscribes to your categories.
 - **i18n Support**: Notification messages automatically adapt to your blog's default language.
 
+### Security
+
+- **JWT authentication** for admin with **sliding session**: tokens auto-renew on daily visits, so active admins stay logged in indefinitely
+- **Brute-force protection**: escalating lockout (30s → 5m → 15m) after repeated failed login attempts
+- **Secret categories**: password-protected categories hidden from public listings
+- **SSRF protection**: federation URL validation blocks private/internal IPs
+- **XSS protection**: server-side HTML sanitization on all user inputs
+
 ### Technical
 
 - **PWA**: installable, offline-capable with service worker
 - **Image optimization**: Sharp-based resize/compress to WebP
 - **SQLite**: zero-config database, single file backup
-- **JWT authentication** for admin
 - **RESTful API** with Hono framework
 - **Background sync worker**: automatic periodic federation sync with GC optimization
 - **Server-proxied federation**: all cross-origin calls are server-to-server (no CORS dependency)
@@ -427,10 +434,12 @@ npm run start
 | `PORT`                   | Server port                    | `3000`                  |
 | `WEBHOOK_SYNC_INTERVAL`  | Federation sync interval (min) | `15`                    |
 | `ALLOW_LOCAL_FEDERATION` | Allow localhost/private IPs    | `false`                 |
+| `ADMIN_BLOG_HANDLE`      | Blog handle (URL slug)         | —                       |
 | `GITHUB_CLIENT_ID`       | GitHub OAuth App Client ID     | —                       |
 | `GITHUB_CLIENT_SECRET`   | GitHub OAuth App Secret        | —                       |
 | `GOOGLE_CLIENT_ID`       | Google OAuth Client ID         | —                       |
 | `GOOGLE_CLIENT_SECRET`   | Google OAuth Client Secret     | —                       |
+| `VITE_GIPHY_API_KEY`     | GIPHY API key for stickers     | —                       |
 
 ---
 
@@ -513,7 +522,7 @@ For developers who want to integrate with ZLOG's federation:
 
 ## Links
 
-- **Live Demo**: [http://zlog.pe.kr](http://zlog.pe.kr)
+- **Live Demo**: [https://zlog.pe.kr](https://zlog.pe.kr)
 - **GitHub**: [https://github.com/zebra0303/zlog](https://github.com/zebra0303/zlog)
 - **License**: MIT
 

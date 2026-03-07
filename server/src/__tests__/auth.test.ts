@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
+import { SignJWT } from "jose";
 import { createApp } from "../app.js";
 import { analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
@@ -90,6 +91,58 @@ describe("Auth API", () => {
         headers: { Authorization: "Bearer invalid-token-here" },
       });
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe("GET /api/auth/me — sliding session", () => {
+    // Helper to create a token with a custom iat (issued-at) time
+    async function createTokenWithAge(ownerId: string, ageSeconds: number): Promise<string> {
+      const secretStr = process.env.JWT_SECRET ?? "test-secret";
+      const key = new TextEncoder().encode(secretStr);
+      const pastIat = Math.floor(Date.now() / 1000) - ageSeconds;
+      return new SignJWT({ sub: ownerId })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt(pastIat)
+        .setExpirationTime("7d")
+        .sign(key);
+    }
+
+    it("should NOT include refreshedToken for a fresh token (< 24h)", async () => {
+      const freshToken = await getAuthToken(admin.id);
+      const res = await app.request("/api/auth/me", {
+        headers: { Authorization: `Bearer ${freshToken}` },
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as Record<string, unknown>;
+      expect(data.refreshedToken).toBeUndefined();
+    });
+
+    it("should include refreshedToken for an old token (> 24h)", async () => {
+      const oldToken = await createTokenWithAge(admin.id, 25 * 60 * 60); // 25 hours
+      const res = await app.request("/api/auth/me", {
+        headers: { Authorization: `Bearer ${oldToken}` },
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { refreshedToken?: string };
+      expect(data.refreshedToken).toBeDefined();
+      expect(typeof data.refreshedToken).toBe("string");
+    });
+
+    it("should return a valid refreshed token that works for auth", async () => {
+      const oldToken = await createTokenWithAge(admin.id, 25 * 60 * 60);
+      const res = await app.request("/api/auth/me", {
+        headers: { Authorization: `Bearer ${oldToken}` },
+      });
+      const data = (await res.json()) as { refreshedToken: string };
+
+      // Use the refreshed token for another request
+      const res2 = await app.request("/api/auth/me", {
+        headers: { Authorization: `Bearer ${data.refreshedToken}` },
+      });
+      expect(res2.status).toBe(200);
+      const data2 = (await res2.json()) as Record<string, unknown>;
+      // The refreshed token is fresh, so no refreshedToken this time
+      expect(data2.refreshedToken).toBeUndefined();
     });
   });
 
