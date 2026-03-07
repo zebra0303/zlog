@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { api } from "@/shared/api/client";
-import type { PublicOwner, LoginResponse } from "@zlog/shared";
+import type { PublicOwner, LoginResponse, MeResponse } from "@zlog/shared";
 
 interface AuthState {
   owner: PublicOwner | null;
@@ -33,7 +33,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     }
     try {
-      const owner = await api.get<PublicOwner>("/auth/me");
+      const data = await api.get<MeResponse>("/auth/me");
+      // Sliding session: update token if server issued a fresh one
+      if (data.refreshedToken) {
+        api.setToken(data.refreshedToken);
+      }
+      const { refreshedToken: _, ...owner } = data;
       set({ owner, isAuthenticated: true, isLoading: false });
     } catch {
       // Token already cleared by api.get() on 401; preserve token on network errors

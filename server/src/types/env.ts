@@ -4,4 +4,5 @@ import type * as schema from "../db/schema.js";
 export interface AppVariables {
   owner: typeof schema.owner.$inferSelect;
   ownerId: string;
+  shouldRefreshToken: boolean;
 }

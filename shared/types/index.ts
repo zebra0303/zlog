@@ -24,6 +24,11 @@ export interface Owner {
 
 export type PublicOwner = Omit<Owner, "email">;
 
+// /auth/me response — includes optional refreshed token for sliding sessions
+export interface MeResponse extends PublicOwner {
+  refreshedToken?: string;
+}
+
 // ============ SocialLink ============
 export interface SocialLink {
   id: string;

@@ -120,9 +120,16 @@ auth.post("/login", async (c) => {
   return c.json({ token, owner: ownerData });
 });
 
-auth.get("/me", authMiddleware, (c) => {
+auth.get("/me", authMiddleware, async (c) => {
   const ownerRecord = c.get("owner");
   const { passwordHash: _, ...ownerData } = ownerRecord;
+
+  // Sliding session: issue a fresh token if the current one is older than 24h
+  if (c.get("shouldRefreshToken")) {
+    const newToken = await createToken(ownerRecord.id);
+    return c.json({ ...ownerData, refreshedToken: newToken });
+  }
+
   return c.json(ownerData);
 });
 

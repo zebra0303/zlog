@@ -23,14 +23,18 @@ export async function createToken(ownerId: string): Promise<string> {
     .sign(SECRET_KEY);
 }
 
-export async function verifyToken(token: string): Promise<string | null> {
+export async function verifyToken(token: string): Promise<{ sub: string; iat: number } | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-    return payload.sub ?? null;
+    if (!payload.sub || typeof payload.iat !== "number") return null;
+    return { sub: payload.sub, iat: payload.iat };
   } catch {
     return null;
   }
 }
+
+// Threshold for sliding session renewal (24 hours)
+const TOKEN_REFRESH_AGE_SEC = 24 * 60 * 60;
 
 export async function authMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header("Authorization");
@@ -39,18 +43,25 @@ export async function authMiddleware(c: Context, next: Next) {
   }
 
   const token = authHeader.slice(7);
-  const ownerId = await verifyToken(token);
-  if (!ownerId) {
+  const result = await verifyToken(token);
+  if (!result) {
     return c.json({ error: "Invalid token." }, 401);
   }
 
-  const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
+  const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.id, result.sub)).get();
   if (!ownerRecord) {
     return c.json({ error: "User not found." }, 401);
   }
 
   c.set("owner", ownerRecord);
-  c.set("ownerId", ownerId);
+  c.set("ownerId", result.sub);
+
+  // Sliding session: flag renewal if token is older than 24h
+  const tokenAge = Math.floor(Date.now() / 1000) - result.iat;
+  if (tokenAge >= TOKEN_REFRESH_AGE_SEC) {
+    c.set("shouldRefreshToken", true);
+  }
+
   await next();
 }
 
@@ -58,12 +69,16 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
-    const ownerId = await verifyToken(token);
-    if (ownerId) {
-      const ownerRecord = db.select().from(schema.owner).where(eq(schema.owner.id, ownerId)).get();
+    const result = await verifyToken(token);
+    if (result) {
+      const ownerRecord = db
+        .select()
+        .from(schema.owner)
+        .where(eq(schema.owner.id, result.sub))
+        .get();
       if (ownerRecord) {
         c.set("owner", ownerRecord);
-        c.set("ownerId", ownerId);
+        c.set("ownerId", result.sub);
       }
     }
   }
