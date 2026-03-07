@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const owner = await api.get<PublicOwner>("/auth/me");
       set({ owner, isAuthenticated: true, isLoading: false });
     } catch {
-      api.setToken(null);
+      // Token already cleared by api.get() on 401; preserve token on network errors
       set({ owner: null, isAuthenticated: false, isLoading: false });
     }
   },
