@@ -51,7 +51,9 @@ describe("Comments API", () => {
       expect(data.items).toHaveLength(1);
       const first = data.items[0];
       expect(first).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       expect(first?.authorName).toBe("Parent");
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       expect(first?.replies).toHaveLength(1);
     });
 

@@ -32,7 +32,7 @@ async function renderMermaidBlocks() {
 
     // Use DOMParser for safer HTML entity decoding
     const doc = new DOMParser().parseFromString(code, "text/html");
-    const decoded = doc.documentElement.textContent;
+    const decoded = doc.documentElement.textContent ?? "";
 
     try {
       const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -169,7 +169,7 @@ export function AppLayout() {
       };
 
       navigator.clipboard
-        .writeText(codeEl.textContent)
+        .writeText(codeEl.textContent ?? "")
         .then(copied)
         .catch(() => {
           btn.dataset.copied = "";

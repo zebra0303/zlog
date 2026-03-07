@@ -339,6 +339,7 @@ describe("Federation & Sync Security", () => {
       // Verify fetch call
       expect(fetchSpy).toHaveBeenCalled();
       const firstCall = fetchSpy.mock.calls[0];
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!firstCall) throw new Error("fetchSpy was not called");
       const callUrl = firstCall[0] as string;
       expect(callUrl).toContain("https://remote-blog.com/api/posts/original-123/comments");

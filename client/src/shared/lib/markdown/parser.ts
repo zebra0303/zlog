@@ -219,7 +219,14 @@ export async function parseMarkdown(markdown: string): Promise<string> {
 
   // Add slugified id attributes to h2/h3 for TOC anchors
   html = html.replace(/<(h[23])>(.*?)<\/\1>/g, (_match, tag: string, content: string) => {
-    const text = content.replace(/<[^>]*>/g, "").trim();
+    // Strip HTML tags iteratively to handle incomplete/nested tags safely
+    let text = content;
+    let prev = "";
+    while (text !== prev) {
+      prev = text;
+      text = text.replace(/<[^>]*>/g, "");
+    }
+    text = text.trim();
     const slug = text
       .toLowerCase()
       .replace(/[^\w\s가-힣-]/g, "")

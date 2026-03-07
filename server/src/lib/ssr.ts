@@ -234,6 +234,7 @@ export function handleSsr(
   settings: Record<string, string>,
   siteUrl: string,
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const blogTitle = settings.blog_title ?? "zlog";
   const seoDesc = settings.seo_description;
   const seoImage = settings.seo_og_image;
@@ -246,6 +247,7 @@ export function handleSsr(
   const meta = buildPageMeta(pathname, url, blogTitle, seoDesc, seoImage, canonicalBase);
 
   // Preload font CSS to break JS→API→font dependency chain
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const fontCdn = FONT_CDN_MAP[settings.font_family ?? ""];
   // Preload + stylesheet for font CSS: eliminates JS→API→font waterfall
   const fontPreload = fontCdn

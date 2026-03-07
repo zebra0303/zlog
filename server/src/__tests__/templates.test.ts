@@ -47,6 +47,7 @@ describe("Post Templates API", () => {
     expect(json.length).toBe(1);
     const first = json[0];
     expect(first).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     expect(first?.name).toBe("My Template");
   });
 

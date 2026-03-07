@@ -59,7 +59,9 @@ ${rssItems.join("\n")}
 }
 
 export function getRssFeed(siteUrl: string, settings: Record<string, string>) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const blogTitle = settings.blog_title ?? "Blog";
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const blogDesc = settings.seo_description ?? "";
 
   const posts = db
@@ -123,6 +125,7 @@ export function getCategoryRssFeed(
     .limit(20)
     .all();
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const seoDesc = settings.seo_description ?? "";
   const catDesc = (category.description ?? "").trim();
   const channelTitle = `${blogTitle} - ${category.name}`;

@@ -66,7 +66,7 @@ categoriesRoute.get("/", optionalAuthMiddleware, (c) => {
 });
 
 categoriesRoute.get("/:slug", optionalAuthMiddleware, (c) => {
-  const slug = c.req.param("slug");
+  const slug = c.req.param("slug") ?? "";
   const ownerId = c.get("ownerId");
   const isAdmin = !!ownerId;
 
@@ -147,7 +147,7 @@ categoriesRoute.post("/", authMiddleware, async (c) => {
 });
 
 categoriesRoute.put("/:id", authMiddleware, async (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const body = await c.req.json<{
     name?: string;
     description?: string;
@@ -191,7 +191,7 @@ categoriesRoute.put("/:id", authMiddleware, async (c) => {
 });
 
 categoriesRoute.delete("/:id", authMiddleware, async (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const existing = db.select().from(schema.categories).where(eq(schema.categories.id, id)).get();
   if (!existing) {
     return c.json({ error: "Category not found." }, 404);

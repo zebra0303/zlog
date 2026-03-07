@@ -84,6 +84,7 @@ oauthRoute.get("/github/callback", async (c) => {
         primary: boolean;
         verified: boolean;
       }[];
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       email = emails.find((e) => e.primary && e.verified)?.email ?? emails[0]?.email ?? undefined;
     } catch {
       // ignore

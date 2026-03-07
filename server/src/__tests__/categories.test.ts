@@ -46,7 +46,9 @@ describe("Categories API", () => {
       expect(data).toHaveLength(1);
       const first = data[0];
       expect(first).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       expect(first?.name).toBe("Tech");
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       expect(first?.postCount).toBe(1); // only published
     });
   });

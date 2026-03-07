@@ -23,6 +23,7 @@ function computeBodyStyle(
 
   if (!from) return {};
   if (to) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return { background: `linear-gradient(${dir ?? "to bottom"}, ${from}, ${to})` };
   }
   return { backgroundColor: from };

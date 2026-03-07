@@ -134,7 +134,7 @@ export default function PostDetailPage() {
     headings.forEach((h) => {
       const id = h.getAttribute("id");
       if (id) {
-        items.push({ id, text: h.textContent || "", level: h.tagName === "H2" ? 2 : 3 });
+        items.push({ id, text: h.textContent ?? "", level: h.tagName === "H2" ? 2 : 3 });
       }
     });
     setTocItems(items);

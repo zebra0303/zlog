@@ -83,8 +83,10 @@ export function createApp() {
     const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
     const ownerRecord = db.select().from(schema.owner).get();
     const settings = getSiteSettings();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const blogTitle = settings.blog_title ?? ownerRecord?.blogTitle ?? "zlog";
     const blogDesc =
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       (settings.seo_description?.trim() ? settings.seo_description : null) ??
       ownerRecord?.blogDescription ??
       "A personal blog powered by zlog";
@@ -174,11 +176,13 @@ export function createApp() {
   // Robots.txt
   app.get("/robots.txt", (c) => {
     const settings = getSiteSettings();
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
     const siteUrl = (
       settings.canonical_url ??
       process.env.SITE_URL ??
       "http://localhost:3000"
     ).replace(/\/$/, "");
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
     return c.text(`User-agent: *
 Allow: /
 
@@ -194,11 +198,13 @@ Sitemap: ${siteUrl}/sitemap.xml`);
   // Sitemap
   app.get("/sitemap.xml", (c) => {
     const settings = getSiteSettings();
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
     const siteUrl = (
       settings.canonical_url ??
       process.env.SITE_URL ??
       "http://localhost:3000"
     ).replace(/\/$/, "");
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
     c.header("Content-Type", "application/xml");
     return c.body(getSitemap(siteUrl));
   });

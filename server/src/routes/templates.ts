@@ -44,7 +44,7 @@ templatesRoute.post("/", authMiddleware, async (c) => {
 });
 
 templatesRoute.put("/:id", authMiddleware, async (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const body = await c.req.json<{ name?: string; content?: string }>();
 
   const existing = db
@@ -74,7 +74,7 @@ templatesRoute.put("/:id", authMiddleware, async (c) => {
 });
 
 templatesRoute.delete("/:id", authMiddleware, (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   db.delete(schema.postTemplates).where(eq(schema.postTemplates.id, id)).run();
   return c.json({ message: "Template deleted" });
 });

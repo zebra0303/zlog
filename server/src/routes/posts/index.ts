@@ -455,7 +455,7 @@ postsRoute.get("/tags", (c) => {
 });
 
 postsRoute.get("/:id/access-logs", authMiddleware, (c) => {
-  const postId = c.req.param("id");
+  const postId = c.req.param("id") ?? "";
   const logs = analyticsDb
     .select()
     .from(schema.postAccessLogs)
@@ -752,7 +752,7 @@ postsRoute.post("/", authMiddleware, async (c) => {
 });
 
 postsRoute.put("/:id", authMiddleware, async (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const body = await c.req.json<{
     title?: string;
     content?: string;
@@ -871,7 +871,7 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
 });
 
 postsRoute.delete("/:id", authMiddleware, (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const existing = db.select().from(schema.posts).where(eq(schema.posts.id, id)).get();
   if (!existing) {
     return c.json({ error: "Post not found." }, 404);

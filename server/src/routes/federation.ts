@@ -921,7 +921,7 @@ federationRoute.get("/subscriptions", authMiddleware, (c) => {
 
 // ============ Admin: manual sync subscription category ============
 federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const sub = db
     .select()
     .from(schema.categorySubscriptions)
@@ -1073,7 +1073,7 @@ federationRoute.post("/subscriptions/:id/sync", authMiddleware, async (c) => {
 
 // ============ Admin: toggle subscription active/inactive ============
 federationRoute.put("/subscriptions/:id/toggle", authMiddleware, (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const existing = db
     .select()
     .from(schema.categorySubscriptions)
@@ -1116,7 +1116,7 @@ federationRoute.put("/subscriptions/:id/toggle", authMiddleware, (c) => {
 
 // ============ Admin: delete subscription ============
 federationRoute.delete("/subscriptions/:id", authMiddleware, (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const existing = db
     .select()
     .from(schema.categorySubscriptions)
@@ -1160,7 +1160,7 @@ federationRoute.get("/subscribers", authMiddleware, (c) => {
 
 // ============ Admin: delete subscriber ============
 federationRoute.delete("/subscribers/:id", authMiddleware, (c) => {
-  const id = c.req.param("id");
+  const id = c.req.param("id") ?? "";
   const existing = db.select().from(schema.subscribers).where(eq(schema.subscribers.id, id)).get();
   if (!existing) return c.json({ error: "Subscription not found." }, 404);
   db.delete(schema.subscribers).where(eq(schema.subscribers.id, id)).run();
