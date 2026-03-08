@@ -1,6 +1,6 @@
 import { useToast } from "./useToast";
 import { CheckCircle, AlertTriangle, Info, X } from "lucide-react";
-import { cn } from "../lib/cn";
+import { cn } from "@/shared/lib/cn";
 
 export function ToastContainer() {
   const { toasts, removeToast } = useToast();

@@ -2,8 +2,8 @@ import { useRef, useEffect, lazy, Suspense } from "react";
 import { SmilePlus } from "lucide-react";
 import type { EmojiClickData, Theme } from "emoji-picker-react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
-import { useI18n } from "../../i18n";
-import { usePopoverAlignment } from "../../hooks/usePopoverAlignment";
+import { useI18n } from "@/shared/i18n";
+import { usePopoverAlignment } from "@/shared/hooks/usePopoverAlignment";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 
 const EmojiPicker = lazy(() => import("emoji-picker-react"));

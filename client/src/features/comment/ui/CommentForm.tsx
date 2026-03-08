@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, CardContent, Input, Textarea, DefaultAvatar } from "@/shared/ui";
-import { useCommentMutations } from "../model/useCommentMutations";
+import { useCommentMutations } from "@/features/comment/model/useCommentMutations";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import type { CommenterInfo } from "./types";

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { commentApi } from "../api/commentApi";
+import { commentApi } from "@/features/comment/api/commentApi";
 
 export function useCommentMutations() {
   const [loading, setLoading] = useState(false);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Heart, Reply, Pencil, Trash2 } from "lucide-react";
 import { Button, Input, Textarea, DefaultAvatar, useToast, useConfirm } from "@/shared/ui";
-import { useCommentMutations } from "../model/useCommentMutations";
+import { useCommentMutations } from "@/features/comment/model/useCommentMutations";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";

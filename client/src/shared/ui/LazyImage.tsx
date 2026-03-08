@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { cn } from "../lib/cn";
-import { CONFIG } from "../config";
+import { cn } from "@/shared/lib/cn";
+import { CONFIG } from "@/shared/config";
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallback?: React.ReactNode;

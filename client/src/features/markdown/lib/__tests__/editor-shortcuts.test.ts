@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { processEditorShortcuts } from "../editor-shortcuts";
+import { processEditorShortcuts } from "@/features/markdown/lib/editor-shortcuts";
 
 describe("processEditorShortcuts", () => {
   describe("Enter key: Auto-list continuation", () => {

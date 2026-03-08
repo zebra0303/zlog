@@ -1,8 +1,8 @@
 import { useRef, useEffect } from "react";
 import { Info } from "lucide-react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
-import { useI18n } from "../../i18n";
-import { usePopoverAlignment } from "../../hooks/usePopoverAlignment";
+import { useI18n } from "@/shared/i18n";
+import { usePopoverAlignment } from "@/shared/hooks/usePopoverAlignment";
 
 const calloutTypes = [
   { type: "NOTE", emoji: "\u2139\uFE0F", label: "Note" },

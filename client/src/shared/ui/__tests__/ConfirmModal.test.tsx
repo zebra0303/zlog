@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ConfirmModal } from "../ConfirmModal";
-import { useConfirm } from "../useConfirm";
+import { ConfirmModal } from "@/shared/ui/ConfirmModal";
+import { useConfirm } from "@/shared/ui/useConfirm";
 
 // Mock the react portal so it renders in the normal DOM tree
 vi.mock("react-dom", async () => {

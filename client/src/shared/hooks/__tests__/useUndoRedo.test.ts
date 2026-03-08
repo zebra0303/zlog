@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useUndoRedo } from "../useUndoRedo";
+import { useUndoRedo } from "@/shared/hooks/useUndoRedo";
 
 describe("useUndoRedo", () => {
   beforeEach(() => {

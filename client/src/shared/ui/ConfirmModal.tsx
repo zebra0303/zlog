@@ -1,7 +1,7 @@
 import { useConfirm } from "./useConfirm";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
-import { useI18n } from "../i18n";
+import { useI18n } from "@/shared/i18n";
 import { AlertCircle } from "lucide-react";
 
 export function ConfirmModal() {

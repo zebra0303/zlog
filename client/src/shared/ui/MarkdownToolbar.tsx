@@ -17,8 +17,8 @@ import {
   Undo2,
   Redo2,
 } from "lucide-react";
-import { useI18n } from "../i18n";
-import { useMarkdownActions } from "../hooks/useMarkdownActions";
+import { useI18n } from "@/shared/i18n";
+import { useMarkdownActions } from "@/shared/hooks/useMarkdownActions";
 import {
   ColorPicker,
   TablePicker,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseMarkdown } from "../parser";
+import { parseMarkdown } from "@/shared/lib/markdown/parser";
 
 describe("Markdown Parser", () => {
   it("should parse normal markdown", async () => {

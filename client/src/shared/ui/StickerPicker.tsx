@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useI18n } from "../i18n";
+import { useI18n } from "@/shared/i18n";
 
 interface StickerPickerProps {
   apiKey: string;

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Table } from "lucide-react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
-import { useI18n } from "../../i18n";
-import { usePopoverAlignment } from "../../hooks/usePopoverAlignment";
-import { generateMarkdownTable, GRID_SIZE } from "../../lib/markdown-toolbar-utils";
+import { useI18n } from "@/shared/i18n";
+import { usePopoverAlignment } from "@/shared/hooks/usePopoverAlignment";
+import { generateMarkdownTable, GRID_SIZE } from "@/shared/lib/markdown-toolbar-utils";
 
 interface TablePickerProps {
   isOpen: boolean;

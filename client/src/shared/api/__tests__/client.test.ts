@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ApiClient } from "../client";
+import { ApiClient } from "@/shared/api/client";
 
 describe("ApiClient 401 Interceptor", () => {
   let apiClient: ApiClient;

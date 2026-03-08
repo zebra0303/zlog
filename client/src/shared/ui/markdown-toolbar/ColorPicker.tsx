@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { Palette, Copy, Check } from "lucide-react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
-import { useI18n } from "../../i18n";
-import { usePopoverAlignment } from "../../hooks/usePopoverAlignment";
-import { PRESET_COLORS_DARK, PRESET_COLORS_LIGHT } from "../../lib/markdown-toolbar-utils";
+import { useI18n } from "@/shared/i18n";
+import { usePopoverAlignment } from "@/shared/hooks/usePopoverAlignment";
+import { PRESET_COLORS_DARK, PRESET_COLORS_LIGHT } from "@/shared/lib/markdown-toolbar-utils";
 
 const HexColorPicker = lazy(() =>
   import("react-colorful").then((m) => ({ default: m.HexColorPicker })),

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import type { CommentWithReplies } from "@zlog/shared";
-import { commentApi } from "../api/commentApi";
+import { commentApi } from "@/features/comment/api/commentApi";
 
 interface UseCommentsProps {
   postId: string;
