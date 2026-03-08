@@ -11,7 +11,7 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/__tests__/**", "src/vite-env.d.ts"],
-      reporter: ["text", "html"],
+      reporter: ["text-summary", "html"],
       reportsDirectory: "./coverage",
     },
   },

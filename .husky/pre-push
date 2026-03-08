@@ -1,6 +1,15 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Run coverage report before push
+echo "🧪 코드 커버리지 측정 중..."
+npm run test:coverage
+if [ $? -ne 0 ]; then
+  echo "❌ 커버리지 테스트 실패. 푸시를 중단합니다."
+  exit 1
+fi
+echo "✅ 커버리지 측정 완료. (상세 리포트: server/coverage, client/coverage)"
+
 echo "📊 측정 스크립트 실행: Lighthouse Core Web Vitals 측정 중..."
 npm run vitals -w client
 

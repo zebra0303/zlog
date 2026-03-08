@@ -15,7 +15,7 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.ts"],
       exclude: ["src/__tests__/**", "src/db/migrations/**"],
-      reporter: ["text", "html"],
+      reporter: ["text-summary", "html"],
       reportsDirectory: "./coverage",
     },
   },
