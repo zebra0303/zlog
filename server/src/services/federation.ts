@@ -554,7 +554,7 @@ export class FederationService {
           slug: string;
           description: string | null;
         };
-      } catch {
+      } catch (err) {
         throw new Error(`Failed to fetch info from remote blog. (${err})`);
       }
     }
@@ -614,7 +614,7 @@ export class FederationService {
           slug: string;
           description: string | null;
         };
-      } catch {
+      } catch (err) {
         throw new Error(`Failed to fetch categories from remote blog. (${err})`);
       }
     }
@@ -666,7 +666,7 @@ export class FederationService {
       if (!res.ok) {
         throw new Error(`Remote subscribe failed: ${res.status} ${res.statusText}`);
       }
-    } catch {
+    } catch (err) {
       throw new Error(`Failed to register webhook with remote blog. (${err})`);
     }
   }
@@ -710,7 +710,7 @@ export class FederationService {
         }),
         signal: AbortSignal.timeout(10000),
       });
-    } catch {
+    } catch (err) {
       console.warn(`Failed to notify remote blog of unsubscription: ${err}`);
     }
   }
