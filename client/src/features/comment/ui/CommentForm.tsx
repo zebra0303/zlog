@@ -43,9 +43,12 @@ export function CommentForm({
       let count = 0;
       const maxRetries = 5;
       const doScroll = () => {
-        textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        const el = textareaRef.current;
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.focus({ preventScroll: true });
+        }
         if (count === 0) {
-          textareaRef.current?.focus();
           setHighlight(true);
           setTimeout(() => {
             setHighlight(false);

@@ -99,7 +99,7 @@ export function CommentSection({
   const showSsoLogin = commentMode !== "anonymous_only";
 
   return (
-    <div>
+    <div id="comments">
       <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
         <MessageSquare className="h-5 w-5" />
         {t("comment_title")}
@@ -150,7 +150,9 @@ export function CommentSection({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  localStorage.setItem("zlog_oauth_return", window.location.href);
+                  const url = new URL(window.location.href);
+                  url.hash = "comments";
+                  localStorage.setItem("zlog_oauth_return", url.toString());
                   window.location.href = "/api/oauth/github";
                 }}
               >
@@ -163,7 +165,9 @@ export function CommentSection({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  localStorage.setItem("zlog_oauth_return", window.location.href);
+                  const url = new URL(window.location.href);
+                  url.hash = "comments";
+                  localStorage.setItem("zlog_oauth_return", url.toString());
                   window.location.href = "/api/oauth/google";
                 }}
               >
