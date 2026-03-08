@@ -42,7 +42,7 @@ export class ApiClient {
     const headers = { ...(this.getHeaders() as Record<string, string>), ...extraHeaders };
     const res = await fetch(`${API_BASE}${path}`, { headers, credentials: "include" });
     if (!res.ok) {
-      if (res.status === 401 && !path.includes("/auth/login")) {
+      if (res.status === 401 && !path.includes("/auth/login") && !path.includes("/auth/me")) {
         window.dispatchEvent(new CustomEvent("zlog_unauthorized"));
       }
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
