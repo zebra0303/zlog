@@ -1,6 +1,6 @@
 # zlog Federation Subscription System — Complete Technical Reference
 
-**Date:** 2026-02-28
+**Date:** 2026-03-08 (updated)
 **Scope:** Exhaustive line-by-line analysis of all federation subscription logic across server and client
 
 ---
@@ -1124,4 +1124,22 @@ User Browser           Your Server
 
 ---
 
-_This document covers every function, query, condition, and data flow in the zlog federation subscription system. All code references are from the actual source files as of 2026-02-28._
+## 19. Recent Changes (since 2026-02-28)
+
+| Date       | Commit    | Description                                                                                                             |
+| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-07 | `1205097` | Fix: FederationService catch blocks had build errors — corrected error variable references                              |
+| 2026-03-06 | `51d493b` | Refactor: modularized codebase — federation routes/services remain in same files but overall project structure improved |
+| 2026-03-05 | `e3f36ac` | Feat: sliding session renewal for JWT — admin tokens auto-renew on activity (affects federation admin endpoints)        |
+| 2026-03-04 | `092fa69` | Feat: show subscribe button for all users, block self-subscription in UI                                                |
+
+### Key architectural notes after refactoring:
+
+- `server/src/services/federation.ts` — FederationService class (unchanged structure)
+- `server/src/services/syncService.ts` — Background sync worker (unchanged)
+- `server/src/routes/federation.ts` — All federation API routes (unchanged)
+- `server/src/services/federation/` directory exists but is empty (reserved for future modularization)
+
+---
+
+_This document covers every function, query, condition, and data flow in the zlog federation subscription system. All code references are from the actual source files. Last updated: 2026-03-08._

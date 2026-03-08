@@ -1,7 +1,7 @@
 # ZLOG — Comprehensive Architecture & Codebase Report
 
-**Date:** 2026-03-07
-**Commit:** 216806f (main)
+**Date:** 2026-03-08
+**Commit:** fa0ef03 (main)
 **Scope:** Full-depth analysis of the entire zlog codebase
 
 ---
@@ -52,7 +52,7 @@ zlog/
 
 - **ESLint:** TypeScript ESLint strict + stylistic, prettier integration
 - **Prettier:** `{ semi: true, singleQuote: false, tabWidth: 2, printWidth: 100, tailwindcss plugin }`
-- **Husky:** Pre-commit (lint-staged: prettier + eslint), Pre-push (Lighthouse vitals measurement)
+- **Husky:** Pre-commit (lint-staged: prettier + eslint), Pre-push (coverage report + Lighthouse vitals measurement)
 
 ---
 
@@ -706,7 +706,29 @@ mermaid: external (CDN via importmap)
 - Vitest + jsdom + @testing-library/react
 - Coverage: Button, Badge, ConfirmModal, markdown parser, useUndoRedo, editor shortcuts, API client
 
+### Coverage
+
+- **Provider:** @vitest/coverage-v8
+- **Reporter:** text-summary (terminal) + html (browser)
+- **Server:** `server/coverage/` — includes `src/**/*.ts`, excludes tests + migrations
+- **Client:** `client/coverage/` — includes `src/**/*.{ts,tsx}`, excludes tests + vite-env.d.ts
+
 ### Pre-commit Workflow
 
 1. `npx lint-staged` — prettier --check + eslint --max-warnings=0
-2. Pre-push: Lighthouse measurement -> .ai-vitals.md auto-update
+2. Pre-push: Coverage report (text-summary) -> Lighthouse measurement -> .ai-vitals.md auto-update
+
+---
+
+## 11. Recent Changes (since 2026-02-28)
+
+| Commit    | Description                                                                             |
+| --------- | --------------------------------------------------------------------------------------- |
+| `51d493b` | Major refactor: modularized routes (posts/, upload/ subdirectories), federation service |
+| `1205097` | Fix build errors in FederationService catch blocks                                      |
+| `e3f36ac` | Sliding session renewal for admin JWT tokens                                            |
+| `2be1451` | Preserve JWT on network errors during deployment                                        |
+| `05ea677` | Add @vitest/coverage-v8 for code coverage reporting                                     |
+| `fa0ef03` | Add coverage report to pre-push husky hook                                              |
+| `216806f` | Upgrade TypeScript 5.7.3 → 5.9.3                                                        |
+| `58e37ca` | Fix 7 security vulnerabilities (Dependabot + CodeQL)                                    |
