@@ -44,7 +44,7 @@ export function createApp() {
       c.header("X-Frame-Options", "SAMEORIGIN");
       c.header(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; frame-src https://www.youtube-nocookie.com https://codepen.io https://codesandbox.io; connect-src 'self' https:; object-src 'none'; base-uri 'self'",
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; frame-src https://www.youtube-nocookie.com https://codepen.io https://codesandbox.io; connect-src 'self' https:; object-src 'none'; base-uri 'self'",
       );
     }
 
