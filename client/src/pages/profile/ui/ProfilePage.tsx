@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { sanitizeHtml } from "@/shared/lib/security/sanitize";
 import { Link } from "react-router";
 import {
   MapPin,
@@ -169,7 +170,7 @@ export default function ProfilePage() {
             <h2 className="mb-3 font-semibold text-[var(--color-text)]">{t("profile_about")}</h2>
             <div
               className="prose dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: aboutHtml }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(aboutHtml) }}
             />
           </CardContent>
         </Card>

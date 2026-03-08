@@ -13,6 +13,7 @@ import {
 } from "@/shared/ui";
 import { api } from "@/shared/api/client";
 import { useAuthStore } from "@/features/auth/model/store";
+import { sanitizeHtml } from "@/shared/lib/security/sanitize";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
@@ -402,7 +403,7 @@ export default function SettingsPage() {
                 {aboutHtml ? (
                   <div
                     className="prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: aboutHtml }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(aboutHtml) }}
                   />
                 ) : (
                   <p className="text-sm text-[var(--color-text-secondary)]">

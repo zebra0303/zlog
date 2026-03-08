@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { sanitizeHtml } from "@/shared/lib/security/sanitize";
 import { useParams, Link, useLocation, useNavigate } from "react-router";
 import {
   Calendar,
@@ -418,7 +419,7 @@ export default function PostDetailPage() {
         <CardContent className="pt-6">
           <div
             className="prose dark:prose-invert md:prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }}
           />
 
           <div className="mt-8 flex justify-center border-t border-[var(--color-border)] pt-6">

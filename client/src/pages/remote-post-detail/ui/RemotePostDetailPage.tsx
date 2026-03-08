@@ -13,6 +13,7 @@ import {
   OfflineFallback,
   NotFoundFallback,
 } from "@/shared/ui";
+import { sanitizeHtml } from "@/shared/lib/security/sanitize";
 import { api } from "@/shared/api/client";
 import { formatDate } from "@/shared/lib/formatDate";
 import { parseMarkdown } from "@/shared/lib/markdown/parser";
@@ -205,7 +206,7 @@ export default function RemotePostDetailPage() {
         <CardContent className="pt-6">
           <div
             className="prose dark:prose-invert md:prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }}
           />
         </CardContent>
       </Card>

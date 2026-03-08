@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
+import { sanitizeHtml } from "@/shared/lib/security/sanitize";
 import { FileText, Plus, Pencil, Trash2, X, Save, Loader2, Edit3, Eye } from "lucide-react";
 import {
   Button,
@@ -209,7 +210,7 @@ export function TemplateManager() {
                     {newPreviewHtml ? (
                       <div
                         className="prose dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: newPreviewHtml }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(newPreviewHtml) }}
                       />
                     ) : (
                       <p className="text-sm text-[var(--color-text-secondary)]">
@@ -300,7 +301,7 @@ export function TemplateManager() {
                           {editPreviewHtml ? (
                             <div
                               className="prose dark:prose-invert max-w-none"
-                              dangerouslySetInnerHTML={{ __html: editPreviewHtml }}
+                              dangerouslySetInnerHTML={{ __html: sanitizeHtml(editPreviewHtml) }}
                             />
                           ) : (
                             <p className="text-sm text-[var(--color-text-secondary)]">

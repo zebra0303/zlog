@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { sanitizeHtml } from "@/shared/lib/security/sanitize";
 import { useParams, useSearchParams, useNavigate } from "react-router";
 import { Rss, Info, X, ExternalLink, Tag, ArrowLeft, Search } from "lucide-react";
 import { PostCard } from "@/entities/post/ui/PostCard";
@@ -276,7 +277,7 @@ export default function CategoryDetailPage() {
               {descHtml && (
                 <div
                   className="prose dark:prose-invert mt-4 max-w-none"
-                  dangerouslySetInnerHTML={{ __html: descHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(descHtml) }}
                 />
               )}
             </CardContent>
