@@ -434,7 +434,6 @@ npm run start
 | `PORT`                   | Server port                    | `3000`                  |
 | `WEBHOOK_SYNC_INTERVAL`  | Federation sync interval (min) | `15`                    |
 | `ALLOW_LOCAL_FEDERATION` | Allow localhost/private IPs    | `false`                 |
-| `ADMIN_BLOG_HANDLE`      | Blog handle (URL slug)         | —                       |
 | `GITHUB_CLIENT_ID`       | GitHub OAuth App Client ID     | —                       |
 | `GITHUB_CLIENT_SECRET`   | GitHub OAuth App Secret        | —                       |
 | `GOOGLE_CLIENT_ID`       | Google OAuth Client ID         | —                       |

@@ -434,7 +434,6 @@ npm run start
 | `JWT_SECRET`             | JWT 서명 비밀키             | `please-change-this`    |
 | `WEBHOOK_SYNC_INTERVAL`  | Federation 동기화 주기 (분) | `15`                    |
 | `ALLOW_LOCAL_FEDERATION` | 로컬/사설 IP 연합 허용 여부 | `false`                 |
-| `ADMIN_BLOG_HANDLE`      | 블로그 핸들 (URL 슬러그)    | —                       |
 | `GITHUB_CLIENT_ID`       | GitHub OAuth App Client ID  | —                       |
 | `GITHUB_CLIENT_SECRET`   | GitHub OAuth App Secret     | —                       |
 | `GOOGLE_CLIENT_ID`       | Google OAuth Client ID      | —                       |
