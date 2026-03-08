@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, CardContent, Input, Textarea, DefaultAvatar } from "@/shared/ui";
-import { api } from "@/shared/api/client";
+import { useCommentMutations } from "../model/useCommentMutations";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import type { CommenterInfo } from "./types";
@@ -33,6 +33,7 @@ export function CommentForm({
   const [highlight, setHighlight] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { t } = useI18n();
+  const { createComment } = useCommentMutations();
 
   // After SSO login → scroll to comment input + focus + highlight
   useEffect(() => {
@@ -70,23 +71,7 @@ export function CommentForm({
     setIsSubmitting(true);
     setError(null);
     try {
-      const payload: Record<string, unknown> = commenter
-        ? {
-            authorName: commenter.displayName,
-            authorEmail: commenter.provider + "@oauth",
-            authorAvatarUrl: commenter.avatarUrl,
-            commenterId: commenter.commenterId,
-            content,
-            parentId,
-          }
-        : {
-            authorName: anonName,
-            authorEmail: anonEmail.length > 0 ? anonEmail : "anonymous@guest",
-            password: anonPassword,
-            content,
-            parentId,
-          };
-      await api.post(`/posts/${postId}/comments`, payload);
+      await createComment(postId, content, parentId, anonPassword);
       setContent("");
       if (!commenter) {
         setAnonName("");

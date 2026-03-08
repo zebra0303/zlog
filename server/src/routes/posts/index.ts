@@ -9,102 +9,15 @@ import { createSlug, createUniqueSlug } from "../../lib/slug.js";
 import { stripMarkdown } from "../../lib/markdown.js";
 import { sendWebhookToSubscribers } from "../../services/feedService.js";
 import { triggerStaleSync } from "../../services/syncService.js";
-import { unlinkSync } from "node:fs";
-import path from "node:path";
 import geoip from "geoip-lite";
 import { parseUserAgent } from "../../lib/userAgent.js";
-import sharp from "sharp";
-
-async function getImageDimensions(
-  imageUrl: string | null | undefined,
-): Promise<{ width: number; height: number } | null> {
-  if (!imageUrl?.startsWith("/uploads/images/")) return null;
-  try {
-    const filePath = path.join(process.cwd(), imageUrl);
-    const metadata = await sharp(filePath).metadata();
-    if (metadata.width && metadata.height) {
-      return { width: metadata.width, height: metadata.height };
-    }
-  } catch (err) {
-    console.error("Failed to get image dimensions:", err);
-  }
-  return null;
-}
-
-function deleteUploadedImage(imageUrl: string) {
-  if (!imageUrl.startsWith("/uploads/images/")) return;
-  try {
-    const filePath = path.join(process.cwd(), imageUrl);
-    unlinkSync(filePath);
-  } catch {
-    /* ignore – file may already be deleted */
-  }
-}
-
-// Re-using helper functions (would ideally be shared utils)
-function batchLoadCategories(categoryIds: string[]) {
-  const map = new Map<string, { id: string; name: string; slug: string }>();
-  if (categoryIds.length === 0) return map;
-  const rows = db
-    .select({
-      id: schema.categories.id,
-      name: schema.categories.name,
-      slug: schema.categories.slug,
-    })
-    .from(schema.categories)
-    .where(inArray(schema.categories.id, categoryIds))
-    .all();
-  for (const r of rows) map.set(r.id, r);
-  return map;
-}
-
-function batchLoadCommentCounts(postIds: string[]) {
-  const map = new Map<string, number>();
-  if (postIds.length === 0) return map;
-  const rows = db
-    .select({ postId: schema.comments.postId, count: sql<number>`count(*)` })
-    .from(schema.comments)
-    .where(and(inArray(schema.comments.postId, postIds), isNull(schema.comments.deletedAt)))
-    .groupBy(schema.comments.postId)
-    .all();
-  for (const r of rows) map.set(r.postId, r.count);
-  return map;
-}
-
-function batchLoadLikeCounts(postIds: string[]) {
-  const map = new Map<string, number>();
-  if (postIds.length === 0) return map;
-  const rows = db
-    .select({ postId: schema.postLikes.postId, count: sql<number>`count(*)` })
-    .from(schema.postLikes)
-    .where(inArray(schema.postLikes.postId, postIds))
-    .groupBy(schema.postLikes.postId)
-    .all();
-  for (const r of rows) map.set(r.postId, r.count);
-  return map;
-}
-
-function batchLoadTags(postIds: string[]) {
-  const map = new Map<string, { id: string; name: string; slug: string }[]>();
-  if (postIds.length === 0) return map;
-  const rows = db
-    .select({
-      postId: schema.postTags.postId,
-      id: schema.tags.id,
-      name: schema.tags.name,
-      slug: schema.tags.slug,
-    })
-    .from(schema.postTags)
-    .innerJoin(schema.tags, eq(schema.postTags.tagId, schema.tags.id))
-    .where(inArray(schema.postTags.postId, postIds))
-    .all();
-  for (const r of rows) {
-    const arr = map.get(r.postId) ?? [];
-    arr.push({ id: r.id, name: r.name, slug: r.slug });
-    map.set(r.postId, arr);
-  }
-  return map;
-}
+import { getImageDimensions, deleteUploadedImage } from "../../lib/image/processor.js";
+import {
+  batchLoadCategories,
+  batchLoadCommentCounts,
+  batchLoadLikeCounts,
+  batchLoadTags,
+} from "../../services/postLoaders.js";
 
 const postsRoute = new OpenAPIHono();
 

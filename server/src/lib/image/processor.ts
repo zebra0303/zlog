@@ -67,3 +67,29 @@ export async function generateThumbnail(
     return null;
   }
 }
+
+export async function getImageDimensions(
+  imageUrl: string | null | undefined,
+): Promise<{ width: number; height: number } | null> {
+  if (!imageUrl?.startsWith("/uploads/images/")) return null;
+  try {
+    const filePath = path.join(process.cwd(), imageUrl);
+    const metadata = await sharp(filePath).metadata();
+    if (metadata.width && metadata.height) {
+      return { width: metadata.width, height: metadata.height };
+    }
+  } catch (err) {
+    console.error("Failed to get image dimensions:", err);
+  }
+  return null;
+}
+
+export function deleteUploadedImage(imageUrl: string) {
+  if (!imageUrl.startsWith("/uploads/images/")) return;
+  try {
+    const filePath = path.join(process.cwd(), imageUrl);
+    fs.unlinkSync(filePath);
+  } catch {
+    /* ignore – file may already be deleted */
+  }
+}

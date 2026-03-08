@@ -1,160 +1,55 @@
 import { Hono } from "hono";
-import { db, analyticsDb } from "../db/index.js";
+import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
-import * as analyticsSchema from "../db/schema/analytics.js";
-import { eq, and, desc, gt, inArray } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { fixRemoteUrl, fixRemoteContentUrls, validateRemoteUrl } from "../lib/remoteUrl.js";
-import { getT } from "../lib/i18n/index.js";
+import { federationService } from "../services/federation.js";
 import type { WebhookEvent } from "@zlog/shared";
 
 const federationRoute = new Hono();
 
-/** Convert relative path images in markdown content to absolute URLs (used by provider) */
-function resolveRelativeUrls(content: string, siteUrl: string): string {
-  return content.replace(/(!\[.*?\]\()(\/\/(uploads|img)\/[^)]+\))/g, `$1${siteUrl}$2`);
-}
-
-/** Convert relative path to absolute URL (coverImage, etc.) */
-function resolveUrl(url: string | null, siteUrl: string): string | null {
-  if (!url) return url;
-  return url.startsWith("/") ? siteUrl + url : url;
-}
-
 federationRoute.get("/info", (c) => {
-  const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  if (!ownerRecord) return c.json({ error: "Blog information not found." }, 404);
-  const siteUrl = ownerRecord.siteUrl;
-  const avatarAbsoluteUrl = ownerRecord.avatarUrl?.startsWith("/")
-    ? `${siteUrl}${ownerRecord.avatarUrl}`
-    : ownerRecord.avatarUrl;
-  return c.json({
-    siteUrl,
-    displayName: ownerRecord.displayName,
-    blogTitle: ownerRecord.blogTitle,
-    blogDescription: ownerRecord.blogDescription,
-    avatarUrl: avatarAbsoluteUrl,
-    blogHandle: ownerRecord.blogHandle,
-  });
+  try {
+    const info = federationService.getBlogInfo();
+    return c.json(info);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "Error" }, 404);
+  }
 });
 
 federationRoute.get("/categories", (c) => {
-  const cats = db
-    .select()
-    .from(schema.categories)
-    .where(eq(schema.categories.isPublic, true))
-    .all();
-  return c.json(
-    cats.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      slug: cat.slug,
-      description: cat.description,
-    })),
-  );
+  const categories = federationService.getPublicCategories();
+  return c.json(categories);
 });
 
 // Default max posts per federation sync to prevent unbounded responses
-const FEDERATION_POST_LIMIT = 200;
-
 federationRoute.get("/categories/:id/posts", (c) => {
   const categoryId = c.req.param("id");
   const since = c.req.query("since");
   const limitParam = c.req.query("limit");
-  const limit = Math.min(
-    Math.max(1, parseInt(limitParam ?? "", 10) || FEDERATION_POST_LIMIT),
-    FEDERATION_POST_LIMIT,
-  );
-  const subscriberUrl = c.req.header("X-Zlog-Subscriber-Url")?.replace(/\/+$/, "");
+  const subscriberUrl = c.req.header("X-Zlog-Subscriber-Url");
 
-  // Verify subscriber if header is present (Strict mode for identified pullers)
-  if (subscriberUrl) {
-    const isSubscribed = db
-      .select()
-      .from(schema.subscribers)
-      .where(
-        and(
-          eq(schema.subscribers.categoryId, categoryId),
-          eq(schema.subscribers.subscriberUrl, subscriberUrl),
-          eq(schema.subscribers.isActive, true),
-        ),
-      )
-      .get();
-
-    if (!isSubscribed) {
-      // console.warn(
-      //   `🚫 Pull sync blocked: ${subscriberUrl} is not an active subscriber for category ${categoryId}`,
-      // );
-      return c.json({ error: "ERR_SUBSCRIPTION_REVOKED" }, 403);
+  try {
+    const posts = federationService.getCategoryPosts(categoryId, subscriberUrl, since, limitParam);
+    return c.json(posts);
+  } catch (err) {
+    if (err instanceof Error && err.message === "ERR_SUBSCRIPTION_REVOKED") {
+      return c.json({ error: err instanceof Error ? err.message : "Error" }, 403);
     }
+    return c.json({ error: "Internal Server Error" }, 500);
   }
-
-  const conditions = and(
-    eq(schema.posts.categoryId, categoryId),
-    eq(schema.posts.status, "published"),
-  );
-  // Apply LIMIT to prevent unbounded response payloads
-  const postsResult = since
-    ? db
-        .select()
-        .from(schema.posts)
-        .where(and(conditions, gt(schema.posts.updatedAt, since)))
-        .orderBy(desc(schema.posts.createdAt))
-        .limit(limit)
-        .all()
-    : db
-        .select()
-        .from(schema.posts)
-        .where(conditions)
-        .orderBy(desc(schema.posts.createdAt))
-        .limit(limit)
-        .all();
-
-  const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  const siteUrl = ownerRecord?.siteUrl ?? "";
-
-  return c.json(
-    postsResult.map((post) => ({
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      content: resolveRelativeUrls(post.content, siteUrl),
-      excerpt: post.excerpt,
-      coverImage: resolveUrl(post.coverImage, siteUrl),
-      coverImageWidth: post.coverImageWidth,
-      coverImageHeight: post.coverImageHeight,
-      uri: `${siteUrl}/posts/${post.id}`,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-    })),
-  );
 });
 
 federationRoute.get("/posts/:id", (c) => {
   const id = c.req.param("id");
-  const post = db
-    .select()
-    .from(schema.posts)
-    .where(and(eq(schema.posts.id, id), eq(schema.posts.status, "published")))
-    .get();
-  if (!post) return c.json({ error: "Post not found." }, 404);
-  const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  const siteUrl = ownerRecord?.siteUrl ?? "";
-  return c.json({
-    id: post.id,
-    title: post.title,
-    slug: post.slug,
-    content: resolveRelativeUrls(post.content, siteUrl),
-    excerpt: post.excerpt,
-    coverImage: resolveUrl(post.coverImage, siteUrl),
-    coverImageWidth: post.coverImageWidth,
-    coverImageHeight: post.coverImageHeight,
-    uri: `${siteUrl}/posts/${post.id}`,
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
-    author: ownerRecord?.displayName ?? "",
-  });
+  try {
+    const post = federationService.getPost(id);
+    return c.json(post);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "Error" }, 404);
+  }
 });
 
 federationRoute.post("/posts/:id/view", async (c) => {
@@ -165,69 +60,15 @@ federationRoute.post("/posts/:id/view", async (c) => {
     return c.json({ error: "Missing required fields." }, 400);
   }
 
-  const subscriberUrl = body.subscriberUrl.replace(/\/+$/, "");
-
-  const post = db.select().from(schema.posts).where(eq(schema.posts.id, postId)).get();
-  if (post?.status !== "published" || !post.categoryId) {
-    return c.json({ error: "Post not found." }, 404);
+  try {
+    federationService.recordPostView(postId, body.visitorId, body.subscriberUrl);
+    return c.json({ success: true });
+  } catch (err) {
+    if (err instanceof Error && err.message === "Unauthorized subscriber.") {
+      return c.json({ error: err instanceof Error ? err.message : "Error" }, 403);
+    }
+    return c.json({ error: err instanceof Error ? err.message : "Error" }, 404);
   }
-
-  // Verify subscriber
-  const isSubscribed = db
-    .select()
-    .from(schema.subscribers)
-    .where(
-      and(
-        eq(schema.subscribers.categoryId, post.categoryId),
-        eq(schema.subscribers.subscriberUrl, subscriberUrl),
-        eq(schema.subscribers.isActive, true),
-      ),
-    )
-    .get();
-
-  if (!isSubscribed) {
-    return c.json({ error: "Unauthorized subscriber." }, 403);
-  }
-
-  const now = new Date();
-  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-
-  // Prevent duplicate within 24h for the same visitor
-  // Use ip: "federation", referer: subscriberUrl, userAgent: visitorId
-  const existingLog = analyticsDb
-    .select()
-    .from(analyticsSchema.postAccessLogs)
-    .where(
-      and(
-        eq(analyticsSchema.postAccessLogs.postId, postId),
-        eq(analyticsSchema.postAccessLogs.ip, "federation"),
-        eq(analyticsSchema.postAccessLogs.referer, subscriberUrl),
-        eq(analyticsSchema.postAccessLogs.userAgent, body.visitorId),
-        gt(analyticsSchema.postAccessLogs.createdAt, dayAgo),
-      ),
-    )
-    .get();
-
-  if (!existingLog) {
-    db.update(schema.posts)
-      .set({ viewCount: post.viewCount + 1 })
-      .where(eq(schema.posts.id, postId))
-      .run();
-
-    analyticsDb
-      .insert(analyticsSchema.postAccessLogs)
-      .values({
-        id: generateId(),
-        postId,
-        ip: "federation",
-        referer: subscriberUrl,
-        userAgent: body.visitorId,
-        createdAt: now.toISOString(),
-      })
-      .run();
-  }
-
-  return c.json({ success: true });
 });
 
 federationRoute.post("/subscribe", async (c) => {
@@ -236,273 +77,44 @@ federationRoute.post("/subscribe", async (c) => {
     subscriberUrl: string;
     callbackUrl: string;
   }>();
-  if (!body.categoryId || !body.subscriberUrl || !body.callbackUrl)
+  if (!body.categoryId || !body.subscriberUrl || !body.callbackUrl) {
     return c.json({ error: "Required fields are missing." }, 400);
-
-  const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  const mySiteUrl = ownerRecord?.siteUrl ?? "";
+  }
 
   try {
-    validateRemoteUrl(body.subscriberUrl, mySiteUrl);
-    validateRemoteUrl(body.callbackUrl, mySiteUrl);
+    const result = federationService.subscribe(
+      body.categoryId,
+      body.subscriberUrl,
+      body.callbackUrl,
+    );
+    return c.json(result, result.message.includes("registered") ? 201 : 200);
   } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "Invalid URL." }, 400);
+    if (err instanceof Error && err.message === "Category not found.")
+      return c.json({ error: err instanceof Error ? err.message : "Error" }, 404);
+    return c.json({ error: err instanceof Error ? err.message : "Error" }, 400);
   }
-
-  const cat = db
-    .select()
-    .from(schema.categories)
-    .where(eq(schema.categories.id, body.categoryId))
-    .get();
-  if (!cat?.isPublic) return c.json({ error: "Category not found." }, 404);
-
-  const webhookUrl = db
-    .select()
-    .from(schema.siteSettings)
-    .where(eq(schema.siteSettings.key, "notification_slack_webhook"))
-    .get()?.value;
-
-  const existing = db
-    .select()
-    .from(schema.subscribers)
-    .where(
-      and(
-        eq(schema.subscribers.categoryId, body.categoryId),
-        eq(schema.subscribers.subscriberUrl, body.subscriberUrl),
-      ),
-    )
-    .get();
-  if (existing) {
-    db.update(schema.subscribers)
-      .set({ isActive: true, callbackUrl: body.callbackUrl })
-      .where(eq(schema.subscribers.id, existing.id))
-      .run();
-
-    if (webhookUrl) {
-      const lang =
-        db
-          .select()
-          .from(schema.siteSettings)
-          .where(eq(schema.siteSettings.key, "default_language"))
-          .get()?.value ?? "ko";
-      const t = getT(lang);
-
-      const lines = [
-        t("slack_federation_reactivated"),
-        t("slack_category", { categoryName: cat.name }),
-        t("slack_subscriber_url", { url: body.subscriberUrl }),
-      ];
-      fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: lines.join("\n") }),
-      }).catch(() => null);
-    }
-
-    return c.json({ message: "Subscription has been reactivated.", id: existing.id });
-  }
-
-  const id = generateId();
-  db.insert(schema.subscribers)
-    .values({
-      id,
-      categoryId: body.categoryId,
-      subscriberUrl: body.subscriberUrl.replace(/\/+$/, ""),
-      callbackUrl: body.callbackUrl,
-      createdAt: new Date().toISOString(),
-    })
-    .run();
-
-  if (webhookUrl) {
-    const lang =
-      db
-        .select()
-        .from(schema.siteSettings)
-        .where(eq(schema.siteSettings.key, "default_language"))
-        .get()?.value ?? "ko";
-    const t = getT(lang);
-
-    const lines = [
-      t("slack_new_federation_subscriber"),
-      t("slack_category", { categoryName: cat.name }),
-      t("slack_subscriber_url", { url: body.subscriberUrl }),
-    ];
-    fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: lines.join("\n") }),
-    }).catch(() => null);
-  }
-
-  return c.json({ message: "Subscription has been registered.", id }, 201);
 });
 
 federationRoute.post("/unsubscribe", async (c) => {
   const body = await c.req.json<{ categoryId: string; subscriberUrl: string }>();
-  const existing = db
-    .select()
-    .from(schema.subscribers)
-    .where(
-      and(
-        eq(schema.subscribers.categoryId, body.categoryId),
-        eq(schema.subscribers.subscriberUrl, body.subscriberUrl),
-      ),
-    )
-    .get();
-  if (!existing) return c.json({ error: "Subscription not found." }, 404);
-  db.update(schema.subscribers)
-    .set({ isActive: false })
-    .where(eq(schema.subscribers.id, existing.id))
-    .run();
-  return c.json({ message: "Subscription has been cancelled." });
+  try {
+    federationService.unsubscribe(body.categoryId, body.subscriberUrl);
+    return c.json({ message: "Subscription has been cancelled." });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "Error" }, 404);
+  }
 });
 
 federationRoute.post("/webhook", async (c) => {
   const body = await c.req.json<Partial<WebhookEvent>>();
-  if (!body.event || !body.post || !body.categoryId || !body.siteUrl)
-    return c.json({ error: "Invalid webhook data." }, 400);
-
-  const ownerRecord = db.select().from(schema.owner).limit(1).get();
-  const mySiteUrl = ownerRecord?.siteUrl ?? "";
-
   try {
-    validateRemoteUrl(body.siteUrl, mySiteUrl);
+    const result = federationService.handleWebhook(body);
+    return c.json(result);
   } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "Invalid site URL." }, 400);
+    return c.json({ error: err instanceof Error ? err.message : "Error" }, 400);
   }
-
-  let remoteBlog = db
-    .select()
-    .from(schema.remoteBlogs)
-    .where(eq(schema.remoteBlogs.siteUrl, body.siteUrl))
-    .get();
-  if (!remoteBlog) {
-    try {
-      const infoRes = await fetch(`${body.siteUrl}/api/federation/info`, {
-        signal: AbortSignal.timeout(10000),
-      });
-      const info = (await infoRes.json()) as {
-        displayName?: string;
-        blogTitle?: string;
-        avatarUrl?: string;
-      };
-      const id = generateId();
-      db.insert(schema.remoteBlogs)
-        .values({
-          id,
-          siteUrl: body.siteUrl,
-          displayName: info.displayName ?? null,
-          blogTitle: info.blogTitle ?? null,
-          avatarUrl: fixRemoteUrl(info.avatarUrl ?? null, body.siteUrl),
-          createdAt: new Date().toISOString(),
-        })
-        .run();
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      remoteBlog = db.select().from(schema.remoteBlogs).where(eq(schema.remoteBlogs.id, id)).get()!;
-    } catch {
-      return c.json({ error: "Failed to fetch remote blog information." }, 502);
-    }
-  }
-
-  let remoteCategory = db
-    .select()
-    .from(schema.remoteCategories)
-    .where(
-      and(
-        eq(schema.remoteCategories.remoteBlogId, remoteBlog.id),
-        eq(schema.remoteCategories.remoteId, body.categoryId),
-      ),
-    )
-    .get();
-  if (!remoteCategory) {
-    const id = generateId();
-    db.insert(schema.remoteCategories)
-      .values({
-        id,
-        remoteBlogId: remoteBlog.id,
-        remoteId: body.categoryId,
-        name: "Unknown",
-        slug: "unknown",
-        createdAt: new Date().toISOString(),
-      })
-      .run();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    remoteCategory = db
-      .select()
-      .from(schema.remoteCategories)
-      .where(eq(schema.remoteCategories.id, id))
-      .get()!;
-  }
-
-  const remoteUri = `${body.siteUrl}/posts/${body.post.id}`;
-  const now = new Date().toISOString();
-  const subscription = db
-    .select()
-    .from(schema.categorySubscriptions)
-    .where(
-      and(
-        eq(schema.categorySubscriptions.remoteCategoryId, remoteCategory.id),
-        eq(schema.categorySubscriptions.isActive, true),
-      ),
-    )
-    .get();
-  const localCatId = subscription?.localCategoryId ?? null;
-
-  if (body.event === "post.published" || body.event === "post.updated") {
-    const fixedContent = fixRemoteContentUrls(body.post.content, body.siteUrl);
-    const fixedCover = fixRemoteUrl(body.post.coverImage ?? null, body.siteUrl);
-    const existing = db
-      .select()
-      .from(schema.remotePosts)
-      .where(eq(schema.remotePosts.remoteUri, remoteUri))
-      .get();
-    if (existing) {
-      db.update(schema.remotePosts)
-        .set({
-          title: body.post.title,
-          slug: body.post.slug,
-          content: fixedContent,
-          excerpt: body.post.excerpt ?? null,
-          coverImage: fixedCover,
-          remoteStatus: "published",
-          remoteUpdatedAt: body.post.updatedAt,
-          fetchedAt: now,
-          localCategoryId: localCatId ?? existing.localCategoryId,
-        })
-        .where(eq(schema.remotePosts.id, existing.id))
-        .run();
-    } else {
-      db.insert(schema.remotePosts)
-        .values({
-          id: generateId(),
-          remoteUri,
-          remoteBlogId: remoteBlog.id,
-          remoteCategoryId: remoteCategory.id,
-          localCategoryId: localCatId,
-          title: body.post.title,
-          slug: body.post.slug,
-          content: fixedContent,
-          excerpt: body.post.excerpt ?? null,
-          coverImage: fixedCover,
-          remoteStatus: "published",
-          authorName: remoteBlog.displayName,
-          remoteCreatedAt: body.post.createdAt,
-          remoteUpdatedAt: body.post.updatedAt,
-          fetchedAt: now,
-        })
-        .run();
-    }
-  } else {
-    db.update(schema.remotePosts)
-      .set({ remoteStatus: "deleted", fetchedAt: now })
-      .where(eq(schema.remotePosts.remoteUri, remoteUri))
-      .run();
-  }
-
-  return c.json({ message: "Webhook processed successfully." });
 });
 
-// ============ Local subscription (subscribe to an external blog category) ============
 federationRoute.post("/local-subscribe", async (c) => {
   const body = await c.req.json<{
     remoteSiteUrl: string;

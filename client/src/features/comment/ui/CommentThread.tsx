@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Heart, Reply, Pencil, Trash2 } from "lucide-react";
 import { Button, Input, Textarea, DefaultAvatar, useToast, useConfirm } from "@/shared/ui";
-import { api } from "@/shared/api/client";
+import { useCommentMutations } from "../model/useCommentMutations";
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
-import { getVisitorId } from "@/shared/lib/visitorId";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
 import type { CommentWithReplies } from "@zlog/shared";
 import { CommentContent } from "./CommentContent";
@@ -44,7 +43,7 @@ export function CommentThread({
   const isDeleted = !!comment.deletedAt;
   const handleLike = async () => {
     try {
-      await api.post(`/comments/${comment.id}/like`, { visitorId: getVisitorId() });
+      await likeComment(comment.id);
       showToast(t("post_like_added"), "success");
       onRefresh();
     } catch {
@@ -53,6 +52,8 @@ export function CommentThread({
     }
   };
   const { t } = useI18n();
+  const { updateComment, deleteComment, likeComment } = useCommentMutations();
+
   const { showToast } = useToast();
   const { confirm } = useConfirm();
 
@@ -77,7 +78,7 @@ export function CommentThread({
       } else if (isAnonComment) {
         payload.password = editPassword;
       }
-      await api.put(`/comments/${comment.id}`, payload);
+      await updateComment(comment.id, editContent, deletePassword);
       setIsEditing(false);
       setEditPassword("");
       showToast(t("success"), "success");
@@ -99,7 +100,7 @@ export function CommentThread({
     // Admin can leave body empty (authenticated via JWT token)
 
     try {
-      await api.delete(`/comments/${comment.id}`, payload);
+      await deleteComment(comment.id, deletePassword);
       showToast(t("success"), "success");
       onCountChange?.(-1);
       onRefresh();
