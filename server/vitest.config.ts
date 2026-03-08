@@ -11,6 +11,13 @@ export default defineConfig({
     env: {
       ALLOW_LOCAL_FEDERATION: "false",
     },
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      exclude: ["src/__tests__/**", "src/db/migrations/**"],
+      reporter: ["text", "html"],
+      reportsDirectory: "./coverage",
+    },
   },
   resolve: {
     alias: {

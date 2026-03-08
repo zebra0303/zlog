@@ -11,5 +11,6 @@ docker-data/
 *.log
 .vite/
 *.tsbuildinfo
+coverage/
 .gemini
 GEMINI.md

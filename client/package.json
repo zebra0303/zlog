@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "vitals": "node scripts/measure-vitals.js"
   },
   "dependencies": {
@@ -54,6 +55,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/coverage-v8": "^4.0.18",
     "chrome-launcher": "^1.2.1",
     "jsdom": "^28.1.0",
     "lighthouse": "^13.0.3",

@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.10",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
     "@types/geoip-lite": "^1.4.4",
+    "@vitest/coverage-v8": "^4.0.18",
     "drizzle-kit": "^0.31.9",
     "tsx": "^4.19.0",
     "vitest": "^4.0.18"

@@ -7,6 +7,13 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
     setupFiles: ["src/__tests__/setup.ts"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/__tests__/**", "src/vite-env.d.ts"],
+      reporter: ["text", "html"],
+      reportsDirectory: "./coverage",
+    },
   },
   resolve: {
     alias: {
