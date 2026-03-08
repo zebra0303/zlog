@@ -149,7 +149,7 @@ describe("Posts API", () => {
       createTestPost({ title: "Admin View", slug: "admin-view" });
 
       const res = await app.request("/api/posts/admin-view", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(200);
       const data = (await res.json()) as { viewCount: number };
@@ -183,7 +183,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ title: "New Post Title", content: "Some content here" }),
       });
@@ -199,7 +199,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           title: "Tagged Post",
@@ -222,7 +222,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           title: "Post One",
@@ -237,7 +237,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           title: "Post Two",
@@ -262,7 +262,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ title: "Duplicate", content: "Content" }),
       });
@@ -285,7 +285,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ content: "Content only" }),
       });
@@ -301,7 +301,7 @@ describe("Posts API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ title: "Updated Title" }),
       });
@@ -318,7 +318,7 @@ describe("Posts API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ status: "published" }),
       });
@@ -332,7 +332,7 @@ describe("Posts API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ title: "Test" }),
       });
@@ -356,7 +356,7 @@ describe("Posts API", () => {
 
       const res = await app.request(`/api/posts/${post.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(200);
 
@@ -368,7 +368,7 @@ describe("Posts API", () => {
     it("should return 404 for non-existent post", async () => {
       const res = await app.request("/api/posts/nonexistent-id", {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(404);
     });
@@ -530,7 +530,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           title: "Post 1",
@@ -543,7 +543,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           title: "Post 2",
@@ -613,7 +613,7 @@ describe("Posts API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ visitorId: "admin-visitor" }),
       });

@@ -61,7 +61,7 @@ describe("Analytics API", () => {
   it("should not count visit for admin", async () => {
     const res = await app.request("/api/analytics/visit", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Cookie: `zlog_token=${token}` },
     });
 
     expect(res.status).toBe(200);
@@ -77,7 +77,7 @@ describe("Analytics API", () => {
     await app.request("/api/analytics/visit", { method: "POST" });
 
     const res = await app.request("/api/analytics/visitors", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Cookie: `zlog_token=${token}` },
     });
 
     expect(res.status).toBe(200);

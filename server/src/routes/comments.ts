@@ -1,4 +1,5 @@
-import { Hono } from "hono";
+import { Hono, Context } from "hono";
+import { getCookie } from "hono/cookie";
 import { db, sqlite } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and, sql, inArray, isNull, asc, desc } from "drizzle-orm";
@@ -105,12 +106,9 @@ async function sendSlackNotification(
 }
 
 /** Check if the user is an admin from JWT token (optional) */
-async function isAdmin(c: {
-  req: { header: (name: string) => string | undefined };
-}): Promise<boolean> {
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) return false;
-  const token = authHeader.slice(7);
+async function isAdmin(c: Context): Promise<boolean> {
+  const token = getCookie(c, "zlog_token");
+  if (!token) return false;
   const ownerId = await verifyToken(token);
   return !!ownerId;
 }

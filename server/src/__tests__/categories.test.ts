@@ -74,7 +74,7 @@ describe("Categories API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ name: "New Category" }),
       });
@@ -98,7 +98,7 @@ describe("Categories API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({}),
       });
@@ -113,7 +113,7 @@ describe("Categories API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ name: "New Name" }),
       });
@@ -128,7 +128,7 @@ describe("Categories API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ name: "Test" }),
       });
@@ -143,7 +143,7 @@ describe("Categories API", () => {
 
       const res = await app.request(`/api/categories/${cat.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(200);
     });
@@ -153,7 +153,7 @@ describe("Categories API", () => {
 
       const res = await app.request(`/api/categories/${cat.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(400);
       const data = (await res.json()) as { code: string };
@@ -167,7 +167,7 @@ describe("Categories API", () => {
 
       const res = await app.request(`/api/categories/${cat.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(409);
       const data = (await res.json()) as { code: string; postCount: number };
@@ -183,7 +183,7 @@ describe("Categories API", () => {
       const res = await app.request(`/api/categories/${cat.id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ targetCategoryId: target.id }),

@@ -108,7 +108,7 @@ federationRoute.post("/unsubscribe", async (c) => {
 federationRoute.post("/webhook", async (c) => {
   const body = await c.req.json<Partial<WebhookEvent>>();
   try {
-    const result = federationService.handleWebhook(body);
+    const result = await federationService.handleWebhook(body);
     return c.json(result);
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : "Error" }, 400);

@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { getCookie } from "hono/cookie";
 import { db, analyticsDb, sqlite } from "../../db/index.js";
 import * as schema from "../../db/schema.js";
 import { eq, desc, and, or, sql, like, inArray, isNull, type SQL } from "drizzle-orm";
@@ -68,10 +69,10 @@ postsRoute.openapi(
 
     // Check if user is admin
     let isAdmin = false;
-    const authHeader = c.req.header("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
+    const token = getCookie(c, "zlog_token");
+    if (token) {
       try {
-        const payload = await verifyToken(authHeader.substring(7));
+        const payload = await verifyToken(token);
         if (payload) isAdmin = true;
       } catch {
         // ignore
@@ -394,9 +395,9 @@ postsRoute.get("/:param", async (c) => {
   // Determine whether to increment view count: exclude admins or already-viewed visitors
   let shouldCount = true;
   let isAdmin = false;
-  const authHeader = c.req.header("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const ownerId = await verifyToken(authHeader.slice(7));
+  const token = getCookie(c, "zlog_token");
+  if (token) {
+    const ownerId = await verifyToken(token);
     if (ownerId) {
       shouldCount = false;
       isAdmin = true;
@@ -554,16 +555,15 @@ postsRoute.post("/:id/like", async (c) => {
   const body = await c.req.json<{ visitorId: string }>();
 
   // Prevent admin from liking
-  const authHeader = c.req.header("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.substring(7);
+  const token = getCookie(c, "zlog_token");
+  if (token) {
     try {
       const payload = await verifyToken(token);
       if (payload) {
-        return c.json({ error: "Administrators cannot like posts." }, 403);
+        return c.json({ error: "Administrator cannot like posts." }, 403);
       }
     } catch {
-      // Invalid token, ignore and treat as visitor
+      // ignore
     }
   }
 

@@ -22,7 +22,7 @@ describe("Post Templates API", () => {
     const res = await app.request("/api/templates", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${adminToken}`,
+        Cookie: `zlog_token=${adminToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -39,7 +39,7 @@ describe("Post Templates API", () => {
 
   it("should list templates", async () => {
     const res = await app.request("/api/templates", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
 
     expect(res.status).toBe(200);
@@ -53,7 +53,7 @@ describe("Post Templates API", () => {
 
   it("should update a template", async () => {
     const listRes = await app.request("/api/templates", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
     const templates = (await listRes.json()) as PostTemplate[];
     expect(templates[0]).toBeDefined();
@@ -62,7 +62,7 @@ describe("Post Templates API", () => {
     const res = await app.request(`/api/templates/${templateId}`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${adminToken}`,
+        Cookie: `zlog_token=${adminToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -78,7 +78,7 @@ describe("Post Templates API", () => {
 
   it("should delete a template", async () => {
     const listRes = await app.request("/api/templates", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
     const templates = (await listRes.json()) as PostTemplate[];
     expect(templates[0]).toBeDefined();
@@ -86,13 +86,13 @@ describe("Post Templates API", () => {
 
     const res = await app.request(`/api/templates/${templateId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
 
     expect(res.status).toBe(200);
 
     const listRes2 = await app.request("/api/templates", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
     const templates2 = (await listRes2.json()) as PostTemplate[];
     expect(templates2.length).toBe(0);

@@ -262,7 +262,7 @@ describe("Comments API", () => {
 
       const res = await app.request(`/api/comments/${comment.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(200);
     });
@@ -469,7 +469,7 @@ describe("Comments API", () => {
     it("should return 400 when no webhook URL is configured", async () => {
       const res = await app.request("/api/settings/test-slack", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(400);
     });
@@ -480,7 +480,7 @@ describe("Comments API", () => {
 
       const res = await app.request("/api/settings/test-slack", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(502);
     });
@@ -491,7 +491,7 @@ describe("Comments API", () => {
 
       const res = await app.request("/api/settings/test-slack", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(200);
       const data = (await res.json()) as { ok: boolean };

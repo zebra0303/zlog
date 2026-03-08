@@ -46,7 +46,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           displayName: "Updated Name",
@@ -64,7 +64,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ blogTitle: "My New Blog" }),
       });
@@ -100,7 +100,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           links: [
@@ -118,7 +118,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           links: [{ platform: "github", url: "https://github.com/newtest" }],
@@ -135,7 +135,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           email: "newemail@test.com",
@@ -158,7 +158,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           email: "new@test.com",
@@ -173,7 +173,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({
           currentPassword: admin.password,
@@ -197,7 +197,7 @@ describe("Settings & Profile API", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: JSON.stringify({ posts_per_page: "20", default_language: "ko" }),
       });

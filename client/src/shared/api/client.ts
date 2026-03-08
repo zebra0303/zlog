@@ -13,8 +13,6 @@ export const queryClient = new QueryClient({
 });
 
 export class ApiClient {
-  private token: string | null = null;
-
   async getErrorMessage(res: Response, fallback: string): Promise<string> {
     const text = await res.text().catch(() => "");
     if (!text) return fallback;
@@ -34,34 +32,17 @@ export class ApiClient {
     return fallback;
   }
 
-  setToken(token: string | null) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem("zlog_token", token);
-    } else {
-      localStorage.removeItem("zlog_token");
-    }
-  }
-
-  getToken(): string | null {
-    this.token ??= localStorage.getItem("zlog_token");
-    return this.token;
-  }
-
   private getHeaders(contentType?: string): HeadersInit {
     const headers: Record<string, string> = {};
     if (contentType) headers["Content-Type"] = contentType;
-    const token = this.getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
     return headers;
   }
 
   async get<T>(path: string, extraHeaders?: Record<string, string>): Promise<T> {
     const headers = { ...(this.getHeaders() as Record<string, string>), ...extraHeaders };
-    const res = await fetch(`${API_BASE}${path}`, { headers });
+    const res = await fetch(`${API_BASE}${path}`, { headers, credentials: "include" });
     if (!res.ok) {
       if (res.status === 401 && !path.includes("/auth/login")) {
-        this.setToken(null);
         window.dispatchEvent(new CustomEvent("zlog_unauthorized"));
       }
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
@@ -74,11 +55,11 @@ export class ApiClient {
     const res = await fetch(`${API_BASE}${path}`, {
       method: "POST",
       headers,
+      credentials: "include",
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
       if (res.status === 401 && !path.includes("/auth/login")) {
-        this.setToken(null);
         window.dispatchEvent(new CustomEvent("zlog_unauthorized"));
       }
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
@@ -91,11 +72,11 @@ export class ApiClient {
     const res = await fetch(`${API_BASE}${path}`, {
       method: "PUT",
       headers,
+      credentials: "include",
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
       if (res.status === 401) {
-        this.setToken(null);
         window.dispatchEvent(new CustomEvent("zlog_unauthorized"));
       }
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
@@ -108,11 +89,11 @@ export class ApiClient {
     const res = await fetch(`${API_BASE}${path}`, {
       method: "DELETE",
       headers,
+      credentials: "include",
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
       if (res.status === 401) {
-        this.setToken(null);
         window.dispatchEvent(new CustomEvent("zlog_unauthorized"));
       }
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));
@@ -121,18 +102,15 @@ export class ApiClient {
   }
 
   async upload<T>(path: string, formData: FormData): Promise<T> {
-    const headers: Record<string, string> = {};
-    const token = this.getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-
+    const headers = this.getHeaders();
     const res = await fetch(`${API_BASE}${path}`, {
       method: "POST",
       headers,
+      credentials: "include",
       body: formData,
     });
     if (!res.ok) {
       if (res.status === 401) {
-        this.setToken(null);
         window.dispatchEvent(new CustomEvent("zlog_unauthorized"));
       }
       throw new Error(await this.getErrorMessage(res, `HTTP ${res.status}`));

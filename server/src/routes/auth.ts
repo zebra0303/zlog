@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { setCookie, deleteCookie } from "hono/cookie";
 import { db, analyticsDb } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and, gte, lt } from "drizzle-orm";
@@ -116,8 +117,21 @@ auth.post("/login", async (c) => {
   analyticsDb.delete(schema.failedLogins).where(eq(schema.failedLogins.ipAddress, ip)).run();
 
   const token = await createToken(ownerRecord.id);
+  setCookie(c, "zlog_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax",
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+    path: "/",
+  });
+
   const { passwordHash: _, ...ownerData } = ownerRecord;
-  return c.json({ token, owner: ownerData });
+  return c.json({ owner: ownerData });
+});
+
+auth.post("/logout", (c) => {
+  deleteCookie(c, "zlog_token", { path: "/" });
+  return c.json({ success: true });
 });
 
 auth.get("/me", authMiddleware, async (c) => {
@@ -127,7 +141,13 @@ auth.get("/me", authMiddleware, async (c) => {
   // Sliding session: issue a fresh token if the current one is older than 24h
   if (c.get("shouldRefreshToken")) {
     const newToken = await createToken(ownerRecord.id);
-    return c.json({ ...ownerData, refreshedToken: newToken });
+    setCookie(c, "zlog_token", newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: "/",
+    });
   }
 
   return c.json(ownerData);

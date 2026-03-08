@@ -29,15 +29,15 @@ describe("Auth API", () => {
   });
 
   describe("POST /api/auth/login", () => {
-    it("should return token and owner on valid credentials", async () => {
+    it("should return token cookie and owner on valid credentials", async () => {
       const res = await app.request("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: admin.email, password: admin.password }),
       });
       expect(res.status).toBe(200);
-      const data = (await res.json()) as { token: string; owner: Record<string, unknown> };
-      expect(data.token).toBeDefined();
+      expect(res.headers.get("Set-Cookie")).toMatch(/zlog_token=/);
+      const data = (await res.json()) as { owner: Record<string, unknown> };
       expect(data.owner).toBeDefined();
       expect(data.owner).not.toHaveProperty("passwordHash");
     });
@@ -73,7 +73,7 @@ describe("Auth API", () => {
   describe("GET /api/auth/me", () => {
     it("should return owner data with valid token", async () => {
       const res = await app.request("/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: `zlog_token=${token}` },
       });
       expect(res.status).toBe(200);
       const data = (await res.json()) as Record<string, unknown>;
@@ -88,7 +88,7 @@ describe("Auth API", () => {
 
     it("should return 401 with invalid token", async () => {
       const res = await app.request("/api/auth/me", {
-        headers: { Authorization: "Bearer invalid-token-here" },
+        headers: { Cookie: "zlog_token=invalid-token-here" },
       });
       expect(res.status).toBe(401);
     });
@@ -107,42 +107,41 @@ describe("Auth API", () => {
         .sign(key);
     }
 
-    it("should NOT include refreshedToken for a fresh token (< 24h)", async () => {
+    it("should NOT include refreshedToken cookie for a fresh token (< 24h)", async () => {
       const freshToken = await getAuthToken(admin.id);
       const res = await app.request("/api/auth/me", {
-        headers: { Authorization: `Bearer ${freshToken}` },
+        headers: { Cookie: `zlog_token=${freshToken}` },
       });
       expect(res.status).toBe(200);
-      const data = (await res.json()) as Record<string, unknown>;
-      expect(data.refreshedToken).toBeUndefined();
+      expect(res.headers.get("Set-Cookie")).toBeNull();
     });
 
-    it("should include refreshedToken for an old token (> 24h)", async () => {
+    it("should include refreshedToken cookie for an old token (> 24h)", async () => {
       const oldToken = await createTokenWithAge(admin.id, 25 * 60 * 60); // 25 hours
       const res = await app.request("/api/auth/me", {
-        headers: { Authorization: `Bearer ${oldToken}` },
+        headers: { Cookie: `zlog_token=${oldToken}` },
       });
       expect(res.status).toBe(200);
-      const data = (await res.json()) as { refreshedToken?: string };
-      expect(data.refreshedToken).toBeDefined();
-      expect(typeof data.refreshedToken).toBe("string");
+      expect(res.headers.get("Set-Cookie")).toMatch(/zlog_token=/);
     });
 
     it("should return a valid refreshed token that works for auth", async () => {
       const oldToken = await createTokenWithAge(admin.id, 25 * 60 * 60);
       const res = await app.request("/api/auth/me", {
-        headers: { Authorization: `Bearer ${oldToken}` },
+        headers: { Cookie: `zlog_token=${oldToken}` },
       });
-      const data = (await res.json()) as { refreshedToken: string };
+      const cookieHeader = res.headers.get("Set-Cookie");
+      expect(cookieHeader).not.toBeNull();
+      const match = cookieHeader?.match(/zlog_token=([^;]+)/);
+      const newCookieVal = match?.[1] ?? "";
 
       // Use the refreshed token for another request
       const res2 = await app.request("/api/auth/me", {
-        headers: { Authorization: `Bearer ${data.refreshedToken}` },
+        headers: { Cookie: `zlog_token=${newCookieVal}` },
       });
       expect(res2.status).toBe(200);
-      const data2 = (await res2.json()) as Record<string, unknown>;
-      // The refreshed token is fresh, so no refreshedToken this time
-      expect(data2.refreshedToken).toBeUndefined();
+      // The refreshed token is fresh, so no refreshedToken cookie this time
+      expect(res2.headers.get("Set-Cookie")).toBeNull();
     });
   });
 

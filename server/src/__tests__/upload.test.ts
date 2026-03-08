@@ -46,7 +46,7 @@ describe("Upload API", () => {
       const res = await app.request("/api/upload/image", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: new FormData(),
       });
@@ -63,7 +63,7 @@ describe("Upload API", () => {
       const res = await app.request("/api/upload/image", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: formData,
       });
@@ -81,7 +81,7 @@ describe("Upload API", () => {
       const res = await app.request("/api/upload/image", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Cookie: `zlog_token=${token}`,
         },
         body: formData,
       });

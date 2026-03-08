@@ -20,11 +20,9 @@ analytics.post("/visit", async (c) => {
   }
 
   // 2. Check Admin (via Token)
-  // If the client sends an Authorization header, we verify it.
   // If it's a valid admin token, we DO NOT count the visit.
-  const authHeader = c.req.header("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice(7);
+  const token = getCookie(c, "zlog_token");
+  if (token) {
     const ownerId = await verifyToken(token);
     if (ownerId) {
       return c.json({ counted: false, reason: "is_admin" });

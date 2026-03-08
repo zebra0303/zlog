@@ -86,7 +86,7 @@ describe("Secret Categories API", () => {
 
   it("should show secret categories for admins", async () => {
     const res = await app.request("/api/categories", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
     const json = (await res.json()) as { slug: string }[];
     expect(json.find((c) => c.slug === "secret-cat")).toBeDefined();
@@ -101,7 +101,7 @@ describe("Secret Categories API", () => {
 
   it("should show secret posts for admins", async () => {
     const res = await app.request("/api/posts?status=published", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
     const json = (await res.json()) as { items: { slug: string }[] };
     expect(json.items.find((p) => p.slug === "secret-post")).toBeDefined();
@@ -114,7 +114,7 @@ describe("Secret Categories API", () => {
 
   it("should return 200 for secret post single view as admin", async () => {
     const res = await app.request("/api/posts/secret-post", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `zlog_token=${adminToken}` },
     });
     expect(res.status).toBe(200);
   });

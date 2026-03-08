@@ -15,9 +15,7 @@ describe("ApiClient 401 Interceptor", () => {
     vi.restoreAllMocks();
   });
 
-  it("should clear token and dispatch zlog_unauthorized on 401 error (not /auth/login)", async () => {
-    apiClient.setToken("dummy-token");
-
+  it("should dispatch zlog_unauthorized on 401 error (not /auth/login)", async () => {
     const mockResponse = new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
@@ -25,9 +23,6 @@ describe("ApiClient 401 Interceptor", () => {
     vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
 
     await expect(apiClient.get("/users/me")).rejects.toThrow("Unauthorized");
-
-    expect(apiClient.getToken()).toBeNull();
-    expect(localStorage.getItem("zlog_token")).toBeNull();
 
     const dispatchCalls = vi.mocked(window.dispatchEvent).mock.calls;
     expect(dispatchCalls.length).toBe(1);

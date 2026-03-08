@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Menu, X, Sun, Moon, PenSquare, Settings, LogOut, Home, User, LogIn } from "lucide-react";
 import { Button, ZlogLogo } from "@/shared/ui";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -18,12 +18,10 @@ export function Header() {
   const { isDark, toggle } = useThemeStore();
   const { getHeaderStyle, settings } = useSiteSettingsStore();
   const { t } = useI18n();
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const isMinimal = pathname.startsWith("/write") || pathname === "/login";
   const handleLogout = () => {
-    logout();
-    void navigate("/");
+    void logout();
   };
   const headerRef = useRef<HTMLElement>(null);
 

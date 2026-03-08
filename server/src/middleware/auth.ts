@@ -1,4 +1,5 @@
 import { Context, Next } from "hono";
+import { getCookie } from "hono/cookie";
 import { jwtVerify, SignJWT } from "jose";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
@@ -37,12 +38,11 @@ export async function verifyToken(token: string): Promise<{ sub: string; iat: nu
 const TOKEN_REFRESH_AGE_SEC = 24 * 60 * 60;
 
 export async function authMiddleware(c: Context, next: Next) {
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
+  const token = getCookie(c, "zlog_token");
+  if (!token) {
     return c.json({ error: "Authentication required." }, 401);
   }
 
-  const token = authHeader.slice(7);
   const result = await verifyToken(token);
   if (!result) {
     return c.json({ error: "Invalid token." }, 401);
@@ -66,9 +66,8 @@ export async function authMiddleware(c: Context, next: Next) {
 }
 
 export async function optionalAuthMiddleware(c: Context, next: Next) {
-  const authHeader = c.req.header("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice(7);
+  const token = getCookie(c, "zlog_token");
+  if (token) {
     const result = await verifyToken(token);
     if (result) {
       const ownerRecord = db
