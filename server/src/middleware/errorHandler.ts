@@ -1,4 +1,5 @@
-import { Context } from "hono";
+import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { AppError } from "../lib/errors.js";
 import { ZodError } from "zod";
 
@@ -12,7 +13,8 @@ export function errorHandler(err: Error, c: Context) {
           message: err.message,
         },
       },
-      err.statusCode,
+      // Cast number to Hono's ContentfulStatusCode
+      err.statusCode as ContentfulStatusCode,
     );
   }
 

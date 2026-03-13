@@ -1,12 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ApiClient } from "@/shared/api/client";
+import { api } from "@/shared/api/client";
 
 describe("ApiClient 401 Interceptor", () => {
-  let apiClient: ApiClient;
-
   beforeEach(() => {
-    apiClient = new ApiClient();
-    localStorage.clear();
     vi.spyOn(window, "dispatchEvent");
     global.fetch = vi.fn();
   });
@@ -22,7 +18,7 @@ describe("ApiClient 401 Interceptor", () => {
     });
     vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
 
-    await expect(apiClient.get("/users/me")).rejects.toThrow("Unauthorized");
+    await expect(api.get("/users/me")).rejects.toThrow("Unauthorized");
 
     const dispatchCalls = vi.mocked(window.dispatchEvent).mock.calls;
     expect(dispatchCalls.length).toBe(1);
@@ -40,7 +36,7 @@ describe("ApiClient 401 Interceptor", () => {
     vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
 
     await expect(
-      apiClient.post("/auth/login", { email: "admin@example.com", password: "wrong" }),
+      api.post("/auth/login", { email: "admin@example.com", password: "wrong" }),
     ).rejects.toThrow("Invalid credentials");
 
     expect(window.dispatchEvent).not.toHaveBeenCalled();

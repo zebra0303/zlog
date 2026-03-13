@@ -1,10 +1,5 @@
-/**
- * Extracts a user-friendly error message from an unknown caught value.
- * Returns the Error's message if available, otherwise the fallback string.
- */
-export function getErrorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error && err.message ? err.message : fallback;
-}
+// Re-export base utility from shared library
+export { getErrorMessage } from "@zebra/core";
 
 /**
  * Extracts error message with i18n ERR_ code translation support.

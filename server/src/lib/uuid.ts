@@ -1,5 +1,2 @@
-import { uuidv7 } from "uuidv7";
-
-export function generateId(): string {
-  return uuidv7();
-}
+// Re-export from shared library
+export { generateId } from "@zebra/core";
