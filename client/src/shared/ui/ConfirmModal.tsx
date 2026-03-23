@@ -1,6 +1,6 @@
 import { useConfirm } from "./useConfirm";
 import { Modal } from "./Modal";
-import { Button } from "./Button";
+import { Button } from "@zebra/core/client";
 import { useI18n } from "@/shared/i18n";
 import { AlertCircle } from "lucide-react";
 
