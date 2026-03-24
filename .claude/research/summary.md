@@ -3,7 +3,7 @@
 **Date:** 2026-03-22
 **Scope:** Full-depth analysis of the entire zlog codebase
 
-> **2026-03-22 Architecture Update:** Core UI components (Button, Card, Input, Textarea, Badge, ConfirmModal) and foundational utilities/types have been extracted into the `@zebra/core` (`zCore` repo) library to standardize the ecosystem. These are now integrated via `github:zebra0303/zCore#main`.
+> **2026-03-25 Architecture Update:** Core UI components, foundational utilities (error parsing, masking, text manipulation), and shared types have been extracted into the ( repo) library to standardize the ecosystem. These are now integrated via .
 
 ---
 
