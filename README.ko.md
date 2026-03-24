@@ -327,7 +327,7 @@ flowchart TB
     subgraph client [클라이언트 — React 19 + Vite 7]
         direction TB
         FSD[Feature-Sliced Design]
-        UI[Radix UI + Tailwind CSS v4]
+        UI[Radix UI + Tailwind CSS v4 + @zebra/core]
         State[Zustand 상태 관리]
         MD[Unified 마크다운 파이프라인]
     end
