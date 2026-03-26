@@ -57,5 +57,15 @@ export default tseslint.config(
       "react/prop-types": "off",
     },
   },
+  {
+    files: ["**/__tests__/**/*.[jt]s?(x)"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+    },
+  },
   prettier,
 );
