@@ -8,6 +8,7 @@ export const ko: Record<TranslationKeys, string> = {
   edit: "수정",
   close: "닫기",
   confirm: "확인",
+  confirm_title: "작업 확인",
   loading: "로딩 중...",
   error: "오류",
   success: "성공",

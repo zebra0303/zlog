@@ -6,6 +6,7 @@ export const en = {
   edit: "Edit",
   close: "Close",
   confirm: "Confirm",
+  confirm_title: "Confirm Action",
   loading: "Loading...",
   error: "Error",
   success: "Success",

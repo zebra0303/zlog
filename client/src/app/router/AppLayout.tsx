@@ -3,9 +3,10 @@ import { Outlet, useLocation } from "react-router";
 import { Header } from "@/widgets/header/ui/Header";
 import { Footer } from "@/widgets/footer/ui/Footer";
 import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
-import { ToastContainer } from "@/shared/ui/ToastContainer";
-import { ScrollToTop } from "@/shared/ui/ScrollToTop";
-import { ConfirmModal } from "@/shared/ui/ConfirmModal";
+import { ToastContainer, ConfirmModal, ScrollToTop } from "@/shared/ui";
+import { useToast } from "@/shared/ui/useToast";
+import { useConfirm } from "@/shared/ui/useConfirm";
+import { useI18n } from "@/shared/i18n";
 import { useSiteSettingsStore } from "@/features/site-settings/model/store";
 import { useThemeStore } from "@/features/toggle-theme/model/store";
 
@@ -52,6 +53,11 @@ export function AppLayout() {
   const observerRef = useRef<MutationObserver | null>(null);
   const { getBodyStyle, settings } = useSiteSettingsStore();
   const { isDark } = useThemeStore();
+  const { t } = useI18n();
+
+  // Toast and Confirm state from global stores (synchronized with @zebra/core)
+  const { toasts, removeToast } = useToast();
+  const { isOpen, message, onConfirm, onCancel } = useConfirm();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -275,8 +281,16 @@ export function AppLayout() {
         )}
       </div>
       <Footer />
-      <ConfirmModal />
-      <ToastContainer />
+      <ConfirmModal
+        isOpen={isOpen}
+        title={t("confirm_title") || "Confirm"}
+        message={message}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+        confirmLabel={t("confirm")}
+        cancelLabel={t("cancel")}
+      />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <ScrollToTop />
     </div>
   );
