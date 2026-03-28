@@ -24,6 +24,7 @@ zlog began with a simple, exciting vision: **"What if friends or hobbyist groups
   <img src="https://img.shields.io/badge/RSS_2.0-orange?style=flat-square" alt="RSS" />
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/@zebra/core-6C5CE7?style=flat-square" alt="zCore" />
   <img src="https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
 </p>

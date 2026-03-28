@@ -540,9 +540,9 @@ mermaid: external (CDN via importmap)
 
 ### Shared UI Components
 
-**Radix UI based:** Button, Input, Textarea, Card, Badge, Modal, Dialog, Dropdown Menu, Select, Tabs, Tooltip, Switch, Label, Separator
+**Integrated from @zebra/core:** Button, Input, Textarea, Card, Badge, Modal, ConfirmModal, ToastContainer, Pagination, Skeleton, Checkbox, Select, ToggleSwitch, LazyImage
 
-**Custom:** Skeleton, LazyImage, Pagination, SEOHead, DefaultAvatar, ZlogLogo, ToastContainer, ConfirmModal, OfflineFallback, NotFoundFallback, MarkdownToolbar, StickerPicker, ColorPicker, ToggleSwitch, ScrollToTop
+**Custom local / Radix UI:** Dialog, Dropdown Menu, Tabs, Tooltip, Label, Separator, SEOHead, DefaultAvatar, ZlogLogo, OfflineFallback, NotFoundFallback, MarkdownToolbar, StickerPicker, ColorPicker, ScrollToTop
 
 ### Shared Hooks
 
