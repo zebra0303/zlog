@@ -358,6 +358,8 @@ export default function CategoryDetailPage() {
                 ps.set("page", String(p));
                 setSearchParams(ps);
               }}
+              buttonClassName="cursor-pointer"
+              activeButtonClassName="!bg-[var(--color-primary)] !text-white"
             />
           </div>
         </>

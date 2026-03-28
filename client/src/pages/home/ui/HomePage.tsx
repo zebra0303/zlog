@@ -458,6 +458,8 @@ export default function HomePage() {
               currentPage={posts.page}
               totalPages={posts.totalPages}
               onPageChange={handlePageChange}
+              buttonClassName="cursor-pointer"
+              activeButtonClassName="!bg-[var(--color-primary)] !text-white"
             />
           </div>
         </>

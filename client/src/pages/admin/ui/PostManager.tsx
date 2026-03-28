@@ -373,7 +373,13 @@ export function PostManager() {
               ))}
             </div>
             <div className="mt-4">
-              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                buttonClassName="cursor-pointer"
+                activeButtonClassName="!bg-[var(--color-primary)] !text-white"
+              />
             </div>
           </>
         )}

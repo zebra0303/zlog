@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../../node_modules/@zebra/core/dist/**/*.js";
 @import "highlight.js/styles/github.css";
 @plugin "@tailwindcss/typography";
 @custom-variant dark (&:is(.dark *));
@@ -7,8 +8,8 @@
   --color-primary: #6c5ce7;
   --color-primary-foreground: #ffffff;
   --color-primary-light: #a29bfe;
-  --color-accent: #ff6b6b;
-  --color-accent-foreground: #ffffff;
+  --color-accent: rgba(108, 92, 231, 0.1);
+  --color-accent-foreground: #6c5ce7;
   --color-background: #faf9ff;
   --color-foreground: #1a1a2e;
   --color-surface: #ffffff;
@@ -43,9 +44,13 @@
   --color-surface: #1a1a24;
   --color-text: #f0f0f5;
   --color-text-secondary: #9ca3af;
-  --color-border: #3f3f50;
-  --color-input: #3f3f50;
+  --color-border: #262635;
+  --color-input: #262635;
   --color-ring: #6c5ce7;
+
+  /* Dark mode accent */
+  --color-accent: rgba(162, 155, 254, 0.15);
+  --color-accent-foreground: #a29bfe;
 
   /* Dark mode semantic mappings */
   --color-card: var(--color-surface);
