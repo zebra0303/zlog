@@ -135,7 +135,7 @@ export function PostManager() {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="p-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
             <FileText className="h-5 w-5" />

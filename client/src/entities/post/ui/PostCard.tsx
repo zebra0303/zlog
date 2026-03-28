@@ -59,7 +59,7 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
         )}
       </Link>
 
-      <CardContent className={post.coverImage ? "pt-4" : "pt-6"}>
+      <CardContent className={post.coverImage ? "px-8 pt-5 pb-8" : "p-8"}>
         {/* 2. Category & Remote Badges (Static) */}
         <div className="relative z-10 mb-2 flex flex-wrap items-center gap-2">
           {post.category && (

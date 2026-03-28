@@ -200,7 +200,7 @@ export function ThemeCustomizer({
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="p-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
           <Palette className="h-5 w-5" />
           {t("admin_theme_title")}
@@ -497,7 +497,7 @@ export function ThemeCustomizer({
           </div>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           {sections.map((section) => {
             const { heightKey } = section;
             const {

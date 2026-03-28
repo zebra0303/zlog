@@ -56,7 +56,7 @@ export function SubscriberManager() {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="p-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
           <Rss className="h-5 w-5" />
           {t("admin_sub_title")}

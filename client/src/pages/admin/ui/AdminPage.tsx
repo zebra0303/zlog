@@ -227,7 +227,7 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <SEOHead title={t("admin_title")} />
       <div className="flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-text)]">
@@ -300,7 +300,7 @@ export default function AdminPage() {
         <>
           {/* Language settings */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-8">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
                 <Languages className="h-5 w-5" />
                 {t("admin_lang_title")}
@@ -325,7 +325,7 @@ export default function AdminPage() {
 
           {/* Display settings */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-8">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
                 <FileText className="h-5 w-5" />
                 {t("admin_display_title")}
@@ -407,7 +407,7 @@ export default function AdminPage() {
 
           {/* Notifications */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-8">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
                 <Activity className="h-5 w-5" />
                 {t("admin_notifications")}
@@ -453,7 +453,7 @@ export default function AdminPage() {
 
           {/* SEO settings */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-8">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
                 <Globe className="h-5 w-5" />
                 {t("admin_seo_title")}
@@ -525,7 +525,7 @@ export default function AdminPage() {
         <>
           {/* Federation settings */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-8">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
                 <Globe className="h-5 w-5" />
                 {t("admin_fed_title")}

@@ -444,7 +444,7 @@ export default function HomePage() {
         <OfflineFallback />
       ) : posts && posts.items.length > 0 ? (
         <>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-8">
             {posts.items.map((post, index) => (
               <PostCard
                 key={post.id}

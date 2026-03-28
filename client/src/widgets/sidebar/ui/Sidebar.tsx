@@ -12,7 +12,7 @@ export function Sidebar() {
   const { t } = useI18n();
 
   return (
-    <aside className="flex flex-col gap-4">
+    <aside className="flex flex-col gap-6">
       {isLoadingProfile ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 pt-6">

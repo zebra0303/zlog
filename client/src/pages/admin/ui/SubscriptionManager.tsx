@@ -258,7 +258,7 @@ export function SubscriptionManager({
 
   return (
     <Card ref={sectionRef}>
-      <CardContent className="pt-6">
+      <CardContent className="p-8">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
             <Link2 className="h-5 w-5" />
