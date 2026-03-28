@@ -5,29 +5,63 @@
 
 @theme {
   --color-primary: #6c5ce7;
+  --color-primary-foreground: #ffffff;
   --color-primary-light: #a29bfe;
   --color-accent: #ff6b6b;
+  --color-accent-foreground: #ffffff;
   --color-background: #faf9ff;
+  --color-foreground: #1a1a2e;
   --color-surface: #ffffff;
   --color-text: #1a1a2e;
   --color-text-secondary: #6b7280;
   --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  --color-ring: #6c5ce7;
+
+  /* Semantic mappings for @zebra/core components */
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: var(--color-text-secondary);
+  --color-secondary: #f3f4f6;
+  --color-secondary-foreground: #1f2937;
+
   /* Semantic status colors */
   --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
   --color-destructive-light: #fef2f2;
   --color-success: #16a34a;
+  --color-success-foreground: #ffffff;
   --color-success-light: #f0fdf4;
 }
 
 .dark {
   --color-background: #0f0f14;
+  --color-foreground: #f0f0f5;
   --color-surface: #1a1a24;
   --color-text: #f0f0f5;
   --color-text-secondary: #9ca3af;
   --color-border: #3f3f50;
+  --color-input: #3f3f50;
+  --color-ring: #6c5ce7;
+
+  /* Dark mode semantic mappings */
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-muted: #1f2937;
+  --color-muted-foreground: var(--color-text-secondary);
+  --color-secondary: #1f2937;
+  --color-secondary-foreground: #f0f0f5;
+
   --color-destructive: #f87171;
+  --color-destructive-foreground: #ffffff;
   --color-destructive-light: rgba(239, 68, 68, 0.15);
   --color-success: #4ade80;
+  --color-success-foreground: #000000;
   --color-success-light: rgba(34, 197, 94, 0.15);
 }
 
