@@ -12,10 +12,10 @@ export function Sidebar() {
   const { t } = useI18n();
 
   return (
-    <aside className="flex flex-col gap-6">
+    <aside className="flex flex-col gap-8">
       {isLoadingProfile ? (
         <Card>
-          <CardContent className="flex flex-col items-center gap-3 pt-6">
+          <CardContent className="flex flex-col items-center gap-3 p-8">
             <Skeleton className="h-20 w-20 rounded-full" />
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-4 w-48" />
