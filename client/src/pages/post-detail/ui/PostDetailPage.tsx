@@ -416,7 +416,7 @@ export default function PostDetailPage() {
         )}
       </div>
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-8">
           <div
             className="prose dark:prose-invert md:prose-lg max-w-none"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }}

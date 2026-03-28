@@ -253,7 +253,7 @@ export default function SettingsPage() {
         </div>
       )}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-8">
           <h2 className="mb-4 font-semibold text-[var(--color-text)]">{t("settings_avatar")}</h2>
           <div className="flex items-center gap-4">
             {avatarPreview ? (
@@ -299,7 +299,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-8">
           <h2 className="mb-4 font-semibold text-[var(--color-text)]">
             {t("settings_basic_info")}
           </h2>
@@ -454,7 +454,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-8">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-[var(--color-text)]">{t("profile_social_links")}</h2>
             <Button
@@ -523,7 +523,7 @@ export default function SettingsPage() {
 
       {/* Account Settings */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-8">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-[var(--color-text)]">
             <KeyRound className="h-5 w-5" />
             {t("settings_account")}

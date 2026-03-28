@@ -70,7 +70,7 @@ export default function ProfilePage() {
     <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden">
       <SEOHead title={profile.displayName} description={profile.bio ?? undefined} />
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-8">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             {profile.avatarUrl ? (
               <img
@@ -142,7 +142,7 @@ export default function ProfilePage() {
       </Card>
       {profile.socialLinks.length > 0 && (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-8">
             <h2 className="mb-3 font-semibold text-[var(--color-text)]">
               {t("profile_social_links")}
             </h2>
@@ -166,7 +166,7 @@ export default function ProfilePage() {
       )}
       {aboutHtml && (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-8">
             <h2 className="mb-3 font-semibold text-[var(--color-text)]">{t("profile_about")}</h2>
             <div
               className="prose dark:prose-invert max-w-none"

@@ -235,7 +235,7 @@ export default function CategoryDetailPage() {
             url={`${window.location.origin}/category/${category.slug}`}
           />
           <Card className="mb-6">
-            <CardContent className="pt-6">
+            <CardContent className="p-8">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
                   <h1 className="text-text mb-2 text-2xl font-bold">{category.name}</h1>
