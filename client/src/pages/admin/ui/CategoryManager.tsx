@@ -203,7 +203,6 @@ export function CategoryManager() {
                   onToggle={() => {
                     setNewIsPublic(!newIsPublic);
                   }}
-                  label={t("public")}
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -261,7 +260,6 @@ export function CategoryManager() {
                         onToggle={() => {
                           setEditIsPublic(!editIsPublic);
                         }}
-                        label={t("public")}
                       />
                     </div>
                     <div className="flex justify-end gap-2">

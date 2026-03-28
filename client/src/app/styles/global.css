@@ -15,8 +15,8 @@
   --color-surface: #ffffff;
   --color-text: #1a1a2e;
   --color-text-secondary: #6b7280;
-  --color-border: #e5e7eb;
-  --color-input: #e5e7eb;
+  --color-border: #d1d5db;
+  --color-input: #d1d5db;
   --color-ring: #6c5ce7;
 
   /* Semantic mappings for @zebra/core components */
@@ -44,8 +44,8 @@
   --color-surface: #1a1a24;
   --color-text: #f0f0f5;
   --color-text-secondary: #9ca3af;
-  --color-border: #262635;
-  --color-input: #262635;
+  --color-border: #3f3f46;
+  --color-input: #3f3f46;
   --color-ring: #6c5ce7;
 
   /* Dark mode accent */
@@ -787,4 +787,69 @@ pre code.hljs {
   img {
     max-width: 100% !important;
   }
+}
+
+/* ToggleSwitch UI - Standard Symmetrical Fix */
+html body button[role="switch"] {
+  all: unset !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important; /* Crucial: prevent shrinking */
+  width: 44px !important; /* Restore to standard w-11 */
+  min-width: 44px !important;
+  height: 24px !important;
+  border-radius: 9999px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+  background-color: #d1d5db !important;
+}
+
+.dark html body button[role="switch"] {
+  background-color: #3f3f46 !important;
+}
+
+html body button[role="switch"][aria-checked="true"] {
+  background-color: var(--color-primary) !important;
+}
+
+html body button[role="switch"] span {
+  position: absolute !important;
+  top: 2px !important;
+  left: 2px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 9999px !important;
+  background-color: white !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transform: translateX(0) !important;
+}
+
+/* Perfect Symmetry for 44px track: 44 - 20 - 2 (left) - 2 (right) = 20px move */
+html body button[role="switch"][aria-checked="true"] span {
+  transform: translateX(20px) !important;
+}
+
+/* Small size (h-5 w-9) */
+html body button[role="switch"].h-5 {
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 20px !important;
+}
+
+html body button[role="switch"].h-5 span {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* SM Symmetry: 36 - 16 - 2 - 2 = 16px move */
+html body button[role="switch"].h-5[aria-checked="true"] span {
+  transform: translateX(16px) !important;
+}
+
+/* Ensure consistent card borders even if hardcoded in some places */
+.card-border-fix {
+  border: 1px solid var(--color-border) !important;
 }

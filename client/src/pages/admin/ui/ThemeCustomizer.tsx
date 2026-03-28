@@ -578,7 +578,6 @@ export function ThemeCustomizer({
                               }
                             }}
                             size="sm"
-                            label={t("admin_theme_gradient")}
                           />
                         </div>
                       )}
@@ -670,7 +669,6 @@ export function ThemeCustomizer({
                               }
                             }}
                             size="sm"
-                            label={t("admin_theme_gradient")}
                           />
                         </div>
                       )}

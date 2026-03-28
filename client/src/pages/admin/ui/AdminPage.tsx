@@ -345,7 +345,6 @@ export default function AdminPage() {
                         settings.lazy_load_images === "true" ? "false" : "true",
                       );
                     }}
-                    label={t("admin_display_lazy_load")}
                   />
                 </div>
                 <div>
