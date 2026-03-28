@@ -32,7 +32,11 @@ describe("useUndoRedo", () => {
     });
 
     expect(result.current.canUndo).toBe(true);
-    expect(result.current.undo()).toBe("initial");
+    let undoneValue;
+    act(() => {
+      undoneValue = result.current.undo();
+    });
+    expect(undoneValue).toBe("initial");
   });
 
   it("should debounce rapid back-to-back pushes", () => {
@@ -50,9 +54,11 @@ describe("useUndoRedo", () => {
 
     expect(result.current.canUndo).toBe(true);
 
+    let undoneValue;
     act(() => {
-      expect(result.current.undo()).toBe("initial");
+      undoneValue = result.current.undo();
     });
+    expect(undoneValue).toBe("initial");
   });
 
   it("should support undoing and redoing", () => {
@@ -101,16 +107,20 @@ describe("useUndoRedo", () => {
       // not advancing timers, so it's pending
     });
 
+    let state;
     act(() => {
-      const state = result.current.undo();
-      expect(state).toBe("start");
+      state = result.current.undo();
     });
+    expect(state).toBe("start");
 
     // The pending value should have been committed as history index 1,
     // and undo() should move to index 0 ("start").
     expect(result.current.canRedo).toBe(true);
+
+    let redoneValue;
     act(() => {
-      expect(result.current.redo()).toBe("pending update");
+      redoneValue = result.current.redo();
     });
+    expect(redoneValue).toBe("pending update");
   });
 });
