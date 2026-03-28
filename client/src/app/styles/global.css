@@ -789,16 +789,16 @@ pre code.hljs {
   }
 }
 
-/* ToggleSwitch UI - Standard Symmetrical Fix */
+/* ToggleSwitch UI - Extra Wide Track with Standard Translation */
 html body button[role="switch"] {
   all: unset !important;
   box-sizing: border-box !important;
   position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
-  flex-shrink: 0 !important; /* Crucial: prevent shrinking */
-  width: 44px !important; /* Restore to standard w-11 */
-  min-width: 44px !important;
+  flex-shrink: 0 !important;
+  width: 66px !important; /* Wide track */
+  min-width: 66px !important;
   height: 24px !important;
   border-radius: 9999px !important;
   cursor: pointer !important;
@@ -827,15 +827,15 @@ html body button[role="switch"] span {
   transform: translateX(0) !important;
 }
 
-/* Perfect Symmetry for 44px track: 44 - 20 - 2 (left) - 2 (right) = 20px move */
+/* Keep the translation at standard 20px as requested */
 html body button[role="switch"][aria-checked="true"] span {
   transform: translateX(20px) !important;
 }
 
-/* Small size (h-5 w-9) */
+/* Small size (54px track) */
 html body button[role="switch"].h-5 {
-  width: 36px !important;
-  min-width: 36px !important;
+  width: 54px !important; /* Wide track */
+  min-width: 54px !important;
   height: 20px !important;
 }
 
@@ -844,7 +844,7 @@ html body button[role="switch"].h-5 span {
   height: 16px !important;
 }
 
-/* SM Symmetry: 36 - 16 - 2 - 2 = 16px move */
+/* Keep the translation at standard 16px as requested */
 html body button[role="switch"].h-5[aria-checked="true"] span {
   transform: translateX(16px) !important;
 }
