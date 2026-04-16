@@ -19,32 +19,42 @@ async function renderMermaidBlocks() {
   if (blocks.length === 0) return;
 
   const isDark = document.documentElement.classList.contains("dark");
-  const mermaid = (await import("mermaid")).default;
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: isDark ? "dark" : "default",
-    securityLevel: "loose",
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  });
+  try {
+    const mermaid = (await import("mermaid")).default;
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isDark ? "dark" : "default",
+      securityLevel: "loose",
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    });
 
-  for (const block of blocks) {
-    const code = block.dataset.mermaid;
-    if (!code) continue;
+    for (const block of blocks) {
+      const code = block.dataset.mermaid;
+      if (!code) continue;
 
-    // Use DOMParser for safer HTML entity decoding
-    const doc = new DOMParser().parseFromString(code, "text/html");
-    const decoded = doc.documentElement.textContent;
+      let decoded = "";
+      try {
+        decoded = decodeURIComponent(code);
+      } catch {
+        // Fallback if somehow not URI encoded properly
+        const doc = new DOMParser().parseFromString(code, "text/html");
+        decoded = doc.documentElement.textContent || "";
+      }
 
-    try {
-      const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const { svg } = await mermaid.render(id, decoded);
-      block.innerHTML = svg;
-      block.setAttribute("data-rendered", "true");
-    } catch {
-      // On render failure, display the raw code as-is
-      block.innerHTML = `<pre class="mermaid-error"><code>${decoded.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`;
-      block.setAttribute("data-rendered", "true");
+      try {
+        const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const { svg } = await mermaid.render(id, decoded || "");
+        block.innerHTML = svg;
+        block.setAttribute("data-rendered", "true");
+      } catch (err) {
+        console.error("mermaid render error:", err);
+        // On render failure, display the raw code as-is
+        block.innerHTML = `<pre class="mermaid-error"><code>${(decoded || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`;
+        block.setAttribute("data-rendered", "true");
+      }
     }
+  } catch (err) {
+    console.error("Failed to load or initialize mermaid:", err);
   }
 }
 
@@ -142,12 +152,17 @@ export function AppLayout() {
 
   // Re-render mermaid diagrams on theme change
   useEffect(() => {
+    let prevIsDark = document.documentElement.classList.contains("dark");
     const observer = new MutationObserver(() => {
-      // Remove data-rendered attribute to trigger re-rendering
-      document.querySelectorAll<HTMLElement>(".mermaid-block[data-rendered]").forEach((el) => {
-        el.removeAttribute("data-rendered");
-      });
-      void renderMermaidBlocks();
+      const currentIsDark = document.documentElement.classList.contains("dark");
+      if (prevIsDark !== currentIsDark) {
+        prevIsDark = currentIsDark;
+        // Remove data-rendered attribute to trigger re-rendering
+        document.querySelectorAll<HTMLElement>(".mermaid-block[data-rendered]").forEach((el) => {
+          el.removeAttribute("data-rendered");
+        });
+        void renderMermaidBlocks();
+      }
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => {

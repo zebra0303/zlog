@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { sanitizeHtml } from "@/shared/lib/security/sanitize";
 import { useParams, Link, useLocation, useNavigate } from "react-router";
 import {
@@ -41,6 +41,14 @@ import { useI18n } from "@/shared/i18n";
 import { estimateReadingTime } from "@/shared/lib/readingTime";
 import type { PostWithCategory } from "@zlog/shared";
 
+const MarkdownContent = React.memo(({ html }: { html: string }) => (
+  <div
+    className="prose dark:prose-invert md:prose-lg max-w-none"
+    dangerouslySetInnerHTML={{ __html: html }}
+  />
+));
+MarkdownContent.displayName = "MarkdownContent";
+
 // Extended post type with prev/next navigation from server
 interface PostNav {
   id: string;
@@ -74,6 +82,8 @@ export default function PostDetailPage() {
   // TOC state
   const [tocItems, setTocItems] = useState<{ id: string; text: string; level: number }[]>([]);
   const [activeTocId, setActiveTocId] = useState("");
+
+  const sanitizedContent = useMemo(() => sanitizeHtml(htmlContent), [htmlContent]);
 
   const navigate = useNavigate();
 
@@ -417,10 +427,7 @@ export default function PostDetailPage() {
       </div>
       <Card>
         <CardContent className="p-8">
-          <div
-            className="prose dark:prose-invert md:prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }}
-          />
+          <MarkdownContent html={sanitizedContent} />
 
           <div className="mt-8 flex justify-center border-t border-[var(--color-border)] pt-6">
             <button

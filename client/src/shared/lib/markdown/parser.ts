@@ -239,11 +239,7 @@ export async function parseMarkdown(markdown: string): Promise<string> {
   // After passing through the unified pipeline, they remain as <p>MERMAID_BLOCK_0_PLACEHOLDER</p>
   for (let i = 0; i < mermaidBlocks.length; i++) {
     const raw = mermaidBlocks[i] ?? "";
-    const encoded = raw
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+    const encoded = encodeURIComponent(raw);
     html = html.replace(
       new RegExp(`<p>MERMAID_BLOCK_${i}_PLACEHOLDER</p>|MERMAID_BLOCK_${i}_PLACEHOLDER`, "g"),
       `<div class="mermaid-block" data-mermaid="${encoded}"><div class="mermaid-loading">Loading diagram...</div></div>`,
