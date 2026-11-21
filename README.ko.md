@@ -302,11 +302,12 @@ erDiagram
 
 ### 보안
 
-- **JWT 인증** + **슬라이딩 세션**: 매일 접속 시 토큰이 자동 갱신되어, 활성 관리자는 로그인이 유지됩니다
+- **JWT 인증** + **슬라이딩 세션**: 매일 접속 시 토큰이 자동 갱신되며, `@zebra/core/server`(`resolveJwtSecret`)로 프로덕션 시크릿 설정을 강제합니다
+- **서명된 댓글 SSO 세션**: HttpOnly 서명 쿠키(`zlog_commenter_token`)로 댓글 작성자 스푸핑을 차단하고, 공개 댓글 응답에서 `authorEmail` PII를 제거합니다
 - **무차별 대입 방어**: 반복 로그인 실패 시 점진적 잠금 (30초 → 5분 → 15분)
 - **시크릿 카테고리**: 비밀번호로 보호되는 비공개 카테고리
-- **SSRF 방어**: Federation URL 검증으로 사설/내부 IP 차단
-- **XSS 방어**: 모든 사용자 입력에 대한 서버 측 HTML 정제
+- **SSRF 방어**: 외부 Federation 및 Slack 웹훅 요청에 `@zebra/core/server`(`isPrivateOrReservedIp` + `safeFetch`) 기반 DNS·리다이렉트 검증을 적용하며, 비인증 `/api/settings` 응답에서 Slack 웹훅 URL을 숨깁니다
+- **XSS 및 SSR 강화**: 서버 측 HTML 정제, iframe 허용 목록 및 위험 CSS 필터링, JSON-LD `</script>` 이스케이프 적용
 
 ### 기술
 
@@ -316,8 +317,8 @@ erDiagram
 - **RESTful API**: Hono 프레임워크
 - **백그라운드 동기화 워커**: 주기적 Federation 자동 동기화 + GC 최적화
 - **서버 프록시 Federation**: 모든 크로스 오리진 호출이 서버 간 통신 (CORS 의존성 없음)
-- **테스트**: Vitest + Testing Library 기반 서버 API 및 클라이언트 UI 컴포넌트 테스트
-- **성능 측정**: 내장된 Lighthouse 스크립트로 Core Web Vitals 지표를 자동 측정하고 AI 성능 최적화 컨텍스트로 활용
+- **테스트**: Vitest + Testing Library (**28 스위트, 294개 테스트**: server 249 + client 45)
+- **성능 측정**: 내장된 Lighthouse 스크립트로 Core Web Vitals 지표를 자동 측정(**Performance 97**, LCP 2.6s, CLS 0.052, TBT 20ms, FCP 0.9s)하고 AI 성능 최적화 컨텍스트로 활용
 
 ---
 

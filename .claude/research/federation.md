@@ -1,6 +1,6 @@
 # zlog Federation Subscription System — Complete Technical Reference
 
-**Date:** 2026-03-08 (updated)
+**Date:** 2026-11-21 (updated)
 **Scope:** Exhaustive line-by-line analysis of all federation subscription logic across server and client
 
 ---
@@ -52,12 +52,13 @@ The zlog federation system enables peer-to-peer blog networking through a **Subs
 | `server/src/services/syncService.ts` (~280 lines) | Background pull-sync worker |
 | `server/src/services/feedService.ts` (~50 lines) | Webhook push delivery |
 | `server/src/db/schema/federation.ts` | 5 table definitions |
-| `server/src/lib/remoteUrl.ts` | URL validation & rewriting |
+| `server/src/lib/remoteUrl.ts` | URL validation, `@zebra/core/server` SSRF-safe `safeOutboundFetch`, & URL rewriting |
 | `shared/types/index.ts` | Shared TypeScript interfaces |
+| `client/src/features/federation/ui/SubscribeDialog.tsx` | Shared category subscribe dialog (HomePage & CategoryDetailPage) |
 | `client/src/pages/admin/ui/SubscriptionManager.tsx` | Subscription management UI |
 | `client/src/pages/admin/ui/SubscriberManager.tsx` | Inbound subscriber UI |
 | `client/src/pages/remote-post-detail/ui/RemotePostDetailPage.tsx` | Remote post viewer |
-| `client/src/pages/remote-post-detail/ui/RemoteCommentList.tsx` | Proxied comments UI |
+| `client/src/pages/remote-post-detail/ui/RemoteCommentList.tsx` | Proxied comments UI (full i18n) |
 
 ---
 
@@ -240,9 +241,9 @@ export interface FederationInfo {
 
 ## 4. URL Security & Validation
 
-### `validateRemoteUrl(url, mySiteUrl)` — `lib/remoteUrl.ts`
+### `validateRemoteUrl(url, mySiteUrl)` & `safeOutboundFetch()` — `lib/remoteUrl.ts`
 
-Called before every outgoing federation request and on every incoming subscription/webhook.
+Backed by `@zebra/core/server` (`isPrivateOrReservedIp`, `safeFetch`). Called before every outgoing federation request and on every incoming subscription/webhook.
 
 **Validation steps:**
 
@@ -250,10 +251,12 @@ Called before every outgoing federation request and on every incoming subscripti
 2. **Protocol check** — only `http:` and `https:` allowed → `ERR_INVALID_PROTOCOL`
 3. **Localhost block** (unless `ALLOW_LOCAL_FEDERATION=true`):
    - Blocks: `localhost`, `127.0.0.1`, `::1`, `[::1]` → `ERR_LOCALHOST_FORBIDDEN`
-4. **Private IP block** (unless `ALLOW_LOCAL_FEDERATION=true`):
-   - Blocks: `10.x.x.x`, `192.168.x.x`, `169.254.x.x`, `172.16-31.x.x` → `ERR_PRIVATE_IP_FORBIDDEN`
+4. **Private & reserved IP block** (unless `ALLOW_LOCAL_FEDERATION=true`, via `@zebra/core/server` `isPrivateOrReservedIp`):
+   - Blocks IPv4 private/reserved (`10.x`, `172.16-31.x`, `192.168.x`, `169.254.x`, `100.64.x`, `0.0.0.0/8`), IPv6 link-local/ULA/loopback, and IPv4-mapped IPv6 (`::ffff:127.0.0.1`) → `ERR_PRIVATE_IP_FORBIDDEN`
 5. **Self-subscription prevention**:
    - Compares hostname + port against `mySiteUrl` → `ERR_SELF_SUBSCRIPTION_FORBIDDEN`
+6. **DNS & Redirect Protection (`safeOutboundFetch`)**:
+   - All outbound HTTP calls (remote discovery, subscribe, webhook push, pull sync, live post verification, comment proxy) run through `safeOutboundFetch()`, which wraps `@zebra/core/server` `safeFetch` to validate resolved DNS IPs and every redirect hop against private/reserved ranges.
 
 ### `fixRemoteUrl(url, remoteSiteUrl)` — Single URL
 
@@ -1000,8 +1003,8 @@ When a remote blog removes you as a subscriber:
 | Method | Path                                        | Auth | Description                                  |
 | ------ | ------------------------------------------- | ---- | -------------------------------------------- |
 | POST   | `/api/federation/webhook`                   | No   | Receive WebhookEvent from remote blog        |
-| POST   | `/api/federation/local-subscribe`           | No   | Subscribe to remote category                 |
-| POST   | `/api/federation/local-unsubscribe`         | No   | Deactivate local subscription                |
+| POST   | `/api/federation/local-subscribe`           | Yes  | Subscribe to remote category (admin only)    |
+| POST   | `/api/federation/local-unsubscribe`         | Yes  | Deactivate local subscription (admin only)   |
 | GET    | `/api/federation/remote-posts/:id`          | No   | View remote post with real-time source check |
 | GET    | `/api/federation/remote-posts/:id/comments` | No   | Proxy comments from source blog              |
 
@@ -1126,20 +1129,21 @@ User Browser           Your Server
 
 ## 19. Recent Changes (since 2026-02-28)
 
-| Date       | Commit    | Description                                                                                                             |
-| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 2026-03-07 | `1205097` | Fix: FederationService catch blocks had build errors — corrected error variable references                              |
-| 2026-03-06 | `51d493b` | Refactor: modularized codebase — federation routes/services remain in same files but overall project structure improved |
-| 2026-03-05 | `e3f36ac` | Feat: sliding session renewal for JWT — admin tokens auto-renew on activity (affects federation admin endpoints)        |
-| 2026-03-04 | `092fa69` | Feat: show subscribe button for all users, block self-subscription in UI                                                |
+| Date       | Commit    | Description                                                                                                                                                                                                                      |
+| ---------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-21 | `feeaed5` | Security & Refactor: `@zebra/core/server` `isPrivateOrReservedIp` + `safeFetch` (`safeOutboundFetch`), admin auth enforced on `/local-subscribe` & `/local-unsubscribe`, shared `SubscribeDialog`, localized `RemoteCommentList` |
+| 2026-03-07 | `1205097` | Fix: FederationService catch blocks had build errors — corrected error variable references                                                                                                                                       |
+| 2026-03-06 | `51d493b` | Refactor: modularized codebase — federation routes/services remain in same files but overall project structure improved                                                                                                          |
+| 2026-03-05 | `e3f36ac` | Feat: sliding session renewal for JWT — admin tokens auto-renew on activity (affects federation admin endpoints)                                                                                                                 |
+| 2026-03-04 | `092fa69` | Feat: show subscribe button for all users, block self-subscription in UI                                                                                                                                                         |
 
 ### Key architectural notes after refactoring:
 
 - `server/src/services/federation.ts` — FederationService class (unchanged structure)
-- `server/src/services/syncService.ts` — Background sync worker (unchanged)
-- `server/src/routes/federation.ts` — All federation API routes (unchanged)
-- `server/src/services/federation/` directory exists but is empty (reserved for future modularization)
+- `server/src/services/syncService.ts` — Background sync worker (now routes outbound calls via `safeOutboundFetch`)
+- `server/src/routes/federation.ts` — All federation API routes (admin auth enforced on `/local-subscribe` and `/local-unsubscribe`)
+- `client/src/features/federation/ui/SubscribeDialog.tsx` — Shared subscribe modal extracted from `HomePage` and `CategoryDetailPage`
 
 ---
 
-_This document covers every function, query, condition, and data flow in the zlog federation subscription system. All code references are from the actual source files. Last updated: 2026-03-08._
+_This document covers every function, query, condition, and data flow in the zlog federation subscription system. All code references are from the actual source files. Last updated: 2026-11-21._

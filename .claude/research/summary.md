@@ -1,9 +1,14 @@
 # ZLOG — Comprehensive Architecture & Codebase Report
 
-**Date:** 2026-03-22
+**Date:** 2026-11-21
 **Scope:** Full-depth analysis of the entire zlog codebase
 
-> **2026-03-25 Architecture Update:** Core UI components, foundational utilities (error parsing, masking, text manipulation), and shared types have been extracted into the ( repo) library to standardize the ecosystem. These are now integrated via .
+> **2026-11-21 Architecture & Security Update:**
+>
+> - Upgraded to **@zebra/core@0.2.0** (`resolveJwtSecret`, `isPrivateOrReservedIp`, `safeFetch`, shared UI components, `ErrorBoundary`, `ApiClient`) with `.npmrc` configured for npm 12 Git dependency compatibility.
+> - Hardened server security: enforced admin auth on `/api/federation/local-subscribe` & `/local-unsubscribe`, added signed HttpOnly `zlog_commenter_token` cookie to prevent SSO commenter spoofing, stripped `authorEmail` PII from public comments, hid `notification_slack_webhook` from unauthenticated `GET /settings` and restricted it to Slack webhook URLs, and added JSON-LD `</script>` escaping + percent-encoded Korean slug SSR support.
+> - Improved frontend architecture, accessibility, and Core Web Vitals: added `RequireAuth` route guard, shared `SubscribeDialog`, decomposed `ThemeColorSection`, strengthened `sanitizeHtml` (iframe allowlist + dangerous CSS filtering), fixed `Footer` CLS via fixed-height sentinel, awaited `checkAuth()` before `recordVisit()`, and localized `RemoteCommentList`.
+> - Expanded tests to **28 test files / 294 tests** (server 249 + client 45); Lighthouse Performance reached **97** (CLS **0.052**, TBT **20ms**, FCP **0.9s**, LCP **2.6s**).
 
 ---
 
@@ -11,11 +16,12 @@
 
 **zlog** is a decentralized, self-hosted personal blog system with federation capabilities. It enables blog-to-blog networking via a subscribe-and-push protocol, while maintaining full data ownership on personal hardware (Mac, Raspberry Pi, etc.).
 
-- **Repository:** `/Users/larry/Git/zlog`
+- **Repository:** `/Users/larry/Git/zebra/zlog`
 - **Version:** 1.0.0 (Private)
 - **Architecture:** npm workspaces monorepo (3 workspaces: client, server, shared)
 - **Tech Stack:** React 19 + Vite 7 + TypeScript 5.9 (Frontend) | Hono 4 + SQLite + Drizzle ORM (Backend)
-- **Source Files:** 95 client (.ts/.tsx) + 66 server (.ts) + shared types (353 lines)
+- **Shared Library:** `@zebra/core@0.2.0` (`@zebra/core`, `@zebra/core/client`, `@zebra/core/server`)
+- **Tests:** 28 test suites / 294 tests (server 249 + client 45)
 
 ---
 
@@ -229,18 +235,18 @@ github, twitter, instagram, linkedin, youtube, facebook, threads, mastodon, blue
 
 #### Settings & Profile — 9 endpoints
 
-| Method | Path                  | Auth | Description                                            |
-| ------ | --------------------- | ---- | ------------------------------------------------------ |
-| GET    | /profile              | No   | Owner + social links + stats                           |
-| PUT    | /profile              | Yes  | Update profile fields                                  |
-| POST   | /profile/avatar       | Yes  | Upload avatar (JPEG/PNG/WebP/GIF, max 5MB, multi-size) |
-| DELETE | /profile/avatar       | Yes  | Remove avatar                                          |
-| GET    | /profile/social-links | No   | Social links                                           |
-| PUT    | /profile/social-links | Yes  | Replace all social links                               |
-| PUT    | /profile/account      | Yes  | Change email/password                                  |
-| GET    | /settings             | No   | All site settings                                      |
-| PUT    | /settings             | Yes  | Update settings (whitelist enforced)                   |
-| POST   | /settings/test-slack  | Yes  | Test Slack webhook                                     |
+| Method | Path                  | Auth     | Description                                                              |
+| ------ | --------------------- | -------- | ------------------------------------------------------------------------ |
+| GET    | /profile              | No       | Owner + social links + stats                                             |
+| PUT    | /profile              | Yes      | Update profile fields                                                    |
+| POST   | /profile/avatar       | Yes      | Upload avatar (JPEG/PNG/WebP/GIF, max 5MB, multi-size)                   |
+| DELETE | /profile/avatar       | Yes      | Remove avatar                                                            |
+| GET    | /profile/social-links | No       | Social links                                                             |
+| PUT    | /profile/social-links | Yes      | Replace all social links                                                 |
+| PUT    | /profile/account      | Yes      | Change email/password                                                    |
+| GET    | /settings             | Optional | Site settings (`notification_slack_webhook` hidden unless authenticated) |
+| PUT    | /settings             | Yes      | Update settings (whitelist + Slack webhook URL validation enforced)      |
+| POST   | /settings/test-slack  | Yes      | Test Slack webhook (SSRF-protected via `safeOutboundFetch`)              |
 
 #### Analytics (`/api/analytics`) — 2 endpoints
 
@@ -286,9 +292,10 @@ CRUD for markdown post templates.
 
 **Auth** (`server/src/middleware/auth.ts`):
 
-- `authMiddleware` — Required JWT (HS256, 7d expiry), sets owner/ownerId context
+- `authMiddleware` — Required JWT (HS256, 7d expiry, sliding renewal), sets owner/ownerId context
 - `optionalAuthMiddleware` — Same but doesn't fail on missing token
-- JWT_SECRET from env or random 32-byte hex (warns if not set)
+- `resolveJwtSecret()` from `@zebra/core/server` enforces configured `JWT_SECRET` in production and falls back to an ephemeral dev secret otherwise
+- Commenter SSO uses signed HttpOnly `zlog_commenter_token` cookie to prevent `commenterId` spoofing on edit/delete/create
 
 **Error Handler** (`server/src/middleware/errorHandler.ts`):
 
@@ -305,7 +312,7 @@ CRUD for markdown post templates.
 Server-side metadata injection for:
 
 - **Home page:** WebSite schema.org, canonical URL
-- **Post page:** BlogPosting schema.org (title, description, image, author, dates, JSON-LD)
+- **Post page:** BlogPosting schema.org (title, description, image, author, dates, JSON-LD with `</script>` escaping and percent-encoded Korean slug decoding)
 - **Category page:** CollectionPage schema.org
 - **Font preload:** Injects `<link rel="preload">` + `<link rel="stylesheet">` for configured font
 
@@ -358,22 +365,22 @@ Server-side metadata injection for:
 
 1. Theme (light/dark from localStorage or system preference)
 2. Locale (i18n language)
-3. Auth check (verify JWT, load user)
+3. Auth check (verify JWT, load user) — awaited before visitor recording so authenticated admin visits are accurately excluded
 4. Site settings (customization from backend)
 5. Visitor analytics recording
 
-Wrapped in: QueryClientProvider + HelmetProvider + ErrorBoundary
+Wrapped in: QueryClientProvider + HelmetProvider + ErrorBoundary (`@zebra/core/client`)
 
 ### FSD Architecture
 
 ```
 client/src/
-├── app/           # Global setup, router, providers, styles
-├── pages/         # 11 lazy-loaded route components
-├── widgets/       # Header, Sidebar, Footer
-├── features/      # Auth, comments, theme, settings, markdown, analytics
+├── app/           # Global setup, router (RequireAuth guard), providers, styles
+├── pages/         # 11 lazy-loaded route components (AdminPage split incl. ThemeColorSection)
+├── widgets/       # Header (sticky + a11y), Sidebar, Footer (fixed-height CLS sentinel)
+├── features/      # Auth, comments, federation (shared SubscribeDialog), theme, settings, markdown, analytics
 ├── entities/      # Post (PostCard), Category (CategoryBadge)
-└── shared/        # UI components, API client, hooks, utilities, i18n, config
+└── shared/        # UI components (@zebra/core), API client, hooks, utilities, i18n, config
 ```
 
 ### Routing (`client/src/app/router/index.tsx`)
@@ -643,33 +650,36 @@ mermaid: external (CDN via importmap)
 
 ## 8. Security Features
 
-| Feature                | Implementation                                                      |
-| ---------------------- | ------------------------------------------------------------------- |
-| Authentication         | JWT HS256 (7-day expiry) via jose                                   |
-| Password Hashing       | Scrypt (N=16384, r=8, p=1)                                          |
-| Brute-force Protection | IP-based escalating lockout (30s/5min/15min at 5/10/20+ fails)      |
-| XSS Prevention         | rehype-sanitize (client) + HTML entity encoding (server comments)   |
-| SSRF Prevention        | URL validation (blocks localhost + private IPs)                     |
-| CORS                   | Separate configs (federation: `origin: *`, others: SITE_URL)        |
-| Security Headers       | X-Content-Type-Options, X-Frame-Options, CSP, HSTS, Referrer-Policy |
-| Rate Limiting          | Per-endpoint IP-based in-memory store                               |
-| Soft Deletes           | Posts/comments marked deleted (audit trail)                         |
-| OAuth                  | GitHub + Google (commenter upsert, CSRF state token)                |
-| Comment Password       | bcrypt hashing for anonymous comment edit/delete                    |
+| Feature                | Implementation                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| Authentication         | JWT HS256 (7-day expiry, sliding renewal) via jose + `@zebra/core/server` `resolveJwtSecret` |
+| Commenter SSO Auth     | Signed HttpOnly `zlog_commenter_token` cookie (prevents spoofing); `authorEmail` PII removed |
+| Password Hashing       | Scrypt (N=16384, r=8, p=1)                                                                   |
+| Brute-force Protection | IP-based escalating lockout (30s/5min/15min at 5/10/20+ fails)                               |
+| XSS & SSR Prevention   | `rehype-sanitize` + iframe allowlist + CSS filter + JSON-LD `</script>` escaping             |
+| SSRF Prevention        | `@zebra/core/server` `isPrivateOrReservedIp` + `safeFetch` (DNS + redirect validation)       |
+| Federation Auth        | Admin auth enforced on `/local-subscribe` & `/local-unsubscribe`                             |
+| Settings Protection    | `notification_slack_webhook` hidden from unauthenticated `GET /settings` & URL-validated     |
+| CORS                   | Separate configs (federation: `origin: *`, others: SITE_URL)                                 |
+| Security Headers       | X-Content-Type-Options, X-Frame-Options, CSP, HSTS, Referrer-Policy                          |
+| Rate Limiting          | Per-endpoint IP-based in-memory store                                                        |
+| Soft Deletes           | Posts/comments marked deleted (audit trail)                                                  |
+| OAuth                  | GitHub + Google (commenter upsert, CSRF state token)                                         |
+| Comment Password       | bcrypt hashing for anonymous comment edit/delete                                             |
 
 ---
 
 ## 9. Performance & Optimization
 
-### Current Core Web Vitals (2026-03-07)
+### Current Core Web Vitals (2026-11-21, `.ai-vitals.md`)
 
 | Metric            | Value | Target |
 | ----------------- | ----- | ------ |
-| Performance Score | 80    | 95+    |
-| LCP               | 3.5s  | <2.5s  |
-| CLS               | 0.199 | <0.1   |
-| TBT               | 10ms  | <200ms |
-| FCP               | 2.0s  | <1.8s  |
+| Performance Score | 97    | 95+    |
+| LCP               | 2.6s  | <2.5s  |
+| CLS               | 0.052 | <0.1   |
+| TBT               | 20ms  | <200ms |
+| FCP               | 0.9s  | <1.8s  |
 
 ### Optimization Strategies
 
@@ -696,16 +706,18 @@ mermaid: external (CDN via importmap)
 
 ## 10. Testing Structure
 
-### Server Tests (`server/src/__tests__/`)
+Total: **28 test files / 294 tests** (server 249 + client 45)
+
+### Server Tests (`server/src/__tests__/`) — 249 tests
 
 - Vitest with in-memory SQLite
 - Test helpers: DB fixtures, mock auth
-- Coverage: auth, posts, comments, categories, federation, analytics, upload, SSR, OAuth, settings, templates
+- Coverage: auth, posts, comments (SSO cookie & PII stripping), categories, federation (admin auth & SSRF), analytics, upload, SSR (JSON-LD & Korean slugs), OAuth, settings (Slack webhook protection), templates
 
-### Client Tests (`client/src/*/__tests__/`)
+### Client Tests (`client/src/*/__tests__/`) — 45 tests
 
 - Vitest + jsdom + @testing-library/react
-- Coverage: Button, Badge, ConfirmModal, markdown parser, useUndoRedo, editor shortcuts, API client
+- Coverage: Button, Badge, ConfirmModal, RequireAuth, markdown parser & sanitizeHtml, useUndoRedo, editor shortcuts, API client
 
 ### Coverage
 
