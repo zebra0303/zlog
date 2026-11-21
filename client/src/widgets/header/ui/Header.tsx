@@ -90,7 +90,7 @@ export function Header() {
     <>
       <header
         ref={headerRef}
-        className={`border-border header-animated relative sticky top-0 z-60 border-b ${!isMinimal && hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
+        className={`border-border header-animated sticky top-0 z-60 border-b ${!isMinimal && hasCustom ? "" : "bg-surface/80 backdrop-blur-md"}`}
         style={isMinimal ? undefined : headerStyle}
       >
         <div
@@ -175,12 +175,17 @@ export function Header() {
                 setIsMobileMenuOpen(!isMobileMenuOpen);
               }}
               aria-label={t("nav_menu")}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav-menu"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
           {isMobileMenuOpen && (
-            <div className="border-border bg-surface/95 absolute top-full right-2 z-70 mt-0.5 w-44 rounded-xl border shadow-lg backdrop-blur-md md:hidden">
+            <div
+              id="mobile-nav-menu"
+              className="border-border bg-surface/95 absolute top-full right-2 z-70 mt-0.5 w-44 rounded-xl border shadow-lg backdrop-blur-md md:hidden"
+            >
               <nav className="flex flex-col py-1.5">
                 <Link
                   to="/"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateRemoteUrl } from "../lib/remoteUrl.js";
+import { validateRemoteUrl, fixRemoteContentUrls } from "../lib/remoteUrl.js";
 
 describe("validateRemoteUrl", () => {
   it("should accept valid public URLs", () => {
@@ -116,5 +116,27 @@ describe("validateRemoteUrl", () => {
     expect(() => {
       validateRemoteUrl("https://other-blog.com", myUrl);
     }).not.toThrow();
+  });
+
+  it("should reject trailing-dot localhost, 0.0.0.0, and IPv6 ULA fc00::1", () => {
+    expect(() => {
+      validateRemoteUrl("http://localhost./api");
+    }).toThrow("ERR_LOCALHOST_FORBIDDEN");
+    expect(() => {
+      validateRemoteUrl("http://0.0.0.0/");
+    }).toThrow("ERR_PRIVATE_IP_FORBIDDEN");
+    expect(() => {
+      validateRemoteUrl("http://[fc00::1]/");
+    }).toThrow("ERR_PRIVATE_IP_FORBIDDEN");
+  });
+});
+
+describe("fixRemoteContentUrls", () => {
+  it("rewrites single-slash relative /uploads/ and /img/ URLs in markdown and HTML", () => {
+    const md = "![photo](/uploads/a.webp) and <img src='/img/b.png' />";
+    const fixed = fixRemoteContentUrls(md, "https://remote.example.com");
+    expect(fixed).toBe(
+      "![photo](https://remote.example.com/uploads/a.webp) and <img src='https://remote.example.com/img/b.png' />",
+    );
   });
 });

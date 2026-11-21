@@ -123,4 +123,34 @@ describe("useUndoRedo", () => {
     });
     expect(redoneValue).toBe("pending update");
   });
+
+  it("should clear history and reset to a new baseline value on reset()", () => {
+    const { result } = renderHook(() => useUndoRedo("initial"));
+
+    act(() => {
+      result.current.push("change 1");
+      vi.advanceTimersByTime(500);
+      result.current.push("change 2");
+      vi.advanceTimersByTime(500);
+    });
+    expect(result.current.canUndo).toBe(true);
+
+    act(() => {
+      result.current.reset("fresh start");
+    });
+
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(false);
+
+    // Pushing after reset should undo back to the new baseline
+    act(() => {
+      result.current.push("after reset");
+      vi.advanceTimersByTime(500);
+    });
+    let undoneValue;
+    act(() => {
+      undoneValue = result.current.undo();
+    });
+    expect(undoneValue).toBe("fresh start");
+  });
 });

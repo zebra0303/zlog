@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "./AppLayout";
+import { RequireAuth } from "./RequireAuth";
 import { lazy, Suspense } from "react";
 import { Skeleton } from "@/shared/ui";
 
@@ -35,6 +36,10 @@ function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Eleme
   );
 }
 
+function withAuth(Component: React.LazyExoticComponent<() => React.JSX.Element>) {
+  return <RequireAuth>{withSuspense(Component)}</RequireAuth>;
+}
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -43,13 +48,13 @@ export const router = createBrowserRouter([
       { index: true, element: withSuspense(HomePage) },
       { path: "posts/:slug", element: withSuspense(PostDetailPage) },
       { path: "remote-posts/:id", element: withSuspense(RemotePostDetailPage) },
-      { path: "write", element: withSuspense(PostEditorPage) },
-      { path: "write/:id", element: withSuspense(PostEditorPage) },
+      { path: "write", element: withAuth(PostEditorPage) },
+      { path: "write/:id", element: withAuth(PostEditorPage) },
       { path: "profile", element: withSuspense(ProfilePage) },
       { path: "category/:slug", element: withSuspense(CategoryDetailPage) },
       { path: "login", element: withSuspense(LoginPage) },
-      { path: "admin", element: withSuspense(AdminPage) },
-      { path: "settings", element: withSuspense(SettingsPage) },
+      { path: "admin", element: withAuth(AdminPage) },
+      { path: "settings", element: withAuth(SettingsPage) },
       { path: "oauth-callback", element: withSuspense(OAuthCallbackPage) },
       { path: "*", element: withSuspense(NotFoundPage) },
     ],

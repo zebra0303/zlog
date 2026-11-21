@@ -71,13 +71,9 @@ export function Footer() {
 
   return (
     <>
-      {/* Sentinel that reserves space for the expanded height (fixed height -> prevents flickering) */}
+      {/* Keep sentinel height fixed to prevent CLS layout shifts when toggling expanded state */}
       {hasCustomHeight && (
-        <div
-          ref={sentinelRef}
-          style={{ height: isExpanded ? customStyle.minHeight : compactMinHeight }}
-          aria-hidden="true"
-        />
+        <div ref={sentinelRef} style={{ height: customStyle.minHeight }} aria-hidden="true" />
       )}
       <footer
         className={`${hasCustomHeight ? "sticky bottom-0 z-40" : ""} footer-animated ${isCompact ? "footer-compact flex items-center" : ""} border-t border-[var(--color-border)] ${hasCustom ? "" : "bg-[var(--color-surface)]"}`}

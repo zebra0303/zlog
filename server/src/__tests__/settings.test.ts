@@ -230,5 +230,83 @@ describe("Settings & Profile API", () => {
       });
       expect(res.status).toBe(401);
     });
+
+    it("should hide notification_slack_webhook from unauthenticated GET /api/settings", async () => {
+      const putRes = await app.request("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `zlog_token=${token}`,
+        },
+        body: JSON.stringify({
+          notification_slack_webhook: "https://hooks.slack.com/services/T000/B000/XXXX",
+        }),
+      });
+      expect(putRes.status).toBe(200);
+
+      const publicRes = await app.request("/api/settings");
+      expect(publicRes.status).toBe(200);
+      const publicData = (await publicRes.json()) as Record<string, string>;
+      expect(publicData.notification_slack_webhook).toBeUndefined();
+
+      const adminRes = await app.request("/api/settings", {
+        headers: { Cookie: `zlog_token=${token}` },
+      });
+      const adminData = (await adminRes.json()) as Record<string, string>;
+      expect(adminData.notification_slack_webhook).toBe(
+        "https://hooks.slack.com/services/T000/B000/XXXX",
+      );
+    });
+
+    it("should reject non-Slack webhook URLs on PUT /api/settings and POST /api/settings/test-slack", async () => {
+      const badPut = await app.request("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `zlog_token=${token}`,
+        },
+        body: JSON.stringify({
+          notification_slack_webhook: "http://169.254.169.254/latest/meta-data/",
+        }),
+      });
+      expect(badPut.status).toBe(400);
+
+      // Even if a legacy non-Slack URL exists in DB, test-slack refuses to send outbound requests to it
+      db.update(schema.siteSettings)
+        .set({ value: "https://evil.example.com/hook" })
+        .where(eq(schema.siteSettings.key, "notification_slack_webhook"))
+        .run();
+
+      const badTest = await app.request("/api/settings/test-slack", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `zlog_token=${token}`,
+        },
+      });
+      expect(badTest.status).toBe(400);
+    });
+
+    it("should persist all 6 theme color settings keys", async () => {
+      const themePayload = {
+        primary_color: "#112233",
+        accent_color: "#445566",
+        surface_color_light: "#fafafa",
+        surface_color_dark: "#121212",
+        text_color_light: "#222222",
+        text_color_dark: "#eeeeee",
+      };
+      const res = await app.request("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `zlog_token=${token}`,
+        },
+        body: JSON.stringify(themePayload),
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as Record<string, string>;
+      expect(data).toMatchObject(themePayload);
+    });
   });
 });

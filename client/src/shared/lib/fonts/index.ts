@@ -1,6 +1,3 @@
-// Non-Google CDN fonts that need explicit font-display: swap to prevent FOIT
-const NON_GOOGLE_FONTS = new Set(["pretendard", "nanum-square-neo"]);
-
 export const FONT_OPTIONS = [
   {
     value: "system",
@@ -54,21 +51,6 @@ export function applyFont(fontValue: string) {
       link.href = font.cdn;
       link.crossOrigin = "anonymous"; // Enable CORS for CDN fonts
       document.head.appendChild(link);
-
-      // 3. Inject font-display: swap for non-Google fonts to prevent FOIT
-      if (NON_GOOGLE_FONTS.has(font.value)) {
-        const styleId = `font-display-${font.value}`;
-        if (!document.getElementById(styleId)) {
-          const style = document.createElement("style");
-          style.id = styleId;
-          // Extract primary font name from the family string
-          // split always returns at least one element
-          const [firstFamily = ""] = font.family.split(",");
-          const primaryFont = firstFamily.replace(/"/g, "").trim();
-          style.textContent = `@font-face { font-family: "${primaryFont}"; font-display: swap; }`;
-          document.head.appendChild(style);
-        }
-      }
     }
   }
 }

@@ -545,4 +545,59 @@ describe("Comments API", () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe("Comment PII and SSO spoofing protection", () => {
+    it("should strip authorEmail from public GET /api/posts/:postId/comments", async () => {
+      const post = createTestPost();
+      createTestComment(post.id, {
+        authorName: "Alice",
+        authorEmail: "secret@example.com",
+      });
+
+      const res = await app.request(`/api/posts/${post.id}/comments`);
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { items: Record<string, unknown>[] };
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0]).not.toHaveProperty("authorEmail");
+    });
+
+    it("should reject spoofed SSO comment without signed zlog_commenter_token cookie", async () => {
+      const post = createTestPost();
+      // Without signed cookie, client-supplied commenterId is ignored and rejected as unauthenticated anonymous (400)
+      const anonRes = await app.request(`/api/posts/${post.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          authorName: "Spoofed User",
+          authorEmail: "spoof@example.com",
+          commenterId: "forged-commenter-id",
+          content: "Forged SSO comment",
+        }),
+      });
+      expect(anonRes.status).toBe(400);
+
+      // In sso_only mode, forging commenterId without signed cookie returns 403
+      db.update(schema.siteSettings)
+        .set({ value: "sso_only" })
+        .where(eq(schema.siteSettings.key, "comment_mode"))
+        .run();
+
+      const ssoRes = await app.request(`/api/posts/${post.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          authorName: "Spoofed User",
+          authorEmail: "spoof@example.com",
+          commenterId: "forged-commenter-id",
+          content: "Forged SSO comment",
+        }),
+      });
+      expect(ssoRes.status).toBe(403);
+
+      db.update(schema.siteSettings)
+        .set({ value: "all" })
+        .where(eq(schema.siteSettings.key, "comment_mode"))
+        .run();
+    });
+  });
 });

@@ -56,6 +56,7 @@ function CommentContent({ content, isDeleted }: { content: string; isDeleted: bo
 }
 
 function RemoteCommentThread({ comment, depth }: { comment: CommentWithReplies; depth: number }) {
+  const { t } = useI18n();
   const isDeleted = !!comment.deletedAt;
   const avatarUrl = comment.authorAvatarUrl;
 
@@ -72,10 +73,12 @@ function RemoteCommentThread({ comment, depth }: { comment: CommentWithReplies; 
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="font-medium text-[var(--color-text)]">
-              {isDeleted ? "삭제된 댓글입니다" : comment.authorName}
+              {isDeleted ? t("comment_deleted") : comment.authorName}
             </span>
             {comment.isEdited && !isDeleted && (
-              <span className="text-xs text-[var(--color-text-secondary)]">(수정됨)</span>
+              <span className="text-xs text-[var(--color-text-secondary)]">
+                {t("comment_edited")}
+              </span>
             )}
             <span className="text-xs text-[var(--color-text-secondary)]">
               {timeAgo(comment.createdAt)}
@@ -147,7 +150,7 @@ export function RemoteCommentList({ remotePostId }: { remotePostId: string }) {
         <MessageSquare className="h-5 w-5" />
         {t("comment_title")}
         <span className="ml-2 text-sm font-normal text-[var(--color-text-secondary)]">
-          (읽기 전용)
+          {t("comment_read_only")}
         </span>
       </h3>
 
@@ -158,7 +161,7 @@ export function RemoteCommentList({ remotePostId }: { remotePostId: string }) {
         </div>
       ) : error ? (
         <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">
-          원격 서버에서 댓글을 불러오지 못했습니다.
+          {t("comment_load_failed")}
         </p>
       ) : comments.filter(hasVisibleComments).length === 0 ? (
         <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">

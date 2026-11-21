@@ -108,7 +108,8 @@ export default function PostDetailPage() {
         setError(getErrorMessage(err, "Failed to load post"));
         setIsLoading(false);
       });
-  }, [slug, t]);
+    // Exclude i18n `t` so switching UI language does not re-fetch the post and inflate views
+  }, [slug]);
 
   // Reading progress bar — tracks scroll position within article
   useEffect(() => {
@@ -490,7 +491,8 @@ export default function PostDetailPage() {
           )}
         </div>
       )}
-      <div className="mt-8" id="comments" data-print-hide>
+      {/* CommentSection already owns id="comments"; avoid duplicate DOM IDs */}
+      <div className="mt-8" data-print-hide>
         <CommentSection postId={post.id} onCountChange={handleCommentCountChange} />
       </div>
       {/* Desktop TOC sidebar */}

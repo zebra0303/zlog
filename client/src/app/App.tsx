@@ -18,9 +18,11 @@ export default function App() {
   useEffect(() => {
     initTheme();
     initLocale();
-    void checkAuth();
     void fetchSettings();
-    recordVisit();
+    // Wait for auth check to settle before recording a visit so admin sessions are not counted
+    void checkAuth().then(() => {
+      recordVisit();
+    });
   }, [initTheme, initLocale, checkAuth, fetchSettings]);
   return (
     <ErrorBoundary>

@@ -168,6 +168,7 @@ export const en = {
   comment_reply: "Reply",
   comment_like: "Like",
   comment_deleted: "Deleted",
+  comment_read_only: "(Read-only)",
   comment_login_prompt:
     "Sign in with social to leave a comment. Your profile picture and name will be shown automatically.",
   comment_login_github: "Login with GitHub",

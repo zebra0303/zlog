@@ -128,5 +128,44 @@ describe("SSR handleSsr", () => {
       expect(html).toContain("SSR excerpt");
       expect(html).toContain('"@type":"BlogPosting"');
     });
+
+    it("should escape </script> inside JSON-LD to prevent script breakout XSS", () => {
+      createTestPost({
+        title: "Breakout </script><script>alert(1)</script>",
+        slug: "xss-script-breakout",
+        status: "published",
+        excerpt: "Safe excerpt",
+      });
+
+      const settings = getSiteSettings();
+      const url = new URL("http://localhost:3000/posts/xss-script-breakout");
+      const html = handleSsr(
+        "/posts/xss-script-breakout",
+        url,
+        INDEX_TEMPLATE,
+        settings,
+        "http://localhost:3000",
+      );
+
+      expect(html).not.toContain("</script><script>alert(1)");
+      expect(html).toContain("\\u003c/script\\u003e");
+    });
+
+    it("should resolve percent-encoded Korean post slugs", () => {
+      createTestPost({
+        title: "한글 슬러그 테스트",
+        slug: "한글-슬러그",
+        status: "published",
+        excerpt: "한글 요약",
+      });
+
+      const settings = getSiteSettings();
+      const encodedPath = `/posts/${encodeURIComponent("한글-슬러그")}`;
+      const url = new URL(`http://localhost:3000${encodedPath}`);
+      const html = handleSsr(encodedPath, url, INDEX_TEMPLATE, settings, "http://localhost:3000");
+
+      expect(html).toContain("한글 슬러그 테스트");
+      expect(html).toContain("한글 요약");
+    });
   });
 });

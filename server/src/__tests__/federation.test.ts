@@ -544,4 +544,31 @@ describe("Federation & Sync Security", () => {
       expect(res.status).toBe(502);
     });
   });
+
+  describe("Admin-only local subscription routes", () => {
+    it("should reject unauthenticated POST /api/federation/local-subscribe with 401", async () => {
+      const cat = createTestCategory();
+      const res = await app.request("/api/federation/local-subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          localCategoryId: cat.id,
+          remoteSiteUrl: "https://example.com",
+          remoteCategoryId: "rc-1",
+          remoteCategoryName: "Remote",
+          remoteCategorySlug: "remote",
+        }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it("should reject unauthenticated POST /api/federation/local-unsubscribe with 401", async () => {
+      const res = await app.request("/api/federation/local-unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: "sub-1" }),
+      });
+      expect(res.status).toBe(401);
+    });
+  });
 });
