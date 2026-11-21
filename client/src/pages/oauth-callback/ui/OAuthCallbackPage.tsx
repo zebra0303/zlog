@@ -27,9 +27,21 @@ export default function OAuthCallbackPage() {
 
     const returnUrl = localStorage.getItem("zlog_oauth_return") ?? "/";
     localStorage.removeItem("zlog_oauth_return");
-    // Prevent open redirect — only allow relative paths starting with /
-    const isSafe = returnUrl.startsWith("/") && !returnUrl.startsWith("//");
-    window.location.href = isSafe ? returnUrl : "/";
+    // Prevent open redirect: accept safe relative paths or same-origin URLs
+    let safeReturn = "/";
+    if (returnUrl.startsWith("/") && !returnUrl.startsWith("//")) {
+      safeReturn = returnUrl;
+    } else {
+      try {
+        const parsed = new URL(returnUrl);
+        if (parsed.origin === window.location.origin) {
+          safeReturn = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+        }
+      } catch {
+        safeReturn = "/";
+      }
+    }
+    window.location.href = safeReturn;
   }, [searchParams]);
 
   return (

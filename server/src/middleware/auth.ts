@@ -4,20 +4,15 @@ import { jwtVerify, SignJWT } from "jose";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { randomBytes } from "crypto";
+import { resolveJwtSecret } from "@zebra/core/server";
 
-// Initialize secret once
-let secretStr = process.env.JWT_SECRET;
-if (!secretStr) {
-  secretStr = randomBytes(32).toString("hex");
-  console.warn(
-    "⚠️ JWT_SECRET is not set. Using a random secret (sessions will expire on restart).",
-  );
-}
-const SECRET_KEY = new TextEncoder().encode(secretStr);
+// Centralize JWT secret resolution (enforces explicit secret in production)
+export const SECRET_KEY = new TextEncoder().encode(
+  resolveJwtSecret(process.env.JWT_SECRET, process.env.NODE_ENV),
+);
 
 export async function createToken(ownerId: string): Promise<string> {
-  return new SignJWT({ sub: ownerId })
+  return new SignJWT({ sub: ownerId, type: "admin" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
@@ -27,8 +22,28 @@ export async function createToken(ownerId: string): Promise<string> {
 export async function verifyToken(token: string): Promise<{ sub: string; iat: number } | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
+    // Reject non-admin tokens (e.g. OAuth commenter session cookies)
+    if (payload.type === "commenter") return null;
     if (!payload.sub || typeof payload.iat !== "number") return null;
     return { sub: payload.sub, iat: payload.iat };
+  } catch {
+    return null;
+  }
+}
+
+export async function createCommenterToken(commenterId: string): Promise<string> {
+  return new SignJWT({ sub: commenterId, type: "commenter" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("30d")
+    .sign(SECRET_KEY);
+}
+
+export async function verifyCommenterToken(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jwtVerify(token, SECRET_KEY);
+    if (payload.type !== "commenter" || !payload.sub) return null;
+    return payload.sub;
   } catch {
     return null;
   }

@@ -22,8 +22,11 @@ export default function LoginPage() {
     try {
       await login(email, password);
       const redirect = searchParams.get("redirect");
+      // Prevent open redirect by permitting only same-origin relative paths
+      const safeRedirect =
+        redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
       // Force a full page reload so caches (categories, posts) are refreshed
-      window.location.href = redirect ?? "/";
+      window.location.href = safeRedirect;
     } catch (err) {
       setError(getErrorMessage(err, t("request_failed")));
     } finally {

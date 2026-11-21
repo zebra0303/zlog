@@ -9,6 +9,7 @@ import { getVisitorId } from "@/shared/lib/visitorId";
 import type { CommentWithReplies, PaginatedResponse } from "@zlog/shared";
 import { CommentForm } from "./CommentForm";
 import { CommentThread } from "./CommentThread";
+import { commentApi } from "../api/commentApi";
 import { hasVisibleComments, getCommenter, clearCommenter, GoogleIcon } from "./helpers";
 import type { CommenterInfo } from "./types";
 
@@ -76,6 +77,8 @@ export function CommentSection({
   }, []);
 
   const handleLogout = () => {
+    // Clear server-side HttpOnly commenter session cookie alongside localStorage
+    void commentApi.logoutCommenter().catch(() => null);
     clearCommenter();
     setCommenter(null);
   };
@@ -150,9 +153,9 @@ export function CommentSection({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const url = new URL(window.location.href);
-                  url.hash = "comments";
-                  localStorage.setItem("zlog_oauth_return", url.toString());
+                  // Store relative path + hash so OAuthCallbackPage returns to the current post
+                  const returnPath = `${window.location.pathname}${window.location.search}#comments`;
+                  localStorage.setItem("zlog_oauth_return", returnPath);
                   window.location.href = "/api/oauth/github";
                 }}
               >
@@ -165,9 +168,8 @@ export function CommentSection({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const url = new URL(window.location.href);
-                  url.hash = "comments";
-                  localStorage.setItem("zlog_oauth_return", url.toString());
+                  const returnPath = `${window.location.pathname}${window.location.search}#comments`;
+                  localStorage.setItem("zlog_oauth_return", returnPath);
                   window.location.href = "/api/oauth/google";
                 }}
               >

@@ -26,11 +26,12 @@ export async function processUploadedImage(buffer: Buffer): Promise<ProcessedIma
   // - Resize to max 1920px width (for large screens)
   // - Maintain aspect ratio
   // - Quality 80%
-  const metadata = await sharp(buffer).metadata();
+  // Auto-orient EXIF metadata before resizing and converting to WebP
+  const metadata = await sharp(buffer).rotate().metadata();
   const width = metadata.width;
 
   // If image is very large, resize it
-  let pipeline = sharp(buffer).webp({ quality: 80 });
+  let pipeline = sharp(buffer).rotate().webp({ quality: 80 });
 
   if (width > 1920) {
     pipeline = pipeline.resize({ width: 1920, withoutEnlargement: true });
@@ -68,12 +69,24 @@ export async function generateThumbnail(
   }
 }
 
+/** Resolve an upload URL safely within UPLOADS_DIR to prevent path traversal */
+function resolveSafeUploadPath(imageUrl: string): string | null {
+  if (!imageUrl.startsWith("/uploads/images/")) return null;
+  const filename = path.basename(imageUrl);
+  if (!filename || filename !== imageUrl.slice("/uploads/images/".length)) return null;
+  const resolvedDir = path.resolve(UPLOADS_DIR);
+  const resolvedPath = path.resolve(resolvedDir, filename);
+  if (!resolvedPath.startsWith(resolvedDir + path.sep)) return null;
+  return resolvedPath;
+}
+
 export async function getImageDimensions(
   imageUrl: string | null | undefined,
 ): Promise<{ width: number; height: number } | null> {
-  if (!imageUrl?.startsWith("/uploads/images/")) return null;
+  if (!imageUrl) return null;
+  const filePath = resolveSafeUploadPath(imageUrl);
+  if (!filePath) return null;
   try {
-    const filePath = path.join(process.cwd(), imageUrl);
     const metadata = await sharp(filePath).metadata();
     if (metadata.width && metadata.height) {
       return { width: metadata.width, height: metadata.height };
@@ -85,9 +98,9 @@ export async function getImageDimensions(
 }
 
 export function deleteUploadedImage(imageUrl: string) {
-  if (!imageUrl.startsWith("/uploads/images/")) return;
+  const filePath = resolveSafeUploadPath(imageUrl);
+  if (!filePath) return;
   try {
-    const filePath = path.join(process.cwd(), imageUrl);
     fs.unlinkSync(filePath);
   } catch {
     /* ignore – file may already be deleted */

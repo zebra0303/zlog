@@ -29,7 +29,21 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
   const location = useLocation();
   const { t } = useI18n();
 
-  const sourceUrl = post.isRemote ? (post.remoteUri ?? post.remoteBlog?.siteUrl ?? null) : null;
+  const rawSourceUrl = post.isRemote ? (post.remoteUri ?? post.remoteBlog?.siteUrl ?? null) : null;
+  // Validate protocol and parse safely to prevent render crashes or javascript: URLs
+  let safeSourceUrl: string | null = null;
+  let sourceHostname: string | null = null;
+  if (rawSourceUrl) {
+    try {
+      const parsed = new URL(rawSourceUrl);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        safeSourceUrl = parsed.href;
+        sourceHostname = parsed.hostname;
+      }
+    } catch {
+      safeSourceUrl = null;
+    }
+  }
 
   // Use natural aspect ratio if available, otherwise fallback to 16/9
   const aspectRatio =
@@ -142,10 +156,10 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
       </CardContent>
 
       {/* 5. Remote Original Link (Higher Z-Index) */}
-      {post.isRemote && sourceUrl && (
+      {post.isRemote && safeSourceUrl && sourceHostname && (
         <div className="relative z-10 border-t border-[var(--color-border)] px-4 py-2">
           <a
-            href={sourceUrl}
+            href={safeSourceUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs text-[var(--color-primary)] hover:underline"
@@ -153,7 +167,7 @@ export const PostCard = memo(function PostCard({ post, priority = false }: PostC
             <ExternalLink className="h-3 w-3" />
             {t("post_view_original")}
             <span className="ml-1 max-w-[200px] truncate text-[var(--color-text-secondary)]">
-              {new URL(sourceUrl).hostname}
+              {sourceHostname}
             </span>
           </a>
         </div>

@@ -4,7 +4,12 @@ import * as schema from "../db/schema.js";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { fixRemoteUrl, fixRemoteContentUrls, validateRemoteUrl } from "../lib/remoteUrl.js";
+import {
+  fixRemoteUrl,
+  fixRemoteContentUrls,
+  validateRemoteUrl,
+  safeOutboundFetch,
+} from "../lib/remoteUrl.js";
 import { federationService } from "../services/federation.js";
 import type { WebhookEvent } from "@zlog/shared";
 
@@ -115,7 +120,8 @@ federationRoute.post("/webhook", async (c) => {
   }
 });
 
-federationRoute.post("/local-subscribe", async (c) => {
+// Require admin authentication to prevent unauthorized subscription creation and SSRF
+federationRoute.post("/local-subscribe", authMiddleware, async (c) => {
   const body = await c.req.json<{
     remoteSiteUrl: string;
     remoteCategoryId: string;
@@ -158,7 +164,11 @@ federationRoute.post("/local-subscribe", async (c) => {
   if (!remoteBlog) {
     const id = generateId();
     try {
-      const infoRes = await fetch(`${body.remoteSiteUrl}/api/federation/info`);
+      const infoRes = await safeOutboundFetch(
+        `${body.remoteSiteUrl}/api/federation/info`,
+        { signal: AbortSignal.timeout(10000) },
+        mySiteUrl,
+      );
       const info = (await infoRes.json()) as {
         displayName?: string;
         blogTitle?: string;
@@ -258,16 +268,20 @@ federationRoute.post("/local-subscribe", async (c) => {
 
   // Register as subscriber on remote blog (for webhook delivery — local subscription persists on failure)
   try {
-    await fetch(`${body.remoteSiteUrl}/api/federation/subscribe`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        categoryId: body.remoteCategoryId,
-        subscriberUrl: mySiteUrl,
-        callbackUrl: `${mySiteUrl}/api/federation/webhook`,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
+    await safeOutboundFetch(
+      `${body.remoteSiteUrl}/api/federation/subscribe`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: body.remoteCategoryId,
+          subscriberUrl: mySiteUrl,
+          callbackUrl: `${mySiteUrl}/api/federation/webhook`,
+        }),
+        signal: AbortSignal.timeout(10000),
+      },
+      mySiteUrl,
+    );
   } catch {
     console.warn(
       "⚠️ Failed to register as subscriber on remote blog (local subscription persisted)",
@@ -278,7 +292,8 @@ federationRoute.post("/local-subscribe", async (c) => {
 });
 
 // ============ Local unsubscribe ============
-federationRoute.post("/local-unsubscribe", async (c) => {
+// Require admin authentication for modifying local subscriptions
+federationRoute.post("/local-unsubscribe", authMiddleware, async (c) => {
   const body = await c.req.json<{
     remoteSiteUrl: string;
     remoteCategoryId: string;
@@ -485,9 +500,13 @@ federationRoute.get("/remote-categories", authMiddleware, async (c) => {
 
   const normalized = url.replace(/\/+$/, "");
   try {
-    const res = await fetch(`${normalized}/api/federation/categories`, {
-      signal: AbortSignal.timeout(10000),
-    });
+    const res = await safeOutboundFetch(
+      `${normalized}/api/federation/categories`,
+      {
+        signal: AbortSignal.timeout(10000),
+      },
+      mySiteUrl,
+    );
     if (!res.ok) return c.json({ error: `Remote server error: ${res.status}` }, 502);
     const cats = await res.json();
     return c.json(cats);

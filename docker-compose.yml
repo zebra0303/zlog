@@ -45,10 +45,11 @@ services:
       - ./docker-data/db:/data:ro
       - ./docker-data/backups:/backups
     entrypoint: /bin/sh
+    # Use sqlite3 online backup API instead of raw cp to avoid corrupting active WAL databases
     command: >
-      -c 'while true; do
+      -c 'apk add --no-cache sqlite >/dev/null 2>&1 && while true; do
         BACKUP_FILE="/backups/zlog-$(date +%Y%m%d_%H%M%S).db";
-        cp /data/zlog.db "$$BACKUP_FILE";
+        sqlite3 /data/zlog.db ".backup '\''$$BACKUP_FILE'\''";
         echo "Backup created: $$BACKUP_FILE";
         find /backups -name "*.db" -mtime +7 -delete;
         sleep 86400;

@@ -21,7 +21,7 @@ import { SOCIAL_PLATFORMS } from "@zlog/shared";
 import type { ProfileWithStats, UpdateProfileRequest } from "@zlog/shared";
 
 export default function SettingsPage() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const navigate = useNavigate();
   const { t } = useI18n();
   const [form, setForm] = useState<UpdateProfileRequest>({});
@@ -111,6 +111,8 @@ export default function SettingsPage() {
   );
 
   useEffect(() => {
+    // Wait for initial checkAuth() before redirecting to /login on page reload
+    if (authLoading) return;
     if (!isAuthenticated) {
       void navigate("/login");
       return;
@@ -135,7 +137,7 @@ export default function SettingsPage() {
         setNewEmail(d.email);
       }
     });
-  }, [isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

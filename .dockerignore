@@ -10,3 +10,7 @@ uploads
 .DS_Store
 *.log
 .vite
+path
+docker-data
+coverage
+.claude

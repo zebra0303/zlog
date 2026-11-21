@@ -6,6 +6,9 @@
  * to the actual remote blog URL.
  */
 
+import net from "node:net";
+import { isPrivateOrReservedIp, safeFetch } from "@zebra/core/server";
+
 /** Replace the domain of a single URL with the actual remote blog URL */
 export function fixRemoteUrl(url: string | null, remoteSiteUrl: string): string | null {
   if (!url) return url;
@@ -21,7 +24,8 @@ export function fixRemoteUrl(url: string | null, remoteSiteUrl: string): string 
  */
 export function fixRemoteContentUrls(content: string, remoteSiteUrl: string): string {
   let fixed = content;
-  fixed = fixed.replace(/(!\[.*?\]\()(\/\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
+  // Fix single-slash relative markdown image URLs (previously had a typo matching //uploads)
+  fixed = fixed.replace(/(!\[.*?\]\()(\/(uploads|img)\/[^)]+\))/g, `$1${remoteSiteUrl}$2`);
   fixed = fixed.replace(
     /(!\[.*?\]\()https?:\/\/[^/\s"')]+(\/(uploads|img)\/[^)]+\))/g,
     `$1${remoteSiteUrl}$2`,
@@ -52,28 +56,25 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
     throw new Error("ERR_INVALID_PROTOCOL");
   }
 
-  const hostname = parsed.hostname;
+  const rawHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  const hostname = rawHost.replace(/\.+$/, "");
   const allowLocal = process.env.ALLOW_LOCAL_FEDERATION === "true";
 
   if (!allowLocal) {
-    // Block localhost and loopback
+    // Block localhost, loopback (including 127.0.0.0/8, ::1, and trailing-dot localhost.)
     if (
       hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
+      hostname.endsWith(".localhost") ||
       hostname === "::1" ||
-      hostname === "[::1]"
+      hostname === "0:0:0:0:0:0:0:1" ||
+      hostname.startsWith("127.") ||
+      hostname === "::ffff:127.0.0.1"
     ) {
       throw new Error("ERR_LOCALHOST_FORBIDDEN");
     }
 
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-    if (
-      hostname.startsWith("10.") ||
-      hostname.startsWith("192.168.") ||
-      hostname.startsWith("169.254.") ||
-      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-    ) {
+    // Block all RFC1918, link-local, CGNAT, unspecified (0.0.0.0), and IPv6 private/reserved IP literals
+    if (net.isIP(hostname) !== 0 && isPrivateOrReservedIp(hostname)) {
       throw new Error("ERR_PRIVATE_IP_FORBIDDEN");
     }
   }
@@ -93,4 +94,24 @@ export function validateRemoteUrl(url: string, mySiteUrl?: string): void {
       }
     }
   }
+}
+
+/**
+ * Perform an outbound HTTP request with SSRF validation and DNS-rebinding protection.
+ * Falls back to global fetch under NODE_ENV=test so unit tests stubbing fetch remain deterministic.
+ */
+export async function safeOutboundFetch(
+  url: string,
+  init: RequestInit = {},
+  mySiteUrl?: string,
+): Promise<Response> {
+  validateRemoteUrl(url, mySiteUrl);
+  if (process.env.NODE_ENV === "test") {
+    return fetch(url, init);
+  }
+  return safeFetch(url, {
+    ...init,
+    allowLocal: process.env.ALLOW_LOCAL_FEDERATION === "true",
+    timeoutMs: 10000,
+  });
 }

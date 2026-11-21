@@ -9,7 +9,12 @@ import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, inArray } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
-import { fixRemoteUrl, fixRemoteContentUrls, validateRemoteUrl } from "../lib/remoteUrl.js";
+import {
+  fixRemoteUrl,
+  fixRemoteContentUrls,
+  validateRemoteUrl,
+  safeOutboundFetch,
+} from "../lib/remoteUrl.js";
 
 /**
  * Pull-sync posts for a single subscription
@@ -46,12 +51,16 @@ export async function syncSubscription(
     postsUrl += `?since=${encodeURIComponent(sub.lastSyncedAt)}`;
   }
 
-  const res = await fetch(postsUrl, {
-    headers: {
-      "X-Zlog-Subscriber-Url": mySiteUrl,
+  const res = await safeOutboundFetch(
+    postsUrl,
+    {
+      headers: {
+        "X-Zlog-Subscriber-Url": mySiteUrl,
+      },
+      signal: AbortSignal.timeout(15000),
     },
-    signal: AbortSignal.timeout(15000),
-  });
+    mySiteUrl,
+  );
 
   const now = new Date().toISOString();
 
@@ -176,47 +185,56 @@ export async function syncSubscription(
   return synced;
 }
 
+let isSyncingAll = false;
+
 /**
- * Sync all active subscriptions
+ * Sync all active subscriptions (re-entrancy guarded to prevent overlapping sync cycles)
  */
 export async function syncAllSubscriptions(): Promise<void> {
-  const subs = db
-    .select()
-    .from(schema.categorySubscriptions)
-    .where(eq(schema.categorySubscriptions.isActive, true))
-    .all();
+  if (isSyncingAll) return;
+  isSyncingAll = true;
+  try {
+    const subs = db
+      .select()
+      .from(schema.categorySubscriptions)
+      .where(eq(schema.categorySubscriptions.isActive, true))
+      .all();
 
-  if (subs.length === 0) return;
+    if (subs.length === 0) return;
 
-  console.log(`🔄 Starting sync for ${subs.length} subscription(s)...`);
-  let totalSynced = 0;
+    console.log(`🔄 Starting sync for ${subs.length} subscription(s)...`);
+    let totalSynced = 0;
 
-  for (const sub of subs) {
-    try {
-      const count = await syncSubscription(sub);
-      totalSynced += count;
-    } catch (err) {
-      // On individual subscription failure, continue with the rest
-      const remoteCat = db
-        .select()
-        .from(schema.remoteCategories)
-        .where(eq(schema.remoteCategories.id, sub.remoteCategoryId))
-        .get();
-      console.error(
-        `⚠️ Subscription sync failed (${remoteCat?.name ?? sub.id}):`,
-        err instanceof Error ? err.message : err,
-      );
+    for (const sub of subs) {
+      try {
+        const count = await syncSubscription(sub);
+        totalSynced += count;
+      } catch (err) {
+        // On individual subscription failure, continue with the rest
+        const remoteCat = db
+          .select()
+          .from(schema.remoteCategories)
+          .where(eq(schema.remoteCategories.id, sub.remoteCategoryId))
+          .get();
+        console.error(
+          `⚠️ Subscription sync failed (${remoteCat?.name ?? sub.id}):`,
+          err instanceof Error ? err.message : err,
+        );
+      }
     }
-  }
 
-  console.log(`✅ Sync complete: ${totalSynced} post(s) synced`);
+    console.log(`✅ Sync complete: ${totalSynced} post(s) synced`);
 
-  // Trigger GC after sync (clean up temporary objects from fetch responses, JSON parsing, etc.)
-  if (typeof globalThis.gc === "function") {
-    globalThis.gc();
+    // Trigger GC after sync (clean up temporary objects from fetch responses, JSON parsing, etc.)
+    if (typeof globalThis.gc === "function") {
+      globalThis.gc();
+    }
+  } finally {
+    isSyncingAll = false;
   }
 }
 
+let initialSyncTimer: ReturnType<typeof setTimeout> | null = null;
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 
 // Track recently triggered subscription IDs to prevent duplicate syncs
@@ -280,8 +298,12 @@ export function startSyncWorker(): void {
   const intervalMinutes = Math.max(1, Number(intervalSetting?.value) || 15);
   const intervalMs = intervalMinutes * 60 * 1000;
 
+  // Clean up any existing timers before starting to prevent leaks on repeated calls
+  stopSyncWorker();
+
   // First sync 5 seconds after start (wait for bootstrap to complete)
-  setTimeout(() => {
+  initialSyncTimer = setTimeout(() => {
+    initialSyncTimer = null;
     void syncAllSubscriptions();
   }, 5000);
 
@@ -294,9 +316,13 @@ export function startSyncWorker(): void {
 }
 
 /**
- * Clean up worker (used in tests, etc.)
+ * Clean up worker (used on graceful shutdown and in tests)
  */
 export function stopSyncWorker(): void {
+  if (initialSyncTimer) {
+    clearTimeout(initialSyncTimer);
+    initialSyncTimer = null;
+  }
   if (syncTimer) {
     clearInterval(syncTimer);
     syncTimer = null;

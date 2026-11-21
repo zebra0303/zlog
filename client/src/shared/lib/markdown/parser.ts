@@ -42,7 +42,16 @@ function getProcessor() {
       tagNames: [...(defaultSchema.tagNames ?? []), "iframe"],
       attributes: {
         ...defaultSchema.attributes,
-        iframe: ["src", "width", "height", "frameBorder", "allowFullScreen", "allow", "style"],
+        iframe: [
+          "src",
+          "width",
+          "height",
+          "frameBorder",
+          "allowFullScreen",
+          "allow",
+          "sandbox",
+          "style",
+        ],
         div: ["className", "class"],
         // Allow inline styles on span/td/th for text/background color
         span: ["style"],
@@ -178,8 +187,11 @@ export async function parseMarkdown(markdown: string): Promise<string> {
 
       const path = parsed.pathname.replace(/^\/|\/$/g, "");
       const parts = path.split("/");
-      // Expected path: user/pen/id or user/embed/id
-      return `<iframe height="400" style="width:100%;border-radius:8px;" scrolling="no" src="https://codepen.io/${parts.join("/embed/")}?default-tab=result" frameborder="no" allowfullscreen></iframe>`;
+      // Expected path: user/pen/id or user/embed/id -> emit https://codepen.io/{user}/embed/{id}
+      const user = parts[0];
+      const penId = parts[2];
+      if (!user || !penId || !/^[\w-]+$/.test(user) || !/^[\w-]+$/.test(penId)) return _match;
+      return `<iframe height="400" style="width:100%;border-radius:8px;" scrolling="no" src="https://codepen.io/${user}/embed/${penId}?default-tab=result" frameborder="no" allowfullscreen></iframe>`;
     } catch {
       return _match;
     }

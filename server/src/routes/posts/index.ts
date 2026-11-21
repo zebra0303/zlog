@@ -112,7 +112,9 @@ postsRoute.openapi(
       }
     }
 
-    const includeRemote = status === "published" && !tagSlug;
+    // Restrict non-admin queries to published posts only to prevent draft/deleted post leakage
+    const effectiveStatus = isAdmin ? status : "published";
+    const includeRemote = effectiveStatus === "published" && !tagSlug;
 
     // Build the public category subquery condition
     const publicCatCond = or(
@@ -129,11 +131,11 @@ postsRoute.openapi(
     // Path A: Local only
     if (!includeRemote) {
       const conditions: SQL[] = [];
-      if (status === "all") {
+      if (effectiveStatus === "all") {
         const cond = or(eq(schema.posts.status, "published"), eq(schema.posts.status, "draft"));
         if (cond) conditions.push(cond);
       } else {
-        conditions.push(eq(schema.posts.status, status));
+        conditions.push(eq(schema.posts.status, effectiveStatus));
       }
       if (categoryId) conditions.push(eq(schema.posts.categoryId, categoryId));
       if (search) {
@@ -176,12 +178,14 @@ postsRoute.openapi(
       const categoriesMap = batchLoadCategories(catIds);
       const tagsMap = batchLoadTags(postIds);
       const commentCountsMap = batchLoadCommentCounts(postIds);
+      const likeCountsMap = batchLoadLikeCounts(postIds);
 
       const items = postsResult.map((post) => ({
         ...post,
         category: post.categoryId ? (categoriesMap.get(post.categoryId) ?? null) : null,
         tags: tagsMap.get(post.id) ?? [],
         commentCount: commentCountsMap.get(post.id) ?? 0,
+        likeCount: likeCountsMap.get(post.id) ?? 0,
         isRemote: false,
         remoteUri: null,
         remoteBlog: null,
@@ -343,7 +347,7 @@ postsRoute.openapi(
           updatedAt: rp.remoteUpdatedAt,
           deletedAt: null,
           category: rp.localCategoryId ? (categoriesMap.get(rp.localCategoryId) ?? null) : null,
-          tags: [],
+          tags: [] as { id: string; name: string; slug: string }[],
           isRemote: true,
           remoteUri: rp.remoteUri,
           remoteBlog: remoteBlogsMap.get(rp.remoteBlogId) ?? null,
@@ -402,6 +406,11 @@ postsRoute.get("/:param", async (c) => {
       shouldCount = false;
       isAdmin = true;
     }
+  }
+
+  // Prevent unauthenticated visitors from reading draft posts by slug or UUID
+  if (!isAdmin && post.status !== "published") {
+    return c.json({ error: "Post not found." }, 404);
   }
 
   // If not admin and post has a category, ensure it is public
@@ -764,8 +773,8 @@ postsRoute.put("/:id", authMiddleware, async (c) => {
         } else if (body.status === "draft" && existing.status === "published") {
           void sendWebhookToSubscribers("post.unpublished", updatedPost, catId);
         }
-      } else if (existing.status === "published" && !body.status) {
-        // Content changed while maintaining published status (cover image, body, etc.)
+      } else if (existing.status === "published" && (!body.status || body.status === "published")) {
+        // Trigger post.updated even when editor explicitly re-sends status: "published"
         const contentChanged =
           (body.title !== undefined && body.title !== existing.title) ||
           (body.content !== undefined && body.content !== existing.content) ||

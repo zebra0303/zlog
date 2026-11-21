@@ -161,4 +161,11 @@ export interface SiteSettingsMap {
   webhook_sync_interval: string;
   default_theme: string;
   notification_slack_webhook: string;
+  // Theme color customization keys
+  primary_color?: string;
+  accent_color?: string;
+  surface_color_light?: string;
+  surface_color_dark?: string;
+  text_color_light?: string;
+  text_color_dark?: string;
 }

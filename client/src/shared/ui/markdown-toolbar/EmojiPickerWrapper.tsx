@@ -60,7 +60,8 @@ export function EmojiPickerWrapper({
           >
             <EmojiPicker
               onEmojiClick={onEmojiClick}
-              theme={(isDark ? "dark" : "light") as Theme}
+              // Cast via unknown to avoid bundling emoji-picker-react's Theme enum in the main chunk
+              theme={(isDark ? "dark" : "light") as unknown as Theme}
               lazyLoadEmojis={true}
               searchDisabled={true}
               skinTonesDisabled={true}

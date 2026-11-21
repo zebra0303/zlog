@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from "react";
 import { Outlet, useLocation } from "react-router";
+import DOMPurify from "dompurify";
 import { Header } from "@/widgets/header/ui/Header";
 import { Footer } from "@/widgets/footer/ui/Footer";
 import { Sidebar } from "@/widgets/sidebar/ui/Sidebar";
@@ -24,13 +25,18 @@ async function renderMermaidBlocks() {
     mermaid.initialize({
       startOnLoad: false,
       theme: isDark ? "dark" : "default",
-      securityLevel: "loose",
+      // Enforce strict security level to prevent XSS in user-authored diagrams
+      securityLevel: "strict",
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     });
 
     for (const block of blocks) {
+      if (block.getAttribute("data-rendered")) continue;
       const code = block.dataset.mermaid;
       if (!code) continue;
+
+      // Mark pending before async render to prevent duplicate concurrent renders
+      block.setAttribute("data-rendered", "pending");
 
       let decoded = "";
       try {
@@ -44,7 +50,10 @@ async function renderMermaidBlocks() {
       try {
         const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const { svg } = await mermaid.render(id, decoded || "");
-        block.innerHTML = svg;
+        // Defense-in-depth SVG sanitization before inserting into DOM
+        block.innerHTML = DOMPurify.sanitize(svg, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+        });
         block.setAttribute("data-rendered", "true");
       } catch (err) {
         console.error("mermaid render error:", err);
@@ -114,6 +123,7 @@ export function AppLayout() {
       document.body.style.background = "";
       document.body.style.backgroundColor = "";
       document.documentElement.style.removeProperty("--color-primary");
+      document.documentElement.style.removeProperty("--color-accent");
       document.documentElement.style.removeProperty("--color-surface");
       document.documentElement.style.removeProperty("--color-text");
     };
@@ -173,7 +183,9 @@ export function AppLayout() {
   // Code block copy button — global event delegation
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".code-block-copy");
+      // Guard against non-Element event targets (e.g. Text nodes or Document)
+      if (!(e.target instanceof Element)) return;
+      const btn = e.target.closest<HTMLButtonElement>(".code-block-copy");
       if (!btn) return;
       const wrapper = btn.closest(".code-block-wrapper");
       if (!wrapper) return;
@@ -209,7 +221,8 @@ export function AppLayout() {
     }
 
     const handleClick = (e: MouseEvent) => {
-      const block = (e.target as HTMLElement).closest<HTMLElement>(".mermaid-block[data-rendered]");
+      if (!(e.target instanceof Element)) return;
+      const block = e.target.closest<HTMLElement>(".mermaid-block[data-rendered]");
       if (!block) return;
 
       // Ignore if modal is already open

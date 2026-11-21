@@ -1,12 +1,15 @@
 import { Hono } from "hono";
-import { setCookie, getCookie } from "hono/cookie";
+import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import { randomBytes } from "crypto";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
+import { createCommenterToken } from "../middleware/auth.js";
 
 const oauthRoute = new Hono();
+
+const OAUTH_FETCH_TIMEOUT_MS = 10_000;
 
 // ============ GitHub OAuth ============
 oauthRoute.get("/github", (c) => {
@@ -32,9 +35,10 @@ oauthRoute.get("/github/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) return c.json({ error: "Authorization code is missing." }, 400);
 
-  // Verify OAuth state to prevent CSRF
+  // Verify OAuth state to prevent CSRF and immediately clear single-use state cookie
   const stateQuery = c.req.query("state");
   const stateCookie = getCookie(c, "zlog_oauth_state");
+  deleteCookie(c, "zlog_oauth_state", { path: "/" });
   if (!stateQuery || !stateCookie || stateQuery !== stateCookie) {
     return c.json({ error: "Invalid OAuth state. Please try again." }, 403);
   }
@@ -45,7 +49,7 @@ oauthRoute.get("/github/callback", async (c) => {
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/github/callback`;
 
-  // Issue access token
+  // Issue access token with timeout and status validation
   const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -55,14 +59,18 @@ oauthRoute.get("/github/callback", async (c) => {
       code,
       redirect_uri: redirectUri,
     }),
+    signal: AbortSignal.timeout(OAUTH_FETCH_TIMEOUT_MS),
   });
+  if (!tokenRes.ok) return c.json({ error: "Failed to issue token." }, 502);
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
   if (!tokenData.access_token) return c.json({ error: "Failed to issue token." }, 400);
 
   // Fetch user info
   const userRes = await fetch("https://api.github.com/user", {
     headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: "application/json" },
+    signal: AbortSignal.timeout(OAUTH_FETCH_TIMEOUT_MS),
   });
+  if (!userRes.ok) return c.json({ error: "Failed to fetch GitHub profile." }, 502);
   const user = (await userRes.json()) as {
     id: number;
     login: string;
@@ -78,14 +86,17 @@ oauthRoute.get("/github/callback", async (c) => {
     try {
       const emailRes = await fetch("https://api.github.com/user/emails", {
         headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(OAUTH_FETCH_TIMEOUT_MS),
       });
-      const emails = (await emailRes.json()) as {
-        email: string;
-        primary: boolean;
-        verified: boolean;
-      }[];
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      email = emails.find((e) => e.primary && e.verified)?.email ?? emails[0]?.email ?? undefined;
+      if (emailRes.ok) {
+        const emails = (await emailRes.json()) as {
+          email: string;
+          primary: boolean;
+          verified: boolean;
+        }[];
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        email = emails.find((e) => e.primary && e.verified)?.email ?? emails[0]?.email ?? undefined;
+      }
     } catch {
       // ignore
     }
@@ -105,6 +116,16 @@ oauthRoute.get("/github/callback", async (c) => {
     avatarUrl,
     profileUrl,
   );
+
+  // Issue cryptographically signed HttpOnly session cookie to prevent commenterId spoofing
+  const commenterToken = await createCommenterToken(commenter.id);
+  setCookie(c, "zlog_commenter_token", commenterToken, {
+    httpOnly: true,
+    sameSite: "Lax",
+    maxAge: 30 * 24 * 60 * 60,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
 
   // Redirect to client (pass commenter info as query parameters)
   const params = new URLSearchParams({
@@ -140,9 +161,10 @@ oauthRoute.get("/google/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) return c.json({ error: "Authorization code is missing." }, 400);
 
-  // Verify OAuth state to prevent CSRF
+  // Verify OAuth state to prevent CSRF and immediately clear single-use state cookie
   const stateQuery = c.req.query("state");
   const stateCookie = getCookie(c, "zlog_oauth_state");
+  deleteCookie(c, "zlog_oauth_state", { path: "/" });
   if (!stateQuery || !stateCookie || stateQuery !== stateCookie) {
     return c.json({ error: "Invalid OAuth state. Please try again." }, 403);
   }
@@ -153,7 +175,7 @@ oauthRoute.get("/google/callback", async (c) => {
 
   const redirectUri = `${process.env.SITE_URL ?? "http://localhost:3000"}/api/oauth/google/callback`;
 
-  // Issue access token
+  // Issue access token with timeout and status validation
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -164,14 +186,18 @@ oauthRoute.get("/google/callback", async (c) => {
       redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
+    signal: AbortSignal.timeout(OAUTH_FETCH_TIMEOUT_MS),
   });
+  if (!tokenRes.ok) return c.json({ error: "Failed to issue token." }, 502);
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
   if (!tokenData.access_token) return c.json({ error: "Failed to issue token." }, 400);
 
   // Fetch user info
   const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    signal: AbortSignal.timeout(OAUTH_FETCH_TIMEOUT_MS),
   });
+  if (!userRes.ok) return c.json({ error: "Failed to fetch Google profile." }, 502);
   const user = (await userRes.json()) as {
     id: string;
     name?: string;
@@ -186,6 +212,16 @@ oauthRoute.get("/google/callback", async (c) => {
 
   const commenter = upsertCommenter("google", providerId, displayName, email, avatarUrl, null);
 
+  // Issue cryptographically signed HttpOnly session cookie to prevent commenterId spoofing
+  const commenterToken = await createCommenterToken(commenter.id);
+  setCookie(c, "zlog_commenter_token", commenterToken, {
+    httpOnly: true,
+    sameSite: "Lax",
+    maxAge: 30 * 24 * 60 * 60,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
   const params = new URLSearchParams({
     commenterId: commenter.id,
     displayName: commenter.displayName,
@@ -195,12 +231,27 @@ oauthRoute.get("/google/callback", async (c) => {
   return c.redirect(`/oauth-callback?${params.toString()}`);
 });
 
-// ============ Get current commenter info ============
+// ============ Logout commenter session ============
+oauthRoute.post("/logout", (c) => {
+  deleteCookie(c, "zlog_commenter_token", { path: "/" });
+  return c.json({ success: true });
+});
+
+// ============ Get current commenter info (public fields only) ============
 oauthRoute.get("/commenter/:id", (c) => {
   const id = c.req.param("id");
   const commenter = db.select().from(schema.commenters).where(eq(schema.commenters.id, id)).get();
   if (!commenter) return c.json({ error: "Not found." }, 404);
-  return c.json(commenter);
+  // Strip private PII (email, providerId) from public commenter lookup
+  return c.json({
+    id: commenter.id,
+    provider: commenter.provider,
+    displayName: commenter.displayName,
+    avatarUrl: commenter.avatarUrl,
+    profileUrl: commenter.profileUrl,
+    createdAt: commenter.createdAt,
+    updatedAt: commenter.updatedAt,
+  });
 });
 
 // ============ Check which OAuth providers are enabled ============

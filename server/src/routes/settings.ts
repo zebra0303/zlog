@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth.js";
 import { generateId } from "../lib/uuid.js";
 import { verifyPassword, hashPassword } from "../lib/password.js";
 import sharp from "sharp";
@@ -12,11 +12,27 @@ import type { AppVariables } from "../types/env.js";
 
 const settingsRoute = new Hono<{ Variables: AppVariables }>();
 
-settingsRoute.get("/profile", (c) => {
+function isValidSlackWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "hooks.slack.com" &&
+      parsed.pathname.startsWith("/services/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+settingsRoute.get("/profile", optionalAuthMiddleware, (c) => {
   const ownerRecord = db.select().from(schema.owner).limit(1).get();
   if (!ownerRecord) return c.json({ error: "Profile not found." }, 404);
 
-  const { passwordHash: _, ...ownerData } = ownerRecord;
+  const isAdmin = Boolean(c.get("ownerId"));
+  const { passwordHash: _, email, ...publicOwnerData } = ownerRecord;
+  // Expose admin email only to authenticated admin sessions
+  const ownerData = isAdmin ? { ...publicOwnerData, email } : publicOwnerData;
   const socialLinksData = db
     .select()
     .from(schema.socialLinks)
@@ -277,10 +293,15 @@ settingsRoute.put("/profile/account", authMiddleware, async (c) => {
   return c.json({ ...ownerData, message: "Account information has been updated." });
 });
 
-settingsRoute.get("/settings", (c) => {
+settingsRoute.get("/settings", optionalAuthMiddleware, (c) => {
+  const isAdmin = Boolean(c.get("ownerId"));
   const settings = db.select().from(schema.siteSettings).all();
   const result: Record<string, string> = {};
-  for (const s of settings) result[s.key] = s.value;
+  for (const s of settings) {
+    // Never expose secret Slack webhook URL to unauthenticated callers
+    if (!isAdmin && s.key === "notification_slack_webhook") continue;
+    result[s.key] = s.value;
+  }
 
   // If blog_title is not in siteSettings, get it from owner.blogTitle
   if (!result.blog_title) {
@@ -303,6 +324,11 @@ settingsRoute.post("/settings/test-slack", authMiddleware, async (c) => {
     return c.json({ error: "Slack webhook URL is not configured." }, 400);
   }
 
+  // Restrict outbound test requests strictly to official Slack Incoming Webhook URLs
+  if (!isValidSlackWebhookUrl(webhookUrl)) {
+    return c.json({ error: "Invalid Slack webhook URL." }, 400);
+  }
+
   try {
     const res = await fetch(webhookUrl, {
       method: "POST",
@@ -310,6 +336,7 @@ settingsRoute.post("/settings/test-slack", authMiddleware, async (c) => {
       body: JSON.stringify({
         text: "✅ zlog 알림 테스트 성공! 댓글 알림이 정상적으로 설정되었습니다.",
       }),
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) {
       return c.json({ error: `Slack responded with ${res.status}` }, 502);
@@ -333,6 +360,13 @@ const ALLOWED_SETTING_KEYS = new Set([
   "default_theme",
   "font_family",
   "lazy_load_images",
+  // Theme color customization keys used by ThemeCustomizer & AppLayout
+  "primary_color",
+  "accent_color",
+  "surface_color_light",
+  "surface_color_dark",
+  "text_color_light",
+  "text_color_dark",
   "header_bg_color_dark",
   "header_bg_color_light",
   "header_bg_image_dark",
@@ -366,6 +400,11 @@ settingsRoute.put("/settings", authMiddleware, async (c) => {
     // Skip keys not in whitelist or invalid values
     if (!ALLOWED_SETTING_KEYS.has(key)) continue;
     if (typeof value !== "string" || value.length > 2000) continue;
+    if (key === "notification_slack_webhook" && value.trim() !== "") {
+      if (!isValidSlackWebhookUrl(value.trim())) {
+        return c.json({ error: "Invalid Slack webhook URL." }, 400);
+      }
+    }
     const existing = db
       .select()
       .from(schema.siteSettings)

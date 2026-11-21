@@ -175,6 +175,18 @@ describe("Posts API", () => {
       const res = await app.request("/api/posts/deleted-post");
       expect(res.status).toBe(404);
     });
+
+    it("should return 404 for draft post when unauthenticated", async () => {
+      createTestPost({ title: "Secret Draft", slug: "secret-draft", status: "draft" });
+      const res = await app.request("/api/posts/secret-draft");
+      expect(res.status).toBe(404);
+
+      // Admin can still read draft posts
+      const adminRes = await app.request("/api/posts/secret-draft", {
+        headers: { Cookie: `zlog_token=${token}` },
+      });
+      expect(adminRes.status).toBe(200);
+    });
   });
 
   describe("POST /api/posts", () => {
@@ -209,9 +221,11 @@ describe("Posts API", () => {
       });
       expect(res.status).toBe(201);
 
-      // Verify tags via GET
+      // Verify tags via GET (draft post requires admin auth)
       const data = (await res.json()) as { slug: string };
-      const getRes = await app.request(`/api/posts/${data.slug}`);
+      const getRes = await app.request(`/api/posts/${data.slug}`, {
+        headers: { Cookie: `zlog_token=${token}` },
+      });
       const postData = (await getRes.json()) as { tags: { name: string }[] };
       expect(postData.tags).toHaveLength(2);
     });
@@ -247,9 +261,11 @@ describe("Posts API", () => {
       });
       expect(res2.status).toBe(201);
 
-      // Both posts should share the same tag
+      // Both posts should share the same tag (draft post requires admin auth)
       const data2 = (await res2.json()) as { slug: string };
-      const getRes = await app.request(`/api/posts/${data2.slug}`);
+      const getRes = await app.request(`/api/posts/${data2.slug}`, {
+        headers: { Cookie: `zlog_token=${token}` },
+      });
       const postData = (await getRes.json()) as { tags: { name: string }[] };
       expect(postData.tags).toHaveLength(1);
       expect(postData.tags[0]?.name).toBe("blog");

@@ -5,6 +5,7 @@ import { hashPassword } from "../lib/password.js";
 import { eq, isNull, and, isNotNull, or } from "drizzle-orm";
 import path from "node:path";
 import sharp from "sharp";
+import { safeOutboundFetch } from "../lib/remoteUrl.js";
 
 /**
  * On first run: create tables + admin account + default settings
@@ -273,13 +274,16 @@ export async function bootstrap() {
   // (handles upgrades where FTS table is newly created against an existing DB)
   sqlite.exec("INSERT INTO posts_fts(posts_fts) VALUES('rebuild')");
 
-  // Triggers to keep FTS in sync with posts table
+  // Triggers to keep FTS5 external-content table in sync with posts table
+  // Recreate posts_fts_update using the official FTS5 delete+insert pattern (direct UPDATE fails on external content tables)
   sqlite.exec(`
+    DROP TRIGGER IF EXISTS posts_fts_update;
     CREATE TRIGGER IF NOT EXISTS posts_fts_insert AFTER INSERT ON posts BEGIN
       INSERT INTO posts_fts(rowid, title) VALUES (NEW.rowid, NEW.title);
     END;
-    CREATE TRIGGER IF NOT EXISTS posts_fts_update AFTER UPDATE OF title ON posts BEGIN
-      UPDATE posts_fts SET title = NEW.title WHERE rowid = NEW.rowid;
+    CREATE TRIGGER posts_fts_update AFTER UPDATE OF title ON posts BEGIN
+      INSERT INTO posts_fts(posts_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
+      INSERT INTO posts_fts(rowid, title) VALUES (NEW.rowid, NEW.title);
     END;
     CREATE TRIGGER IF NOT EXISTS posts_fts_delete AFTER DELETE ON posts BEGIN
       INSERT INTO posts_fts(posts_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
@@ -435,12 +439,19 @@ async function autoRepairPostImageDimensions() {
     )
     .all();
 
+  const uploadsRoot = path.resolve(process.cwd(), "uploads");
+  const resolveContainedUpload = (relativeUrl: string): string | null => {
+    const resolved = path.resolve(process.cwd(), relativeUrl.replace(/^\/+/, ""));
+    return resolved.startsWith(uploadsRoot + path.sep) ? resolved : null;
+  };
+
   if (staleLocalPosts.length > 0) {
     console.log(`🔍 Found ${staleLocalPosts.length} local posts with missing image dimensions.`);
     for (const post of staleLocalPosts) {
       if (!post.coverImage?.startsWith("/uploads/images/")) continue;
+      const filePath = resolveContainedUpload(post.coverImage);
+      if (!filePath) continue;
       try {
-        const filePath = path.join(process.cwd(), post.coverImage);
         const metadata = await sharp(filePath).metadata();
         if (metadata.width && metadata.height) {
           db.update(schema.posts)
@@ -454,8 +465,7 @@ async function autoRepairPostImageDimensions() {
     }
   }
 
-  // 2. Repair remote posts (only if we have the images locally or via URL that we can probe - though usually we only repair what we own or have cached)
-  // For remote posts, we try to probe the URL if it's accessible.
+  // 2. Repair remote posts (only if we have the images locally or via safe remote URL)
   const staleRemotePosts = db
     .select({
       id: schema.remotePosts.id,
@@ -475,21 +485,24 @@ async function autoRepairPostImageDimensions() {
     for (const post of staleRemotePosts) {
       if (!post.coverImage) continue;
       try {
-        // If it's a local proxy URL or an absolute URL, try to probe it
-        let metadata: sharp.Metadata | undefined;
+        let metadata: { width?: number; height?: number } | undefined;
         if (post.coverImage.startsWith("/uploads/")) {
-          const filePath = path.join(process.cwd(), post.coverImage);
-          metadata = await sharp(filePath).metadata();
+          const filePath = resolveContainedUpload(post.coverImage);
+          if (filePath) {
+            metadata = await sharp(filePath).metadata();
+          }
         } else if (post.coverImage.startsWith("http")) {
-          const res = await fetch(post.coverImage, { signal: AbortSignal.timeout(5000) });
+          // Use SSRF-validated outbound fetch when probing remote cover images
+          const res = await safeOutboundFetch(post.coverImage, {
+            signal: AbortSignal.timeout(5000),
+          });
           if (res.ok) {
             const buffer = Buffer.from(await res.arrayBuffer());
             metadata = await sharp(buffer).metadata();
           }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (metadata?.width && metadata?.height) {
+        if (metadata?.width && metadata.height) {
           db.update(schema.remotePosts)
             .set({ coverImageWidth: metadata.width, coverImageHeight: metadata.height })
             .where(eq(schema.remotePosts.id, post.id))

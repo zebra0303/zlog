@@ -24,12 +24,8 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             "react-vendor": ["react", "react-dom", "react-router"],
-            "ui-vendor": [
-              "lucide-react",
-              "@radix-ui/react-dialog",
-              "@radix-ui/react-dropdown-menu",
-              "@radix-ui/react-tabs",
-            ],
+            // Removed unused @radix-ui/* packages from chunk split
+            "ui-vendor": ["lucide-react"],
             "markdown-vendor": [
               "remark-parse",
               "remark-rehype",

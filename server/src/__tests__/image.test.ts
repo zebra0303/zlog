@@ -12,11 +12,15 @@ const mockMetadata = vi.fn(() => Promise.resolve({ width: 1000, height: 800 }));
 
 vi.mock("sharp", () => {
   return {
-    default: vi.fn(() => ({
-      metadata: mockMetadata,
-      webp: mockWebp,
-      resize: mockResize,
-    })),
+    default: vi.fn(() => {
+      const instance = {
+        rotate: vi.fn(() => instance),
+        metadata: mockMetadata,
+        webp: mockWebp,
+        resize: mockResize,
+      };
+      return instance;
+    }),
   };
 });
 

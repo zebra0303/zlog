@@ -5,25 +5,23 @@ import * as schema from "../db/schema.js";
 import { eq, and, sql, inArray, isNull, asc, desc } from "drizzle-orm";
 import { generateId } from "../lib/uuid.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
-import { verifyToken } from "../middleware/auth.js";
+import { verifyToken, verifyCommenterToken } from "../middleware/auth.js";
 import { getT } from "../lib/i18n/index.js";
 
 const commentsRoute = new Hono();
 
 /**
- * Strip HTML tags and XSS risk elements — allow plain text only
+ * Strip HTML tags safely without HTML-entity double-encoding plain text quotes/ampersands
  */
 function sanitizePlainText(input: string): string {
-  return (
-    input
-      // Replace dangerous characters not encoded as HTML entities
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#x27;")
-      .trim()
-  );
+  if (typeof input !== "string") return "";
+  let cleaned = input;
+  let prev = "";
+  while (cleaned !== prev) {
+    prev = cleaned;
+    cleaned = cleaned.replace(/<[^>]*>/g, "");
+  }
+  return cleaned.replace(/[<>]/g, "").trim();
 }
 
 /**
@@ -98,10 +96,20 @@ async function sendSlackNotification(
     postUrl ? `🔗 ${postUrl}` : "",
   ].filter(Boolean);
 
+  try {
+    const parsed = new URL(webhookUrl);
+    if (parsed.protocol !== "https:" || parsed.hostname !== "hooks.slack.com") {
+      return;
+    }
+  } catch {
+    return;
+  }
+
   await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: lines.join("\n") }),
+    signal: AbortSignal.timeout(10000),
   });
 }
 
@@ -113,9 +121,32 @@ async function isAdmin(c: Context): Promise<boolean> {
   return !!ownerId;
 }
 
-/** Exclude password field and add hasPassword flag */
+/** Resolve authenticated OAuth commenter ID from signed HttpOnly cookie */
+async function getVerifiedCommenterId(c: Context): Promise<string | null> {
+  const token = getCookie(c, "zlog_commenter_token");
+  if (!token) return null;
+  return verifyCommenterToken(token);
+}
+
+/** Verify post is accessible (published + public category unless admin) */
+function isPostAccessible(postId: string, admin: boolean): boolean {
+  const post = db.select().from(schema.posts).where(eq(schema.posts.id, postId)).get();
+  if (!post || post.status === "deleted") return false;
+  if (!admin && post.status !== "published") return false;
+  if (!admin && post.categoryId) {
+    const cat = db
+      .select({ isPublic: schema.categories.isPublic })
+      .from(schema.categories)
+      .where(eq(schema.categories.id, post.categoryId))
+      .get();
+    if (cat && !cat.isPublic) return false;
+  }
+  return true;
+}
+
+/** Exclude password hash and authorEmail PII from public comment responses */
 function stripPassword(comment: typeof schema.comments.$inferSelect) {
-  const { password, ...rest } = comment;
+  const { password, authorEmail: _email, ...rest } = comment;
   return { ...rest, hasPassword: !!password };
 }
 
@@ -141,8 +172,12 @@ function buildCommentTree(
 }
 
 // ==================== GET comment list ====================
-commentsRoute.get("/posts/:postId/comments", (c) => {
+commentsRoute.get("/posts/:postId/comments", async (c) => {
   const postId = c.req.param("postId");
+  const admin = await isAdmin(c);
+  if (!isPostAccessible(postId, admin)) {
+    return c.json({ error: "Post not found." }, 404);
+  }
   const visitorId = c.req.query("visitorId") ?? "";
   const pageStr = c.req.query("page");
   const page = pageStr ? Math.max(1, parseInt(pageStr, 10)) : 1;
@@ -292,22 +327,31 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     return c.json({ error: "Comments are disabled." }, 403);
   }
 
-  if (commentMode === "sso_only" && !body.commenterId) {
+  // Derive SSO commenter identity from signed HttpOnly cookie instead of trusting client body
+  const verifiedCommenterId = await getVerifiedCommenterId(c);
+  const authenticatedCommenter = verifiedCommenterId
+    ? db.select().from(schema.commenters).where(eq(schema.commenters.id, verifiedCommenterId)).get()
+    : null;
+
+  if (commentMode === "sso_only" && !authenticatedCommenter) {
     return c.json({ error: "Social login is required to post a comment." }, 403);
   }
 
-  if (commentMode === "anonymous_only" && body.commenterId) {
-    // In anonymous_only mode, SSO comments are not allowed (ignore and treat as anonymous)
-    // Ignore body.commenterId
-  }
-
-  // Password is required for anonymous comments (no commenterId)
-  const isAnonymous = !body.commenterId || commentMode === "anonymous_only";
+  // Password is required for anonymous comments (no verified commenter session)
+  const isAnonymous = !authenticatedCommenter || commentMode === "anonymous_only";
   if (isAnonymous && !body.password) {
     return c.json({ error: "Password is required for anonymous comments." }, 400);
   }
 
-  if (!authorName || !content) {
+  // Prefer verified OAuth profile fields for SSO comments
+  const finalAuthorName = isAnonymous
+    ? authorName
+    : sanitizePlainText(authenticatedCommenter.displayName);
+  const finalAuthorEmail = isAnonymous ? authorEmail : (authenticatedCommenter.email ?? "");
+  const finalAuthorAvatarUrl = isAnonymous ? authorAvatarUrl : authenticatedCommenter.avatarUrl;
+  const finalAuthorUrl = isAnonymous ? authorUrl : authenticatedCommenter.profileUrl;
+
+  if (!finalAuthorName || !content) {
     return c.json({ error: "Name and content are required." }, 400);
   }
   if (content.length > 2000) {
@@ -333,6 +377,10 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     }
   }
 
+  const admin = await isAdmin(c);
+  if (!isPostAccessible(postId, admin)) {
+    return c.json({ error: "Post not found." }, 404);
+  }
   const post = db.select().from(schema.posts).where(eq(schema.posts.id, postId)).get();
   if (post?.status !== "published") {
     return c.json({ error: "Post not found." }, 404);
@@ -346,11 +394,11 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
     .values({
       id,
       postId,
-      commenterId: isAnonymous ? null : (body.commenterId ?? null),
-      authorName,
-      authorEmail,
-      authorUrl,
-      authorAvatarUrl,
+      commenterId: isAnonymous ? null : authenticatedCommenter.id,
+      authorName: finalAuthorName,
+      authorEmail: finalAuthorEmail,
+      authorUrl: finalAuthorUrl,
+      authorAvatarUrl: finalAuthorAvatarUrl,
       content,
       password: passwordHash,
       parentId: body.parentId ?? null,
@@ -363,7 +411,7 @@ commentsRoute.post("/posts/:postId/comments", async (c) => {
   const webhookUrl = getSlackWebhook();
   if (webhookUrl) {
     void sendSlackNotification(webhookUrl, post, {
-      authorName,
+      authorName: finalAuthorName,
       content,
       parentId: body.parentId ?? null,
     }).catch(() => null);
@@ -395,10 +443,10 @@ commentsRoute.put("/comments/:id", async (c) => {
     return c.json({ error: "Comment must be 2,000 characters or less." }, 400);
   }
 
-  // Authorization check: SSO comment → match commenterId, anonymous comment → match password
+  // Authorization check: SSO comment → verify signed commenter cookie, anonymous comment → match password
   if (comment.commenterId) {
-    // SSO comment
-    if (!body.commenterId || body.commenterId !== comment.commenterId) {
+    const verifiedCommenterId = await getVerifiedCommenterId(c);
+    if (!verifiedCommenterId || verifiedCommenterId !== comment.commenterId) {
       return c.json({ error: "You can only edit your own comment." }, 403);
     }
   } else {
@@ -450,8 +498,9 @@ commentsRoute.delete("/comments/:id", async (c) => {
   }
 
   if (comment.commenterId) {
-    // SSO comment: verify commenterId
-    if (!body.commenterId || body.commenterId !== comment.commenterId) {
+    // SSO comment: verify signed commenter cookie instead of spoofable request body
+    const verifiedCommenterId = await getVerifiedCommenterId(c);
+    if (!verifiedCommenterId || verifiedCommenterId !== comment.commenterId) {
       return c.json({ error: "You can only delete your own comment." }, 403);
     }
   } else {

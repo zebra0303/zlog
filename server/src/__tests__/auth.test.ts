@@ -11,6 +11,8 @@ import {
   type TestAdmin,
 } from "./helpers.js";
 
+import { SECRET_KEY } from "../middleware/auth.js";
+
 describe("Auth API", () => {
   const app = createApp();
   let admin: TestAdmin;
@@ -97,14 +99,12 @@ describe("Auth API", () => {
   describe("GET /api/auth/me — sliding session", () => {
     // Helper to create a token with a custom iat (issued-at) time
     async function createTokenWithAge(ownerId: string, ageSeconds: number): Promise<string> {
-      const secretStr = process.env.JWT_SECRET ?? "test-secret";
-      const key = new TextEncoder().encode(secretStr);
       const pastIat = Math.floor(Date.now() / 1000) - ageSeconds;
-      return new SignJWT({ sub: ownerId })
+      return new SignJWT({ sub: ownerId, type: "admin" })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt(pastIat)
         .setExpirationTime("7d")
-        .sign(key);
+        .sign(SECRET_KEY);
     }
 
     it("should NOT include refreshedToken cookie for a fresh token (< 24h)", async () => {

@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
+import { except } from "hono/combine";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { apiReference } from "@scalar/hono-api-reference";
 import { errorHandler } from "../middleware/errorHandler.js";
@@ -54,6 +55,20 @@ export function createApp() {
     }
   });
 
+  // Apply global CORS except on /api/federation/* so cross-origin federation keeps origin: "*"
+  app.use(
+    "*",
+    except(
+      "/api/federation/*",
+      cors({
+        origin: getEnv("SITE_URL", "http://localhost:5173"),
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
+      }),
+    ),
+  );
+
   app.use(
     "/api/federation/*",
     cors({
@@ -61,16 +76,6 @@ export function createApp() {
       // Only allow methods actually used by federation endpoints
       allowMethods: ["GET", "POST", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization", "X-Zlog-Subscriber-Url"],
-    }),
-  );
-
-  app.use(
-    "*",
-    cors({
-      origin: getEnv("SITE_URL", "http://localhost:5173"),
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization"],
-      credentials: true,
     }),
   );
 

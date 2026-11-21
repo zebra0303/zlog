@@ -5,6 +5,7 @@ import { useCommentMutations } from "@/features/comment/model/useCommentMutation
 import { timeAgo } from "@/shared/lib/formatDate";
 import { useI18n } from "@/shared/i18n";
 import { getErrorMessage } from "@/shared/lib/getErrorMessage";
+import { getVisitorId } from "@/shared/lib/visitorId";
 import type { CommentWithReplies } from "@zlog/shared";
 import { CommentContent } from "./CommentContent";
 import { CommentForm } from "./CommentForm";
@@ -43,7 +44,7 @@ export function CommentThread({
   const isDeleted = !!comment.deletedAt;
   const handleLike = async () => {
     try {
-      await likeComment(comment.id);
+      await likeComment(comment.id, getVisitorId());
       showToast(t("post_like_added"), "success");
       onRefresh();
     } catch {
@@ -72,13 +73,12 @@ export function CommentThread({
     setIsEditSubmitting(true);
     setEditError(null);
     try {
-      const payload: Record<string, unknown> = { content: editContent };
-      if (isSsoOwner) {
-        payload.commenterId = commenter?.commenterId;
-      } else if (isAnonComment) {
-        payload.password = editPassword;
-      }
-      await updateComment(comment.id, editContent, deletePassword);
+      // Forward editPassword (not deletePassword) and commenterId to updateComment
+      await updateComment(comment.id, {
+        content: editContent,
+        ...(isSsoOwner ? { commenterId: commenter?.commenterId } : {}),
+        ...(isAnonComment && !isSsoOwner ? { password: editPassword } : {}),
+      });
       setIsEditing(false);
       setEditPassword("");
       showToast(t("success"), "success");
@@ -91,16 +91,13 @@ export function CommentThread({
   };
 
   const handleDelete = async (password?: string) => {
-    const payload: Record<string, unknown> = {};
-    if (isSsoOwner) {
-      payload.commenterId = commenter?.commenterId;
-    } else if (isAnonComment && password) {
-      payload.password = password;
-    }
-    // Admin can leave body empty (authenticated via JWT token)
+    const payload = {
+      ...(isSsoOwner ? { commenterId: commenter?.commenterId } : {}),
+      ...(isAnonComment && password ? { password } : {}),
+    };
 
     try {
-      await deleteComment(comment.id, deletePassword);
+      await deleteComment(comment.id, Object.keys(payload).length > 0 ? payload : undefined);
       showToast(t("success"), "success");
       onCountChange?.(-1);
       onRefresh();

@@ -74,7 +74,16 @@ export function CommentForm({
     setIsSubmitting(true);
     setError(null);
     try {
-      await createComment(postId, content, parentId, anonPassword);
+      // Send complete author/commenter metadata matching server comment creation contract
+      await createComment(postId, {
+        authorName: commenter ? commenter.displayName : anonName,
+        authorEmail: commenter ? "" : anonEmail,
+        authorAvatarUrl: commenter?.avatarUrl.length ? commenter.avatarUrl : undefined,
+        commenterId: commenter?.commenterId,
+        content,
+        parentId,
+        password: commenter ? undefined : anonPassword,
+      });
       setContent("");
       if (!commenter) {
         setAnonName("");

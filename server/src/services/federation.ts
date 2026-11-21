@@ -11,7 +11,8 @@ const FEDERATION_POST_LIMIT = 200;
 
 export class FederationService {
   resolveRelativeUrls(content: string, siteUrl: string): string {
-    return content.replace(/(!\[.*?\]\()(\/\/(uploads|img)\/[^)]+\))/g, `$1${siteUrl}$2`);
+    // Fix single-slash relative markdown image URLs (previously had a typo matching //uploads)
+    return content.replace(/(!\[.*?\]\()(\/(uploads|img)\/[^)]+\))/g, `$1${siteUrl}$2`);
   }
 
   resolveUrl(url: string | null, siteUrl: string): string | null {
@@ -361,20 +362,8 @@ export class FederationService {
           .select()
           .from(schema.remoteBlogs)
           .where(eq(schema.remoteBlogs.id, id))
-          .get() as {
-          id: string;
-          siteUrl: string;
-          displayName: string | null;
-          blogTitle: string | null;
-          avatarUrl: string | null;
-          lastFetchedAt: string | null;
-          createdAt: string;
-          remoteBlogId: string;
-          remoteId: string;
-          name: string;
-          slug: string;
-          description: string | null;
-        };
+          .get();
+        if (!remoteBlog) throw new Error("Failed to register remote blog.");
       } catch {
         throw new Error("Failed to register remote blog.");
       }
@@ -417,20 +406,8 @@ export class FederationService {
           .select()
           .from(schema.remoteCategories)
           .where(eq(schema.remoteCategories.id, id))
-          .get() as {
-          id: string;
-          siteUrl: string;
-          displayName: string | null;
-          blogTitle: string | null;
-          avatarUrl: string | null;
-          lastFetchedAt: string | null;
-          createdAt: string;
-          remoteBlogId: string;
-          remoteId: string;
-          name: string;
-          slug: string;
-          description: string | null;
-        };
+          .get();
+        if (!remoteCat) throw new Error("Failed to register remote category.");
       } catch {
         throw new Error("Failed to register remote category.");
       }
@@ -540,20 +517,8 @@ export class FederationService {
           .select()
           .from(schema.remoteBlogs)
           .where(eq(schema.remoteBlogs.id, id))
-          .get() as {
-          id: string;
-          siteUrl: string;
-          displayName: string | null;
-          blogTitle: string | null;
-          avatarUrl: string | null;
-          lastFetchedAt: string | null;
-          createdAt: string;
-          remoteBlogId: string;
-          remoteId: string;
-          name: string;
-          slug: string;
-          description: string | null;
-        };
+          .get();
+        if (!remoteBlog) throw new Error("Failed to register remote blog.");
       } catch (err) {
         throw new Error(`Failed to fetch info from remote blog. (${err})`);
       }
@@ -600,20 +565,8 @@ export class FederationService {
           .select()
           .from(schema.remoteCategories)
           .where(eq(schema.remoteCategories.id, id))
-          .get() as {
-          id: string;
-          siteUrl: string;
-          displayName: string | null;
-          blogTitle: string | null;
-          avatarUrl: string | null;
-          lastFetchedAt: string | null;
-          createdAt: string;
-          remoteBlogId: string;
-          remoteId: string;
-          name: string;
-          slug: string;
-          description: string | null;
-        };
+          .get();
+        if (!remoteCat) throw new Error("Failed to register remote category.");
       } catch (err) {
         throw new Error(`Failed to fetch categories from remote blog. (${err})`);
       }

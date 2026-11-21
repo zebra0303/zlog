@@ -10,6 +10,26 @@ function escapeHtml(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function escapeXml(str: string): string {
+  return escapeHtml(str).replace(/'/g, "&apos;");
+}
+
+/** Serialize JSON-LD safely inside <script> tags to prevent </script> breakout XSS */
+function safeJsonLd(data: Record<string, unknown>): string {
+  return JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+}
+
+function safeDecodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 export function getSiteSettings(): Record<string, string> {
   const rows = db.select().from(schema.siteSettings).all();
   const map: Record<string, string> = {};
@@ -66,7 +86,7 @@ function buildSsrTags(meta: SsrMeta): string {
     lines.push(`<meta name="twitter:image" content="${escapeHtml(meta.image)}" />`);
   }
   if (meta.jsonLd) {
-    lines.push(`<script type="application/ld+json">${JSON.stringify(meta.jsonLd)}</script>`);
+    lines.push(`<script type="application/ld+json">${safeJsonLd(meta.jsonLd)}</script>`);
   }
   return lines.join("\n    ");
 }
@@ -120,7 +140,8 @@ function buildPageMeta(
 
   const postMatch = /^\/posts\/([^/]+)$/.exec(pathname);
   if (postMatch?.[1]) {
-    const slug = postMatch[1];
+    // Decode percent-encoded slugs (e.g. Korean slugs) before DB lookup
+    const slug = safeDecodeSegment(postMatch[1]);
     const post = db.select().from(schema.posts).where(eq(schema.posts.slug, slug)).get();
     if (post?.status === "published") {
       const category = post.categoryId
@@ -178,10 +199,11 @@ function buildPageMeta(
 
   const catMatch = /^\/category\/([^/]+)$/.exec(pathname);
   if (catMatch?.[1]) {
+    const catSlug = safeDecodeSegment(catMatch[1]);
     const cat = db
       .select()
       .from(schema.categories)
-      .where(eq(schema.categories.slug, catMatch[1]))
+      .where(eq(schema.categories.slug, catSlug))
       .get();
     if (cat?.isPublic) return buildCategoryMeta(cat, blogTitle, seoDesc, seoImage, canonicalBase);
     return defaultMeta;
@@ -238,11 +260,12 @@ export function handleSsr(
   const blogTitle = settings.blog_title ?? "zlog";
   const seoDesc = settings.seo_description;
   const seoImage = settings.seo_og_image;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const canonicalBase = (settings.canonical_url ?? siteUrl ?? "http://localhost:3000").replace(
-    /\/$/,
-    "",
-  );
+  // Fall back to siteUrl when canonical_url is empty/whitespace
+  const rawCanonical = (settings.canonical_url as string | undefined)?.trim();
+  const fallbackBase = siteUrl.trim().length > 0 ? siteUrl : "http://localhost:3000";
+  const canonicalBase = (
+    rawCanonical && rawCanonical.length > 0 ? rawCanonical : fallbackBase
+  ).replace(/\/$/, "");
 
   const meta = buildPageMeta(pathname, url, blogTitle, seoDesc, seoImage, canonicalBase);
 
@@ -278,16 +301,17 @@ export function getSitemap(siteUrl: string) {
     .where(eq(schema.categories.isPublic, true))
     .all();
 
+  const safeSiteUrl = escapeXml(siteUrl);
   const urls = [
-    `<url><loc>${siteUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
-    `<url><loc>${siteUrl}/profile</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`,
+    `<url><loc>${safeSiteUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+    `<url><loc>${safeSiteUrl}/profile</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`,
     ...categories.map(
       (cat) =>
-        `<url><loc>${siteUrl}/category/${cat.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+        `<url><loc>${safeSiteUrl}/category/${escapeXml(encodeURIComponent(cat.slug))}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     ),
     ...posts.map(
       (post) =>
-        `<url><loc>${siteUrl}/posts/${post.slug}</loc><lastmod>${post.updatedAt}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
+        `<url><loc>${safeSiteUrl}/posts/${escapeXml(encodeURIComponent(post.slug))}</loc><lastmod>${escapeXml(post.updatedAt)}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
     ),
   ];
 

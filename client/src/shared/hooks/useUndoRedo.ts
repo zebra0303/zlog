@@ -5,6 +5,7 @@ const DEBOUNCE_MS = 500;
 
 interface UseUndoRedoReturn {
   push: (value: string) => void;
+  reset: (value: string) => void;
   undo: () => string | null;
   redo: () => string | null;
   canUndo: boolean;
@@ -93,5 +94,19 @@ export function useUndoRedo(initialValue: string): UseUndoRedoReturn {
     return historyRef.current[indexRef.current] ?? null;
   }, [updateFlags]);
 
-  return { push, undo, redo, canUndo, canRedo };
+  const reset = useCallback(
+    (value: string) => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      pendingRef.current = null;
+      historyRef.current = [value];
+      indexRef.current = 0;
+      updateFlags();
+    },
+    [updateFlags],
+  );
+
+  return { push, reset, undo, redo, canUndo, canRedo };
 }

@@ -60,7 +60,7 @@ export default function PostEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const listFrom = (location.state as { from?: string } | null)?.from ?? "/";
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { t } = useI18n();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -96,7 +96,7 @@ export default function PostEditorPage() {
   });
 
   // Undo/redo history for editor content
-  const { push: pushHistory, undo, redo, canUndo, canRedo } = useUndoRedo("");
+  const { push: pushHistory, reset: resetHistory, undo, redo, canUndo, canRedo } = useUndoRedo("");
 
   // Wrapper that updates content and pushes to undo history
   const setContentWithHistory = useCallback(
@@ -161,6 +161,8 @@ export default function PostEditorPage() {
       const tg = post.tags.map((tg) => tg.name).join(", ");
       setTitle(t);
       setContent(c);
+      // Reset undo history baseline to loaded content so Cmd+Z never wipes the loaded post
+      resetHistory(c);
       setCategoryId(catId);
       setCoverImage(ci);
       setTags(tg);
@@ -168,14 +170,15 @@ export default function PostEditorPage() {
       savedSnapshot.current = { title: t, content: c, categoryId: catId, tags: tg, coverImage: ci };
       isDirtyRef.current = false;
     }
-  }, [post]);
+  }, [post, resetHistory]);
 
-  // Auth check
+  // Auth check (wait for initial checkAuth to finish so browser refresh does not redirect early)
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
       void navigate("/login");
     }
-  }, [isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate]);
 
   // Warn user before leaving with unsaved changes
   useEffect(() => {
@@ -444,13 +447,14 @@ export default function PostEditorPage() {
       .map((tg) => tg.trim())
       .filter(Boolean);
 
+    const safeCover = sanitizeCoverImageUrl(coverImage);
     const payload: CreatePostRequest = {
       title,
       content,
       categoryId: categoryId || undefined,
       status: s,
       tags: tagList.length > 0 ? tagList : undefined,
-      coverImage: coverImage || null,
+      coverImage: safeCover || null,
     };
 
     if (id) {
@@ -629,8 +633,13 @@ export default function PostEditorPage() {
             placeholder={t("editor_cover_image_placeholder")}
             value={coverImage}
             onChange={(e) => {
-              const safeValue = sanitizeCoverImageUrl(e.target.value);
-              setCoverImage(safeValue);
+              // Keep raw value while typing; sanitize on blur, save, and preview
+              setCoverImage(e.target.value);
+            }}
+            onBlur={(e) => {
+              if (e.target.value.trim()) {
+                setCoverImage(sanitizeCoverImageUrl(e.target.value));
+              }
             }}
             className="flex-1"
           />
@@ -704,9 +713,9 @@ export default function PostEditorPage() {
         )}
         {viewMode === "preview" && (
           <>
-            {coverImage && (
+            {sanitizeCoverImageUrl(coverImage) && (
               <img
-                src={coverImage}
+                src={sanitizeCoverImageUrl(coverImage)}
                 alt={title || "Cover"}
                 className="mb-4 h-auto w-full rounded-xl"
               />

@@ -35,9 +35,6 @@
   "overrides": {
     "esbuild": "^0.25.0",
     "rollup": "^4.59.0",
-    "rimraf": "^6.0.0",
-    "glob": "^13.0.0",
-    "minimatch": "^10.2.4",
     "dompurify": "^3.3.2"
   },
   "devDependencies": {

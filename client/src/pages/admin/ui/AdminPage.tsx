@@ -29,7 +29,7 @@ import { SubscriberManager } from "./SubscriberManager";
 type AdminTab = "general" | "content" | "theme" | "federation";
 
 export default function AdminPage() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { fetchSettings: refreshSiteSettings, getCurrentFont } = useSiteSettingsStore();
   const { isDark } = useThemeStore();
   const navigate = useNavigate();
@@ -151,6 +151,8 @@ export default function AdminPage() {
       : null;
 
   useEffect(() => {
+    // Wait for initial checkAuth() to finish before redirecting on browser refresh
+    if (authLoading) return;
     if (!isAuthenticated) {
       // Redirect to current URL (including query params) after login
       const currentPath = window.location.pathname + window.location.search;
@@ -158,7 +160,7 @@ export default function AdminPage() {
       return;
     }
     void api.get<Record<string, string>>("/settings").then(setSettings);
-  }, [isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate]);
 
   const update = (k: string, v: string) => {
     setSettings((p) => ({ ...p, [k]: v }));

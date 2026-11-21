@@ -12,11 +12,17 @@ interface RateLimitOptions {
   message?: string;
 }
 
-// Extract client IP from common proxy headers
+// Extract client IP; trust proxy headers only when TRUST_PROXY is explicitly enabled
 function getClientIp(c: Context): string {
-  const forwarded = c.req.header("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() ?? "unknown";
-  return c.req.header("x-real-ip") ?? "unknown";
+  if (process.env.TRUST_PROXY === "true") {
+    const forwarded = c.req.header("x-forwarded-for");
+    if (forwarded) return forwarded.split(",")[0]?.trim() ?? "unknown";
+    const realIp = c.req.header("x-real-ip");
+    if (realIp) return realIp.trim();
+  }
+  const incoming = (c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)
+    ?.incoming;
+  return incoming?.socket?.remoteAddress ?? c.req.header("x-real-ip") ?? "unknown";
 }
 
 /**

@@ -24,19 +24,28 @@ describe("Settings & Profile API", () => {
   });
 
   describe("GET /api/profile", () => {
-    it("should return profile with stats and social links", async () => {
+    it("should return public profile without email when unauthenticated", async () => {
       const res = await app.request("/api/profile");
       expect(res.status).toBe(200);
       const data = (await res.json()) as {
-        email: string;
+        email?: string;
         socialLinks: unknown[];
         stats: { totalPosts: number; totalCategories: number; totalViews: number };
       };
-      expect(data.email).toBe(admin.email);
+      expect(data.email).toBeUndefined();
       expect(data).not.toHaveProperty("passwordHash");
       expect(data.socialLinks).toBeDefined();
       expect(data.stats).toBeDefined();
       expect(data.stats.totalPosts).toBe(0);
+    });
+
+    it("should include email when authenticated as admin", async () => {
+      const res = await app.request("/api/profile", {
+        headers: { Cookie: `zlog_token=${token}` },
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { email?: string };
+      expect(data.email).toBe(admin.email);
     });
   });
 

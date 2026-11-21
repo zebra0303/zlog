@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { api } from "@/shared/api/client";
 
 describe("ApiClient 401 Interceptor", () => {
+  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
-    vi.spyOn(window, "dispatchEvent");
+    dispatchSpy = vi.spyOn(window, "dispatchEvent");
     global.fetch = vi.fn();
   });
 
@@ -20,7 +22,7 @@ describe("ApiClient 401 Interceptor", () => {
 
     await expect(api.get("/users/me")).rejects.toThrow("Unauthorized");
 
-    const dispatchCalls = vi.mocked(window.dispatchEvent).mock.calls;
+    const dispatchCalls = dispatchSpy.mock.calls;
     expect(dispatchCalls.length).toBe(1);
     const event = Array.isArray(dispatchCalls[0])
       ? (dispatchCalls[0][0] as CustomEvent)
@@ -39,6 +41,6 @@ describe("ApiClient 401 Interceptor", () => {
       api.post("/auth/login", { email: "admin@example.com", password: "wrong" }),
     ).rejects.toThrow("Invalid credentials");
 
-    expect(window.dispatchEvent).not.toHaveBeenCalled();
+    expect(dispatchSpy).not.toHaveBeenCalled();
   });
 });
